@@ -41,12 +41,20 @@ comparison-artifacts/
 verificacion*/
 _tmp*/
 *_tmp*/
+.tmp*/
+tmp*/
+pct_*/
+smoke_*/
+test04/
 %s
 Untitled
 archive_list.txt
 archive_recursive.txt
 *_anomalias_*.txt
 DEELO_*.txt
+tmp_*.py
+*.tmp.*
+soho-naranjaX-MA-etl/[0-9]
 
 # Data files: do not publish real campaign/client data
 *.csv

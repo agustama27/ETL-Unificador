@@ -1,0 +1,37 @@
+# Python cache/test artifacts
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Local IDE/OS noise
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+
+# Logs and temporary files
+*.log
+*.tmp
+*.pid
+
+# Build and binary outputs
+build/
+dist/
+*.exe
+*.dll
+
+# Local temporary workspaces
+.tmp_*/
+
+# Generated output subfolders (keep source visible)
+back-resultados/base-generada/
+
