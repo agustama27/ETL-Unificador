@@ -1,0 +1,77 @@
+# Secrets / credentials
+.env
+.env.*
+**/.env
+**/.env.*
+
+# Python caches / virtual environments
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+.venv/
+venv/
+env/
+
+# Logs
+logs/
+*.log
+
+# Operational data, client files and generated outputs
+input/
+entrada/
+output/
+outputs/
+results/
+resultados/
+salidas/
+base-recibida/
+base-generada/
+base_recibida/
+base_generada/
+base_procesada/
+base_WFM/
+back_recibida/
+back_procesada/
+comparison-artifacts/
+verificacion*/
+_tmp*/
+*_tmp*/
+%s
+Untitled
+archive_list.txt
+archive_recursive.txt
+*_anomalias_*.txt
+DEELO_*.txt
+
+# Data files: do not publish real campaign/client data
+*.csv
+*.xlsx
+*.xls
+*.xlsm
+
+# Build / packaging artifacts
+build/
+dist/
+dist-*/
+*.exe
+*.pkg
+*.toc
+*.pyz
+base_library.zip
+
+# Local AI/editor config
+.claude/settings.local.json
+**/.claude/settings.local.json
+.atl/
+
+# OS/editor noise
+.DS_Store
+Thumbs.db
+desktop.ini
+.vscode/
+.idea/

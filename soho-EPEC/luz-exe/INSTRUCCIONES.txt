@@ -1,0 +1,16 @@
+Luz EXE - Uso rapido
+
+1) Ejecutar: python main.py
+2) Seleccionar CSV Roman (uno o varios)
+3) Seleccionar CSV Logcall (uno o varios)
+4) Click en Procesar
+
+Salida de cada corrida:
+- salidas\DD-MM-YYYY\corrida_HH-MM-SS-ffffff\entradas\roman\
+- salidas\DD-MM-YYYY\corrida_HH-MM-SS-ffffff\entradas\logcall\
+- salidas\DD-MM-YYYY\corrida_HH-MM-SS-ffffff\resultados\output_luz_DD_MM_YY.xlsx
+- salidas\DD-MM-YYYY\corrida_HH-MM-SS-ffffff\logs\luz_YYYYMMDD_HHMMSS.log
+
+Build EXE:
+- pyinstaller luz.spec
+- exe en dist\luz.exe

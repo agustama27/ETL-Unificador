@@ -1,0 +1,410 @@
+{
+  "name": "ENCUESTA-inbound-wh",
+  "nodes": [
+    {
+      "parameters": {
+        "options": {
+          "delimiter": ",",
+          "includeEmptyCells": false
+        }
+      },
+      "id": "70f80268-f899-402f-9084-9d566b5fdb75",
+      "name": "Extract CSV Data",
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1,
+      "position": [
+        -672,
+        144
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "id-1",
+              "leftValue": "={{ $json['phone number'] }}",
+              "rightValue": "={{ $('Code in JavaScript').item.json.from_number_normalized }}",
+              "operator": {
+                "type": "string",
+                "operation": "contains"
+              }
+            }
+          ],
+          "combinator": "or"
+        },
+        "options": {}
+      },
+      "id": "62568294-24f7-43a9-be41-a16d0dd8f28d",
+      "name": "Find Matching Line",
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2.2,
+      "position": [
+        -464,
+        144
+      ]
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "encuesta/inbound",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -1264,
+        144
+      ],
+      "id": "81af76ef-022c-4e52-96ff-6e51aff965e7",
+      "name": "Webhook",
+      "webhookId": "dec0f53e-2f4f-45b3-af36-acbfcbc7816e"
+    },
+    {
+      "parameters": {
+        "operation": "download",
+        "fileId": "0157U64BZB2JLUPNK4RNE3GXZYM5Z4AJ4T"
+      },
+      "type": "n8n-nodes-base.microsoftOneDrive",
+      "typeVersion": 1,
+      "position": [
+        -864,
+        144
+      ],
+      "id": "b65f201c-cf7d-4255-9af5-6e8a33db6197",
+      "name": "Download a file",
+      "retryOnFail": true,
+      "credentials": {
+        "microsoftOneDriveOAuth2Api": {
+          "id": "VUffz366tzZ72e57",
+          "name": "Microsoft Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "2274cffb-16f5-478f-a73f-d58885748afa",
+              "name": "Tier",
+              "value": "={{ $json.Tier }}",
+              "type": "string"
+            },
+            {
+              "id": "a0ae000f-0deb-4e68-b6da-846e53f16c39",
+              "name": "Cliente",
+              "value": "={{ $json.Cliente }}",
+              "type": "string"
+            },
+            {
+              "id": "66fffce3-f11e-4bd7-b49e-06a035da2b7e",
+              "name": "Gerencia Cliente",
+              "value": "={{ $json['Gerencia Cliente'] }}",
+              "type": "string"
+            },
+            {
+              "id": "3aad5a7b-316b-43f1-821f-737df167e0d0",
+              "name": "Vertical de negocio",
+              "value": "={{ $json['Vertical de negocio'] }}",
+              "type": "string"
+            },
+            {
+              "id": "a36a6452-d4aa-4946-a3e9-0ec5bc7d6d53",
+              "name": "customer_name",
+              "value": "={{ $json.customer_name }}",
+              "type": "string"
+            },
+            {
+              "id": "bd8da53c-1840-4ed0-9573-b16e873aa615",
+              "name": "Puesto",
+              "value": "={{ $json.Puesto }}",
+              "type": "string"
+            },
+            {
+              "id": "7445094b-7423-4c62-ba4b-5487632afb37",
+              "name": "Referente",
+              "value": "={{ $json.Referente }}",
+              "type": "string"
+            },
+            {
+              "id": "e75c557b-b1cb-4ebb-997f-a9652d057489",
+              "name": "Jerarquia",
+              "value": "={{ $json.Jerarquia }}",
+              "type": "string"
+            },
+            {
+              "id": "926c39b8-6c6c-4f4e-b917-bac8540ab8ba",
+              "name": "Mail",
+              "value": "={{ $json.Mail }}",
+              "type": "string"
+            },
+            {
+              "id": "b951cc0a-7012-47a6-9c48-aad462c95d86",
+              "name": "phone number",
+              "value": "={{ $json['phone number'] }}",
+              "type": "string"
+            },
+            {
+              "id": "65e44abe-4db5-4d21-be8c-63b88be6da15",
+              "name": "Provincia",
+              "value": "={{ $json.Provincia }}",
+              "type": "string"
+            },
+            {
+              "id": "123fcc4f-4abd-4242-8885-71a0bf10bed1",
+              "name": "Pais",
+              "value": "={{ $json['País'] }}",
+              "type": "string"
+            },
+            {
+              "id": "08a954a0-604f-410f-9bed-edc2744e24a1",
+              "name": "Referente operativo",
+              "value": "={{ $json['Evoltis: Referente operativo'] }}",
+              "type": "string"
+            },
+            {
+              "id": "dc78f984-b599-4048-ac61-8e03b8f85068",
+              "name": "Referente negocio",
+              "value": "={{ $json['Evoltis: Referente de negocio'] }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -48,
+        128
+      ],
+      "id": "1ee267dc-a126-4c63-bbb7-f154e54c5216",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "cdc50a5c-ca68-46d1-bfd3-acb4f7b329a9",
+              "leftValue": "={{ $json.customer_name }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "exists",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -272,
+        144
+      ],
+      "id": "d2a3d1b2-6ac9-4db5-8266-c83a100d10a4",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\n  \"call_inbound\": {\n    \"dynamic_variables\": {\n      \"tier\": \"{{ $json.Tier }}\",\n      \"cliente\": \"{{ $json.Cliente }}\",\n      \"gerencia_cliente\": \"{{ $json['Gerencia Cliente'] }}\",\n      \"vertical_de_negocio\": \"{{ $json['Vertical de negocio'] }}\",\n      \"customer_name\": \"{{ $json.customer_name }}\",\n      \"puesto\": \"{{ $json.Puesto }}\",\n      \"referente\": \"{{ $json.Referente }}\",\n      \"jerarquia\": \"{{ $json.Jerarquia }}\",\n      \"mail\": \"{{ $json.Mail }}\",\n      \"phone_number\": \"{{ $json['phone number'] }}\",\n      \"provincia\": \"{{ $json.Provincia }}\",\n      \"pais\": \"{{ $json.Pais }}\",\n      \"referente_operativo\": \"{{ $json['Referente operativo'] }}\",\n      \"referente_negocio\": \"{{ $json['Referente negocio'] }}\"\n    }\n  }\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [
+        128,
+        128
+      ],
+      "id": "050d4d02-66d9-4dcb-9033-f2a830968906",
+      "name": "RESPONSE NORMAL VARIABLES"
+    },
+    {
+      "parameters": {
+        "operation": "search",
+        "query": "base_encuesta"
+      },
+      "type": "n8n-nodes-base.microsoftOneDrive",
+      "typeVersion": 1,
+      "position": [
+        -816,
+        464
+      ],
+      "id": "476aebd6-daeb-4330-830d-8c6409cfdb81",
+      "name": "Search a file",
+      "credentials": {
+        "microsoftOneDriveOAuth2Api": {
+          "id": "VUffz366tzZ72e57",
+          "name": "Microsoft Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// n8n Code node (JavaScript)\n// Toma el from_number del webhook y lo normaliza (limpia el + y otros caracteres)\n\nfunction normalizePhone(v) {\n  if (v === null || v === undefined) return '';\n  \n  // Convertir a string seguro\n  let s = String(v).trim();\n  \n  // Si viene tipo \"3454400185.0\" desde CSV, sacamos la parte decimal\n  if (/^\\d+(\\.\\d+)?$/.test(s)) {\n    s = s.split('.')[0];\n  }\n  \n  // Sacar todo lo que no sea dígito (incluyendo el +)\n  s = s.replace(/\\D/g, '');\n  \n  return s;\n}\n\n// Obtener el from_number del webhook\nconst fromRaw = $input.first().json.body.call_inbound.from_number;\n\n// Normalizar el número\nconst normalizedPhone = normalizePhone(fromRaw);\n\n// Retornar el número normalizado\nreturn {\n  json: {\n    from_number_original: fromRaw,\n    from_number_normalized: normalizedPhone\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1072,
+        144
+      ],
+      "id": "955c9435-fac3-48f9-9e83-c420174bf65c",
+      "name": "Code in JavaScript",
+      "alwaysOutputData": true
+    }
+  ],
+  "pinData": {
+    "Webhook": [
+      {
+        "json": {
+          "headers": {
+            "host": "evoltis.app.n8n.cloud",
+            "user-agent": "axios/1.11.0",
+            "content-length": "164",
+            "accept": "application/json, text/plain, */*",
+            "accept-encoding": "gzip, br",
+            "cdn-loop": "cloudflare; loops=1; subreqs=1",
+            "cf-connecting-ip": "100.20.5.228",
+            "cf-ew-via": "15",
+            "cf-ipcountry": "US",
+            "cf-ray": "99cf76c3d6cab84b-PDX",
+            "cf-visitor": "{\"scheme\":\"https\"}",
+            "cf-worker": "n8n.cloud",
+            "content-type": "application/json",
+            "x-forwarded-for": "100.20.5.228, 104.23.160.117",
+            "x-forwarded-host": "evoltis.app.n8n.cloud",
+            "x-forwarded-port": "443",
+            "x-forwarded-proto": "https",
+            "x-forwarded-server": "traefik-prod-users-gwc-5-6fbf5bdbfc-9t625",
+            "x-is-trusted": "yes",
+            "x-real-ip": "100.20.5.228",
+            "x-retell-signature": "v=1762881664581,d=83cfa628ee9a0630323e1fbdd459f4209b2d6b774ec7cf57a78bf0b95f081234"
+          },
+          "params": {},
+          "query": {},
+          "body": {
+            "event": "call_inbound",
+            "call_inbound": {
+              "agent_id": "agent_ffb8c22eb9180c43f23d150bee",
+              "agent_version": 0,
+              "from_number": "3512843724",
+              "to_number": "+543515530452"
+            }
+          },
+          "webhookUrl": "https://evoltis.app.n8n.cloud/webhook/galicia/inbound",
+          "executionMode": "production"
+        }
+      }
+    ]
+  },
+  "connections": {
+    "Extract CSV Data": {
+      "main": [
+        [
+          {
+            "node": "Find Matching Line",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download a file": {
+      "main": [
+        [
+          {
+            "node": "Extract CSV Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "RESPONSE NORMAL VARIABLES",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Find Matching Line": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Download a file",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "6922bd13-61fd-462b-89f7-1dccd77914c3",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "e70b4b3fd736c20f8bb13546c3d646378277839b5fc1ecead45f76aca134d882"
+  },
+  "id": "ZoQkR7fQ998Tdcgb",
+  "tags": []
+}

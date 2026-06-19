@@ -1,0 +1,51 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# Entornos virtuales
+env/
+venv/
+ENV/
+.venv/
+
+# Variables de entorno
+.env
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Claude Code
+.claude/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Archivos temporales
+nul
+
+# Carpetas de backup
+*/backup/
+backup/
+
+# Datos de entrada/salida - CSVs y archivos generados
+**/calls/*.csv
+**/calls/*.xlsx
+!**/calls/.gitkeep
+**/output/
+**/roman/*.csv
+!**/roman/.gitkeep
+base-generada/
+base-recibida/
+debug/
+results/
+
+# Archivos Excel/CSV generados
+*.xlsx
+*.csv

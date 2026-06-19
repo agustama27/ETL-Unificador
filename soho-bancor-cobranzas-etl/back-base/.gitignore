@@ -1,0 +1,31 @@
+# Ignorar contenido de carpetas de datos, pero mantener las carpetas
+base-generada/*
+!base-generada/.gitkeep
+
+base-recibida/*
+!base-recibida/.gitkeep
+
+debug/*
+!debug/.gitkeep
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+.venv
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+

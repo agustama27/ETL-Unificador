@@ -1,0 +1,33 @@
+# Ignorar contenidos de las carpetas results y retell
+# (pero mantener las carpetas con .gitkeep)
+
+results/*
+!results/.gitkeep
+
+retell/*
+!retell/.gitkeep
+
+# Archivos temporales y de Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+dist/
+build/
+
+# Entornos virtuales
+venv/
+env/
+ENV/
+
+# Archivos de configuración local
+.env
+.env.local
+
+# Archivos de debug
+*.log
+debug_*.py
+payload_*.json
+

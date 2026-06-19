@@ -1,0 +1,19 @@
+# Generación de Resultados Petersen
+# Este proyecto solo utiliza librerías estándar de Python (no requiere dependencias externas)
+
+# Librerías estándar utilizadas:
+# - csv
+# - pathlib
+# - datetime
+# - typing
+# - re
+# - unicodedata
+
+# Versión mínima de Python recomendada: 3.9+
+# (debido al uso de type hints modernos y 'from __future__ import annotations')
+
+# Si en el futuro se necesitan dependencias externas, agregarlas aquí con formato:
+# paquete==version
+
+# Herramienta de empaquetado (desarrollo/distribución)
+pyinstaller

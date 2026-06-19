@@ -1,0 +1,3 @@
+# Esta carpeta contiene los exports de ROMAN (opcional)
+# Coloca aquí archivos con el patrón: export_roman_*.csv
+# Estos datos tienen prioridad sobre los de Retell cuando existen

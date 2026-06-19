@@ -1,0 +1,11 @@
+# Python
+__pycache__/
+*.py[cod]
+
+# CSVs de trabajo (no versionar datos)
+base_recibida/*.csv
+base_generada/*.csv
+
+# Mantener estructura de carpetas
+!base_recibida/.gitkeep
+!base_generada/.gitkeep

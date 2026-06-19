@@ -1,0 +1,60 @@
+INSTRUCTIVO RAPIDO - petersen_resultados.exe
+===========================================
+
+Este archivo explica como usar el ejecutable paso a paso.
+
+1) CONTENIDO DE LA CARPETA
+--------------------------
+En la misma carpeta deben estar:
+
+- petersen_resultados.exe
+- roman\
+- approach\
+- base\
+- datos-excluidos\
+
+No muevas el .exe fuera de esa carpeta.
+
+
+2) QUE ARCHIVOS CARGAR
+----------------------
+Coloca los archivos CSV dentro de estas carpetas:
+
+- roman\            -> reporte de ROMAN (obligatorio)
+- approach\         -> reporte LOGCALL (opcional)
+- base\             -> cartera/base de clientes (opcional, usado con approach)
+- datos-excluidos\  -> clientes excluidos (opcional)
+
+Importante:
+- Si en una carpeta hay varios CSV, el proceso toma el mas reciente.
+- El archivo de roman es obligatorio para que corra el proceso.
+
+
+3) COMO EJECUTAR
+----------------
+1. Doble clic en petersen_resultados.exe
+2. Espera a que termine (puede tardar varios minutos).
+3. La ventana mostrara el progreso y luego pedira "Presione Enter para salir...".
+
+
+4) RESULTADO FINAL
+------------------
+Al finalizar se genera en la misma carpeta un ZIP con nombre:
+
+Gestiones_Petersen_AAAAMMDD.zip
+
+Ese ZIP contiene unicamente:
+- AG002_45.csv
+- AG002_46.csv
+- AG002_47.csv
+- AG002_48.csv
+
+No se guardan archivos intermedios (debug, temporales, etc.).
+
+
+5) SI ALGO FALLA
+----------------
+- Verifica que el CSV de roman este en roman\.
+- Verifica que los archivos sean .csv y no esten abiertos en Excel.
+- Si el merge con approach muestra 0 matcheos, revisa que base\ y approach\ correspondan a la misma cartera/campana.
+- Si aparece un error, envia una captura completa del log de la consola.

@@ -1,0 +1,16 @@
+base_recibida/*
+!base_recibida/.gitkeep
+
+base_procesada/*
+!base_procesada/.gitkeep
+
+.atl/
+
+back_recibida/logcall/*
+!back_recibida/logcall/.gitkeep
+
+back_recibida/historial/*
+!back_recibida/historial/.gitkeep
+
+back_procesada/*
+!back_procesada/.gitkeep
