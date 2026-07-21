@@ -35,9 +35,9 @@ Focused: `python -m pytest tests/orchestrator/test_run_store.py -q`. Cumulative:
 
 ## PR2B-B — State promotion + durable recovery
 
-- [ ] 5.1 RED — Add `tests/orchestrator/test_state_store.py`: preflight-before-write; snapshot-before-current with directory fsync; partial promotion; failed `recovery.json` replace leaves fsynced fallback `recovery_required` evidence and blocks reruns.
-- [ ] 5.2 GREEN — Add `orchestrator/state_store.py` with durable same-volume replacements and replace-independent fallback marker; ≤150 product, ≤150 tests, ≤40 docs/evidence (≤340).
-- [ ] 5.3 REFACTOR — Centralize ordering/error translation; inject replace/fsync failures; mypy, Ruff, `py_compile`, `git diff --check`, focused+cumulative green.
+- [x] 5.1 RED — Add `tests/orchestrator/test_state_store.py`: preflight-before-write; snapshot-before-current with directory fsync; partial promotion; failed `recovery.json` replace leaves fsynced fallback `recovery_required` evidence and blocks reruns.
+- [x] 5.2 GREEN — Add `orchestrator/state_store.py` with durable same-volume replacements and replace-independent fallback marker; ≤150 product, ≤150 tests, ≤40 docs/evidence (≤340).
+- [x] 5.3 REFACTOR — Centralize ordering/error translation; use injected POSIX/Win32 directory flush APIs; mypy, Ruff, `py_compile`, `git diff --check`, focused+cumulative green.
 
 Focused: `python -m pytest tests/orchestrator/test_state_store.py -q`. Cumulative: `python -m pytest tests/orchestrator -q`. Depends: PR2B-A. Rollback: revert PR2B-B.
 
