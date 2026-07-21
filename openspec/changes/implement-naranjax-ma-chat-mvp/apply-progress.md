@@ -1,7 +1,7 @@
 # Apply Progress: Implement Guarded Naranja X MA Chat MVP
 ## Status
 
-PR1A–PR3 process evidence is complete: 18/21 revised tasks.
+PR1A–PR4A apply evidence is complete: 21/27 revised tasks; PR4B/C remain pending.
 
 ## Completed Tasks
 
@@ -13,6 +13,7 @@ PR1A–PR3 process evidence is complete: 18/21 revised tasks.
 - [x] 4.1–4.3 — PR2B-A lock-identity remediation; 8 focused/45 cumulative passed.
 - [x] 5.1–5.3 — PR2B-B snapshot-first promotion, Win32/POSIX directory durability, and recovery; 10 focused/55 cumulative passed.
 - [x] 6.1–6.3 — PR3 concurrent process capture, redacted deterministic logs, timeout escalation, and partial failure evidence; 8 focused/63 cumulative passed.
+- [x] 7.1–7.3 — PR4A adapter command/date/PLANES and output-classification contract; 18 focused/81 cumulative passed.
 
 ## TDD Cycle Evidence
 
@@ -36,6 +37,9 @@ PR1A–PR3 process evidence is complete: 18/21 revised tasks.
 | 6.1 | `tests/orchestrator/test_runner.py`, `test_logging_utils.py` | Unit/integration | `55 passed` cumulative | Missing runner/logging modules: 2 collection errors | `8 passed` | Success/nonzero, concurrent streams, timeout terminate/kill, spawn failure, legacy/partial evidence | Shared redactor and stream finalization |
 | 6.2 | Same PR3 slice | Unit/integration | N/A — new files | Fresh missing-module RED | `8 passed in 0.68s` | Controlled command/cwd/env plus deterministic persistence | Typed terminal result; 900s/10s defaults |
 | 6.3 | Same PR3 slice | Unit/integration | `8 passed` focused | Inherited fresh RED | `8 focused`; `63 cumulative` | Secrets absent from command/env/streams/errors/logs | Ruff/mypy/compile/diff and scope audits green |
+| 7.1 | `tests/adapters/naranjax/test_ma_chat.py` | Unit | `63 passed` cumulative | Fresh missing `adapters.naranjax.ma_chat`: collection error | `18 passed` | Exact optional/no-PLANES commands and date/omission rejection | Exact tuple retained |
+| 7.2 | Same PR4A slice | Unit | N/A — new product files | Same fresh missing-module RED | `18 passed in 0.75s` | Exact success plus 12 role/classification failures | Pure output classifier extracted |
+| 7.3 | Same PR4A slice | Unit | `18 passed` focused | Inherited fresh RED | `18 focused`; `81 cumulative` | ROMAN/CHAT/E1KIA × missing/unchanged/wrong-date/ambiguous | Ruff/mypy/compile/diff green |
 
 ## Superseded Non-Credit History
 
@@ -46,6 +50,9 @@ The later fresh PR1B strict-TDD cycle superseded that work.
 The combined PR2 WIP and later six-case metadata/state GREEN are non-credit.
 PR2B-A and PR2B-B now each have independent RED evidence.
 
+The former combined PR4 adapter/service/CLI/E2E evidence is superseded non-credit.
+PR4A has a fresh missing-module RED; PR4B/C remain deferred.
+
 ## Test Summary
 
 - PR1B RED: missing module, then unsafe globs 3 failed/24 passed; final 27 focused/31 cumulative.
@@ -53,23 +60,23 @@ PR2B-A and PR2B-B now each have independent RED evidence.
 - PR2B-A remediation RED: same-path replacement produced `1 failed, 6 passed`; final 8 focused/45 cumulative.
 - PR2B-B RED: missing module; Win32 remediation RED `3 failed, 7 passed`; final 10 focused/55 cumulative.
 - PR3 RED: missing runner/logging modules; final 8 focused/63 cumulative with synthetic jobs only.
+- PR4A RED: missing adapter module caused collection failure; final 18 focused/81 cumulative, preserving the 63-test safety net.
 - Static: Ruff, mypy, `py_compile`, and `git diff --check` passed.
 
 ## Files / Budget
 
 - Foundation product: 144 lines; focused tests: 89 lines.
-- Revised tasks preserve prior slices and mark PR3 process complete: 18/21 tasks.
+- Revised tasks preserve all slices and mark only PR4A complete: 21/27 tasks.
 - PR1B exact diff against `4e57072`: 387 additions + 12 deletions = 399 lines.
 - `git diff --check` required; no commit created.
 - PR2A exact diff against `c506e16`: 274 additions + 39 deletions = 313 lines, including hybrid evidence.
 - PR2B-A exact diff against `3c2a9a5`: 349 additions + 49 deletions = 398 lines.
 - PR2B-B exact diff against `8e84861`: 385 additions + 10 deletions = 395 lines.
 - PR3 pre-report diff against `aa24b90`: 350 additions + 10 deletions = 360 lines; report-inclusive final: 388 + 10 = 398.
+- PR4A exact diff against `6332096`: 295 additions + 42 deletions = 337 lines; below forecast and hard stop.
 
 ## Remaining
-- [ ] PR4 Chat/CLI.
+PR4B service/evidence and PR4C CLI/catalog/E2E remain pending.
 
 ## PR Boundary / Risks
-📍 PR3 → PR4, stacked-to-main, 398 final lines (360 pre-report), no exception. Catalog remains inert;
-adapter, CLI, real processes/data, and legacy changes stay deferred. Process
-failures preserve redacted stream/log/file evidence and never delete the sandbox.
+📍 PR3 → PR4A, stacked-to-main, no exception. Catalog remains inert; no service, CLI, E2E, legacy, or real-data change remains in scope.
