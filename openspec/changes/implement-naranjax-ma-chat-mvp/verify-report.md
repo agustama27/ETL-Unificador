@@ -81,3 +81,28 @@ Tracked PR2A numstat is **91 additions + 39 deletions**; untracked source/test a
 
 ## Final Verdict — **PASS**
 PR2A fully passes containment, sandbox, copy/hash/relative evidence, deterministic new/changed/unchanged diff semantics, exact RED/GREEN/cumulative execution, static/diff/scope checks, Strict TDD, hybrid sync, and the 307-line budget.
+
+---
+## PR2B-A Independent Verification Report
+**Change:** `implement-naranjax-ma-chat-mvp` | **Mode:** Strict TDD | **Store:** hybrid | **Scope:** metadata/locks at base `3c2a9a5`; PR2B-B+ excluded.
+### Completeness
+| Metric | Result |
+|---|---|
+| Revised tasks | 12/21 complete; PR2B-A 3/3 independently checked; 9 later tasks intentionally incomplete |
+### Build & Tests Execution
+Focused `python -m pytest tests/orchestrator/test_run_store.py -q` → **8 passed**; cumulative `python -m pytest tests/orchestrator -q` → **45 passed**; independent 24-thread probe → **1 owner/23 blocked (supplementary, non-credit)**; Ruff, mypy, `py_compile`, `git diff --check`, diff and forbidden-scope audit → **PASS**.
+### TDD Compliance
+Apply-progress reports the 6-test safety net and same-path foreign-replacement RED (`1 failed, 6 passed`); the extant persisted eight-case file passes GREEN and solely earns TDD/spec credit for durable metadata, stale collision/contention, atomic claim, identity mismatch, same-path foreign replacement, teardown interference, owned cleanup, and post-claim generic-lock preservation. The independent 24-way probe is explicitly supplementary and earns no test-suite or TDD credit.
+### Test Layers, Coverage, Assertion Quality, and Quality Metrics
+Unit: 8 tests/1 file; integration/E2E: 0. Coverage skipped (`pytest_cov=False`, `coverage=False`). Assertions call production code and verify behavior; no tautology, ghost loop, orphan-empty/type-only/smoke-only check, implementation-detail coupling, or mocks. Ruff/mypy passed the two changed Python files.
+### Spec Compliance Matrix
+| Requirement / scenario | Runtime and static evidence | Result |
+|---|---|---|
+| Durable `run.json` primitive | Atomic same-directory temporary, file fsync, replace, parent-dir fsync; failed replace preserves prior JSON | ✅ COMPLIANT |
+| Lock collision / stale policy | Existing lock fails fast and remains untouched; manual recovery only | ✅ COMPLIANT |
+| Release ownership races | UUID tombstone claim, bounded Windows busy retry, token revalidation; foreign replacement/evidence and new generic lock survive | ✅ COMPLIANT |
+| Concurrent contention | Persisted collision test proves fail-fast preservation; the 24-thread probe independently produced 1 owner/23 blocked but is non-credit | ✅ COMPLIANT |
+| Repository boundary | Only PR2B-A source/test and SDD evidence changed; no state promotion, runner, adapter, CLI, legacy, data, secret, or build artifact | ✅ COMPLIANT |
+### Correctness and Coherence
+Source follows the scoped design except that directory fsync is explicitly best-effort/no-op on Windows; file fsync and atomic replace remain active. OpenSpec/Engram tasks and apply-progress are semantically synchronized. Exact diff is **349 additions + 49 deletions = 398**, hard **`<400` PASS**, no exception.
+### Issues and Verdict — **CRITICAL:** None. **WARNING:** None. **SUGGESTION:** None. **Final verdict: PASS** for PR2B-A only; persisted tests carry all compliance credit, and final MVP acceptance remains excluded.
