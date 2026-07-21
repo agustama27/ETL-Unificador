@@ -12,7 +12,7 @@ Add root packages around unchanged `SOHO-Chat-NX_MA-ETL/back-base/ejecutar_dia.p
 | Paths | Resolve symlinks; catalog and every destination MUST be relative and contained by injected workspace/run roots. External user inputs are copied; persist/pass only staged run-relative POSIX paths and hashes. | Host paths leak details and permit escape. |
 | State | Unifier lineage `var/state/<etl>/<YYYYMM>`; snapshot-first/current-second same-volume `os.replace`. On second failure, atomically write `recovery.json`; snapshot collision also blocks future runs. | Two-file promotion is not transactional. |
 | Lock | Fail-fast `.lock` from preflight through promotion using `os.open(O_CREAT|O_EXCL)`, with schema/run/PID/host/UTC/token. Unlink only an owned token; never auto-break stale locks. | Advisory/auto-clean locks are unsafe. |
-| Review | Four stacked-to-main, independently revertible, path-scoped TDD slices. PR4 uses table-driven adapter tests, injected negative service tests, and one synthetic happy-path E2E; no CLI E2E matrix or duplicated fixtures. | Broad E2E exceeds 400 lines. |
+| Review | Five stacked-to-main, independently revertible TDD slices: PR1A contracts, PR1B catalog, PR2 state, PR3 process, PR4 Chat. PR4 uses table-driven tests and one synthetic E2E. | Broad E2E exceeds 400 lines. |
 
 ## Data Flow
 
@@ -41,7 +41,8 @@ Dependencies are injected: clock (`today`/UTC), UUID factory, replace operation,
 
 | Slice | Exact product boundary | Exact tests / command |
 |---|---|---|
-| PR1 contracts/catalog | `pyproject.toml`; `orchestrator/{__init__,models,catalog}.py`; `registry/naranjax.yaml` (four inert IDs) | `tests/orchestrator/test_catalog.py`; `python -m pytest tests/orchestrator/test_catalog.py -q` |
+| PR1A contracts/foundation | `pyproject.toml`; `orchestrator/{__init__,models}.py` | `tests/orchestrator/test_models.py`; run that path only |
+| PR1B catalog/registry | `orchestrator/catalog.py`; `registry/naranjax.yaml` (four inert IDs) | `tests/orchestrator/test_catalog.py`; then cumulative models+catalog |
 | PR2 sandbox/state | `orchestrator/{file_manager,run_store}.py` | `tests/orchestrator/{test_file_manager,test_run_store}.py`; run those paths only |
 | PR3 process evidence | `orchestrator/{runner,logging_utils}.py`; `tests/support/fake_jobs.py` | `tests/orchestrator/{test_runner,test_logging_utils}.py`; run those paths only |
 | PR4 Chat/CLI | `adapters/{__init__,naranjax/__init__,naranjax/ma_chat}.py`; `orchestrator/{service,run}.py`; Chat-only YAML readiness; concise plan status | `tests/support/synthetic_naranjax.py`; `tests/adapters/naranjax/test_ma_chat.py`; `tests/e2e/test_naranjax_ma_chat.py`; run each path separately |
@@ -52,7 +53,7 @@ PR4 target is 300–380 changed lines: adapter/service/CLI ≤190, generators �
 
 ## Migration / Rollout
 
-No migration. PR1–PR3 stay inert; PR4 alone enables Chat. Failed sandboxes remain evidence; rollback disables Chat without touching legacy state.
+No migration. PR1A–PR3 stay inert; PR4 alone enables Chat. Failed sandboxes remain evidence; rollback disables Chat without touching legacy state.
 
 ## Open Questions
 
