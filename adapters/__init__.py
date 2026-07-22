@@ -1,0 +1,1 @@
+"""Legacy ETL adapters."""

@@ -176,3 +176,46 @@ Source follows the process-boundary design; OpenSpec and Engram proposal/spec/de
 **CRITICAL:** None. **WARNING:** None. **SUGGESTION:** None.
 ## Final Verdict — **PASS**
 PR3 passes runtime behavior, strict-TDD evidence, focused/cumulative execution, changed-file typing, static/diff/scope checks, exact budget, and hybrid synchronization. This is not final MVP acceptance.
+
+---
+## PR4A Adapter/Output Contract Verification (supersedes earlier verdicts above)
+**Change:** `implement-naranjax-ma-chat-mvp` | **Scope:** PR4A only at `6332096`; earlier slices are safety net, PR4B/C excluded | **Mode:** Strict TDD | **Store:** hybrid
+
+### Completeness and Execution
+| Check | Fresh evidence | Result |
+|---|---|---|
+| Tasks | PR4A 7.1–7.3 checked; cumulative 21/27 complete | PASS |
+| RED | Extant test run from detached `6332096` worktree → collection error, `ModuleNotFoundError: adapters` | PASS |
+| Focused GREEN | `python -m pytest tests/adapters/naranjax/test_ma_chat.py -q` → `18 passed in 1.48s` | PASS |
+| Cumulative safety net | `python -m pytest tests/orchestrator tests/adapters/naranjax/test_ma_chat.py -q` → `81 passed in 4.60s` | PASS |
+| Static/diff | Ruff, mypy, `py_compile`, `git diff --check 6332096` | PASS |
+| Coverage | `pytest_cov=False`; `coverage=False`; no threshold | N/A |
+
+### TDD Compliance
+The apply artifact has test file, safety-net, RED, GREEN, triangulation, and refactor evidence for all 3/3 PR4A tasks. The test file exists; detached-base execution freshly reproduces RED; current focused/cumulative execution confirms GREEN; 18 cases cover exact command/PLANES/date plus all 12 role-by-failure combinations. New-file `N/A` is truthful for product files and the 63-test pre-slice safety net is preserved.
+
+### Test Layers, Changed Coverage, Assertion Quality, and Quality Metrics
+The 18 pytest cases comprise 2 isolated validation cases and 16 filesystem/catalog integration cases in one file; E2E is excluded. Changed-file coverage is unavailable. Ruff and mypy pass all four added Python files.
+
+**Assertion quality:** ✅ All assertions call production behavior; no tautology, ghost loop, orphan-empty/type-only/smoke-only assertion, implementation-detail coupling, or mocks.
+
+### PR4A Compliance Matrix
+| Contract | Runtime/static evidence | Result |
+|---|---|---|
+| Exact command/date/month | Exact tuple proves active interpreter, entrypoint, `YYYYMMDD`, derived `YYYYMM`, staged input, five sandbox directories, optional PLANES/PAGOS, and `--chat` | ✅ COMPLIANT |
+| PLANES isolation | No `--planes`; empty run-local `input/diarios`; `--sin_planes_hoy`; host path absent; non-empty directory rejected | ✅ COMPLIANT |
+| Adapter date/omission gate | Wrong host-local date and implicit PLANES omission reject before command construction | ✅ COMPLIANT |
+| Exact output success | One new today-dated ROMAN, CHAT, and E1KIA is selected with exact typed roles | ✅ COMPLIANT |
+| Output failures | ROMAN/CHAT/E1KIA × missing, unchanged, wrong-date, ambiguous/duplicate: 12/12 reject | ✅ COMPLIANT |
+| Scope boundary | Only adapter package/test and SDD evidence changed; catalog stays inert; no service, CLI, promotion, E2E, legacy, data, secret, build, API, or UI delta | ✅ COMPLIANT |
+
+### Correctness, Coherence, Budget, and Hybrid Sync
+Static inspection confirms request date equals injected local today; month derives from that date; omitted PLANES cannot reference host files; output globs are role-specific; one match must contain today's configured date and differ from pre-run evidence. The adapter remains unreachable from the inert catalog, as PR4A requires. OpenSpec and Engram report copies are synchronized.
+
+Exact pre-report delta: **295 additions + 42 deletions = 337**. Report-inclusive final: **338 additions + 42 deletions = 380 changed lines**; hard **`<400` PASS**, 19 lines below 400, no exception.
+
+### Issues Found
+**CRITICAL:** None. **WARNING:** None. **SUGGESTION:** Apply labels the mixed test file “Unit”; 16/18 cases actually integrate the real catalog and filesystem manager. This is informational and does not reduce behavioral coverage.
+
+## Final Verdict — **PASS**
+PR4A passes the exact command/date/PLANES contract, every required output class and outcome, fresh RED/GREEN evidence, 18 focused/81 cumulative tests, static/diff/scope gates, exact 380-line budget, and hybrid synchronization. PR4B/C and final MVP acceptance remain excluded.
