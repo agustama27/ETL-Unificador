@@ -336,14 +336,14 @@ Cada slice incluye sus tests y docs, apunta a no superar 400 líneas cambiadas o
 solicita una excepción explícita, y debe poder revisarse en menos de 60 minutos.
 
 ## Criterios de aceptación del MVP funcional futuro
-- [ ] Catálogo con cuatro IDs; sólo Chat daily ejecutable por el comando documentado.
-- [ ] Paths mutables en sandbox; inputs con hash/tamaño y sin datos reales versionados.
-- [ ] Cada corrida registra `run.json`, streams, log legacy, comando/cwd, exit/timeout/error.
-- [ ] Diff detecta ROMAN/CHAT/E1KIA; exit `0` con faltantes termina `failed`.
-- [ ] Registra `business_date`/`artifact_date`; estado se promueve sólo tras postconditions.
-- [ ] Snapshot existente y concurrencia ETL/mes se bloquean antes de mutar estado.
-- [ ] PLANES omitido no se autodetecta; fallos/timeouts preservan evidencia.
-- [ ] Reglas/formatos legacy siguen compatibles; no hay API/UI ni artefactos prohibidos.
+- [x] Catálogo con cuatro IDs; sólo Chat daily ejecutable por el comando documentado.
+- [x] Paths mutables en sandbox; inputs con hash/tamaño y sin datos reales versionados.
+- [x] Cada corrida registra `run.json`, streams, log legacy, comando/cwd, exit/timeout/error.
+- [x] Diff detecta ROMAN/CHAT/E1KIA; exit `0` con faltantes termina `failed`.
+- [x] Registra `business_date`/`artifact_date`; estado se promueve sólo tras postconditions.
+- [x] Snapshot existente y concurrencia ETL/mes se bloquean antes de mutar estado.
+- [x] PLANES omitido no se autodetecta; fallos/timeouts preservan evidencia.
+- [x] Reglas/formatos legacy siguen compatibles; no hay API/UI ni artefactos prohibidos.
 
 ## Riesgos y mitigaciones
 | Riesgo | Impacto | Mitigación prevista |

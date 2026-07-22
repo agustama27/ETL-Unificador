@@ -223,3 +223,96 @@ PR4A passes the exact command/date/PLANES contract, every required output class 
 ## PR4B Path-Redaction Reverification — **PASS** (supersedes the pre-remediation failure)
 **Change/mode/scope:** `implement-naranjax-ma-chat-mvp`; Strict TDD; PR4B service/evidence lifecycle only against `39dc103`; PR4C excluded; 8.1–8.3 are 3/3 complete and cumulative status is 24/27. <br> **Build/tests/coverage:** focused `python -m pytest tests/orchestrator/test_service.py -q` → **12 passed in 0.86s**; cumulative `python -m pytest tests/orchestrator tests/adapters/naranjax/test_ma_chat.py -q` → **93 passed in 3.02s**; coverage unavailable (`No module named coverage`, no threshold). <br> **Strict TDD:** apply-progress has extant file/layer/safety-net/RED/GREEN/TRIANGULATE/REFACTOR evidence for 3/3 tasks; the remediation RED was `1 failed/11 passed`; current file and all 12 integration cases pass; truthful 81-test safety net and 93-test cumulative GREEN. Unit 0, integration 12/1 file, E2E 0. Assertion audit found no tautology, orphan-empty/type-only/smoke-only assertion, ghost loop, unexercised production path, implementation-detail coupling, or mock-heavy pattern. <br> **Compliance/correctness:** success, historical date, snapshot/recovery/lock blockers, spawn/nonzero/timeout failures, missing/ambiguous outputs, promotion failure, recovery-required lineage, terminal lifecycle/timestamps, relative log references, input SHA-256, process/error/postcondition/state evidence, and no-promotion guards are runtime-compliant. An independent adversarial service probe injected unquoted and single/double-quoted POSIX, drive-qualified Windows, and UNC paths into stdout/stderr: forbidden values in `run.json`+logs `[]`; `run.json`/log host markers `15/7`; secret markers `5`; safe `relative/out.csv` and `https://example.test/a` remained. Static inspection confirms the same pre-persistence `Redactor` sanitizes persisted logs and process metadata while preserving relative paths/URLs and secret redaction. <br> **Quality/design/scope/budget/hybrid:** Ruff, mypy (`--explicit-package-bases`), `py_compile`, and `git diff --check 39dc103` pass. Exact scope is service, shared logging sanitizer, integration/support tests, and SDD evidence; no CLI/catalog promotion/E2E/legacy/real-data/secret/build/API/UI change. Exact report-inclusive delta is **387 additions + 12 deletions = 399**, hard **`<400` PASS**, no exception. OpenSpec and Engram are synchronized. Changed-file coverage skipped because no coverage tool exists. **CRITICAL:** None. **WARNING:** None. **SUGGESTION:** None.
 **Final verdict: PASS.** PR4B now proves every scoped terminal path plus arbitrary POSIX/Windows/UNC/quoted host-path sanitization in both logs and `run.json`, preserves safe relative paths/URLs and secret redaction, and passes focused 12/cumulative 93, adversarial runtime, static/diff/scope, exact-budget, Strict-TDD, and hybrid gates; no implementation fixes were made during verification.
+
+---
+# Final PR4C and Cumulative MVP Verification Report
+
+**Change:** `implement-naranjax-ma-chat-mvp` | **Mode:** Strict TDD | **Store:** hybrid
+**Scope:** PR4C against `e5eb762` plus cumulative PR1A–PR4C acceptance; 27/27 tasks.
+
+## Completeness
+| Metric | Result |
+|---|---|
+| Revised tasks | 27/27 complete; 0 incomplete |
+| PR4C tasks | 9.1–9.3 complete and runtime-verified |
+| Spec scenarios | 11/11 compliant |
+| Root path-scoped tests | 99/99 passed |
+
+## Build, Tests, and Quality Execution
+| Check | Fresh command evidence | Result |
+|---|---|---|
+| PR4C focused | `python -m pytest tests/orchestrator/test_catalog.py tests/e2e/test_naranjax_ma_chat.py -q` → `33 passed in 0.49s` | PASS |
+| Cumulative root suite | `python -m pytest tests -q` → `99 passed in 3.34s` | PASS |
+| Storage/locks/state/runner regression | Five declared files → `38 passed in 1.90s` | PASS |
+| Synthetic terminal E2E | Success and historical rejection parameters → `2 passed in 0.25s` | PASS |
+| Ruff | `python -m ruff check orchestrator adapters tests` → all checks passed | PASS |
+| mypy | `python -m mypy --explicit-package-bases orchestrator adapters tests` → no issues in 25 files | PASS |
+| Compile | `python -m compileall -q orchestrator adapters tests` | PASS |
+| Whitespace | `git diff --check e5eb762 --` and cumulative `03187da` check | PASS |
+| Coverage | `pytest_cov=False`; `coverage=False`; no project threshold | N/A |
+
+## CLI, Catalog, and Terminal Evidence
+- CLI help exposes only `--etl`, `--fecha`, `--base`, `--planes`, `--pagos`, and `--sin-planes-hoy`; help exits 0, missing required arguments and invalid dates exit 2.
+- Injected terminal statuses map exactly to success 0, blocked 2, and execution failure 1.
+- The catalog contains four typed IDs; only `naranjax.ma.chat.daily` is `ready`, executable, and adapter-bound. Voice daily, Voice PCT, and MT daily remain inert.
+- Synthetic success creates terminal `run.json`, records exactly ROMAN/CHAT/E1KIA, passes `--sin_planes_hoy` without `--planes`, and promotes snapshot/current state.
+- Synthetic historical rejection creates terminal blocked `run.json`, never invokes the runner, and leaves the canonical state root absent.
+
+## Spec Compliance Matrix
+| Scenario | Passing runtime evidence | Result |
+|---|---|---|
+| Chat promotion | `test_repository_catalog_promotes_only_chat_daily` | ✅ COMPLIANT |
+| Escaping path | catalog traversal/absolute/symlink tests plus file-manager containment tests | ✅ COMPLIANT |
+| Historical date | service preflight test and synthetic CLI historical parameter | ✅ COMPLIANT |
+| Collision or contention | snapshot/recovery/lock service tests and run-store lock tests | ✅ COMPLIANT |
+| Partial promotion | state-store current-failure/recovery tests and service recovery terminal test | ✅ COMPLIANT |
+| Interleaved output | 2,000 stdout + 2,000 stderr lines drained without deadlock and secret-free | ✅ COMPLIANT |
+| Unresponsive timeout | terminate then kill test with preserved partial streams | ✅ COMPLIANT |
+| PLANES omitted | adapter isolated-directory tests and synthetic successful CLI run | ✅ COMPLIANT |
+| Exact output set | adapter success matrix and synthetic success evidence | ✅ COMPLIANT |
+| Ambiguous output | adapter role matrix and service no-promotion test | ✅ COMPLIANT |
+| Repository scope audit | exact PR4C/cumulative path audit and unchanged legacy diff | ✅ COMPLIANT |
+
+**Compliance summary:** 11/11 scenarios compliant through passing runtime tests.
+
+## TDD Compliance
+| Check | Result | Details |
+|---|---|---|
+| Evidence reported | PASS | Apply-progress contains file/layer/safety-net/RED/GREEN/TRIANGULATE/REFACTOR evidence for all 27 task rows |
+| RED evidence | PASS | Every slice has a fresh or explicit remediation RED; superseded combined cycles remain non-credit |
+| GREEN evidence | PASS | Every referenced test file exists; current cumulative execution is 99/99 |
+| Safety nets | PASS | Recorded baselines progress through 4, 31, 37, 45, 55, 63, 81, 93, and 99 |
+| Triangulation | PASS | Catalog, paths, files, locks, promotion, process, adapter, service, and CLI outcomes vary across non-trivial cases |
+| Assertion quality | PASS | No tautology, ghost loop, unexercised path, orphan-empty/type-only/smoke-only assertion, implementation-detail coupling, or mock-heavy file |
+
+**TDD compliance:** 27/27 tasks carry extant, cross-checked evidence.
+
+## Test Layers and Changed-File Coverage
+| Layer | Tests | Files/tool |
+|---|---:|---|
+| Unit | 60 | pytest |
+| Integration | 33 | pytest filesystem/subprocess/service tests |
+| E2E | 6 | pytest synthetic CLI/service boundary |
+| **Total** | **99** | **12 test files** |
+
+Changed-file coverage was skipped because neither `pytest-cov` nor `coverage` is installed; this is non-blocking under the Strict TDD policy.
+
+## Correctness, Design, Security, and Scope
+- Static inspection follows the catalog → adapter → service → sandbox/lock → runner → postconditions → snapshot-first promotion → terminal evidence flow.
+- Secret values and known/arbitrary POSIX, Windows drive, UNC, and quoted host paths are redacted before logs and process metadata persist; safe relative paths and URLs remain.
+- Input SHA-256, relative log references, subprocess outcomes, postconditions, state lineage, recovery markers, lock ownership, and durable writes are regression-covered.
+- The cumulative diff from `03187da` changes only root orchestrator/adapter/catalog/tests/SDD/plan/dependency files. `SOHO-Chat-NX_MA-ETL` has no diff; no API/UI, real data, generated outputs/state/logs, build artifacts, binaries, or credentials entered scope.
+- OpenSpec proposal/spec/design/tasks/apply artifacts and their Engram counterparts are semantically synchronized. This final report is persisted identically in both stores.
+
+## PR4C Budget
+Exact report-inclusive diff against `e5eb762`: **325 additions + 25 deletions = 350 changed lines**. Hard **`<400`** gate: **PASS**, no exception.
+
+The apply-progress pre-report claim of `230 + 23 = 253` is stale: fresh pre-report accounting, including untracked `orchestrator/run.py` and the E2E file, was `232 + 25 = 257`. This report supersedes that number with the exact final budget.
+
+## Issues Found
+**CRITICAL:** None.
+**WARNING:** Apply-progress retained a stale PR4C pre-report numstat (off by four changed lines); the final exact gate remains below 400 and is recorded above.
+**SUGGESTION:** None.
+
+## Final Verdict — **PASS WITH WARNINGS**
+All functional, scenario, Strict-TDD, test, static, security, state/lock/runner, scope, and hybrid gates pass. PR4C is ready to commit and the complete change is ready to archive.
