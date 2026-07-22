@@ -13,7 +13,7 @@ Chained PRs recommended: Yes
 Chain strategy: stacked-to-main
 400-line budget risk: High
 
-Delivery is stacked-to-main, in order, with no exception; every slice hard-stops at 399 changed lines including tests and hybrid evidence. The former combined PR4 (685 lines; 7 focused/70 cumulative) and its 7.1–7.3 GREEN claims are superseded non-credit. Status is truthfully 24/27 complete.
+Delivery is stacked-to-main, in order, with no exception; every slice hard-stops at 399 changed lines including tests and hybrid evidence. The former combined PR4 (685 lines; 7 focused/70 cumulative) and its 7.1–7.3 GREEN claims are superseded non-credit. Status is truthfully 27/27 complete.
 
 ## Completed foundation: 18 tasks
 
@@ -42,8 +42,8 @@ Focused: `python -m pytest tests/orchestrator/test_service.py -q`. Cumulative: `
 
 ## PR4C — CLI/catalog promotion/E2E
 
-- [ ] 9.1 RED — In `tests/orchestrator/test_catalog.py` and `tests/e2e/test_naranjax_ma_chat.py`, freshly fail Chat-only executability, thin CLI help/exit mapping, and synthetic success plus rejection evidence with unchanged canonical state.
-- [ ] 9.2 GREEN — Modify only `orchestrator/run.py` and `registry/naranjax.yaml`; wire injected service, promote only Chat, and keep Voice/PCT/MT inert.
-- [ ] 9.3 REFACTOR — Keep CLI translation-only; run focused, `python -m pytest tests -q`, static/diff/scope audits; budget ≤300.
+- [x] 9.1 RED — In `tests/orchestrator/test_catalog.py` and `tests/e2e/test_naranjax_ma_chat.py`, freshly fail Chat-only executability, thin CLI help/exit mapping, and synthetic success plus rejection evidence with unchanged canonical state.
+- [x] 9.2 GREEN — Modify only `orchestrator/run.py` and `registry/naranjax.yaml`; wire injected service, promote only Chat, and keep Voice/PCT/MT inert.
+- [x] 9.3 REFACTOR — Keep CLI translation-only; run focused, `python -m pytest tests -q`, static/diff/scope audits; budget ≤300.
 
 Focused: `python -m pytest tests/orchestrator/test_catalog.py tests/e2e/test_naranjax_ma_chat.py -q`. Depends: PR4B merged to `main`. Rollback: revert PR4C readiness/wiring; no executable catalog entry remains.

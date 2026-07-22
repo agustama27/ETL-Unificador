@@ -3,8 +3,8 @@ etls:
   - id: naranjax.ma.chat.daily
     name: Naranja X MA Chat daily
     repository_status: present
-    readiness: candidate
-    executable: false
+    readiness: ready
+    executable: true
     project_path: SOHO-Chat-NX_MA-ETL
     working_dir: SOHO-Chat-NX_MA-ETL
     entrypoint: SOHO-Chat-NX_MA-ETL/back-base/ejecutar_dia.py
@@ -28,6 +28,7 @@ etls:
     timeout_seconds: 900
     request_date_format: YYYYMMDD
     output_date_source: system_date
+    adapter: naranjax.ma.chat
     environment_allowlist: [NARANJAX_PLANES_MIN_COVERAGE]
   - id: naranjax.ma.voice.daily
     name: Naranja X MA Voice daily

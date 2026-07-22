@@ -19,7 +19,8 @@ NAMES = {
 
 
 def _definition():
-    return Catalog.load(Path("registry/naranjax.yaml"), Path.cwd())[
+    return Catalog.load(Path("registry/naranjax.yaml"), Path.cwd(),
+                        adapters={"naranjax.ma.chat": object()})[
         "naranjax.ma.chat.daily"
     ]
 

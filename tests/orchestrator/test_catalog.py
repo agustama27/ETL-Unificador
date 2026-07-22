@@ -26,20 +26,24 @@ def _write(tmp_path: Path, entry: dict[str, object], **root: object) -> Path:
     return path
 
 
-def test_repository_catalog_is_typed_complete_and_entirely_inert() -> None:
-    catalog = Catalog.load(Path("registry/naranjax.yaml"), Path.cwd())
+def test_repository_catalog_promotes_only_chat_daily() -> None:
+    catalog = Catalog.load(
+        Path("registry/naranjax.yaml"), Path.cwd(),
+        adapters={"naranjax.ma.chat": object()},
+    )
 
     assert tuple(item.id for item in catalog) == (
         "naranjax.ma.chat.daily", "naranjax.ma.voice.daily",
         "naranjax.ma.voice.pct", "naranjax.mt.voice.daily")
     chat = catalog["naranjax.ma.chat.daily"]
-    assert (chat.readiness, chat.executable, chat.command) == (Readiness.CANDIDATE, False, (
+    assert (chat.readiness, chat.executable, chat.command) == (Readiness.READY, True, (
         "python", "back-base/ejecutar_dia.py",
     ))
     assert chat.arguments["business_date"] == "--fecha"
     roles = tuple(output.role for output in chat.outputs)
     assert roles == (ArtifactRole.ROMAN, ArtifactRole.CHAT, ArtifactRole.E1KIA)
-    assert all(not item.executable and item.adapter is None for item in catalog)
+    assert chat.adapter == "naranjax.ma.chat"
+    assert all(not item.executable and item.adapter is None for item in tuple(catalog)[1:])
 
 
 @pytest.mark.parametrize(
