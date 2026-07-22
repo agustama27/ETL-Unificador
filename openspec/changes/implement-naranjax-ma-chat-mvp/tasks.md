@@ -4,67 +4,55 @@
 
 | Unit | Scope | Lines |
 |---|---|---:|
-| PR1A | contracts/foundation (complete) | 210–260 |
-| PR1B | catalog/registry (complete) | 399 actual |
-| PR2A | sandbox/files | 200–260 |
-| PR2B | metadata/locks/state | 320–375 |
+| PR1A–PR2A | complete; 9 tasks | 400 / 399 / 313 actual |
+| PR2B-A | run metadata/race-safe locks | 250–330 |
+| PR2B-B | state promotion/durable recovery | 260–340 |
 | PR3 | process | 300–360 |
 | PR4 | Chat/CLI | 340–395 |
-| Overall | stacked | 1,769–2,049 |
 
 Decision needed before apply: No
 Chained PRs recommended: Yes
 Chain strategy: stacked-to-main
 400-line budget risk: High
 
-No functional size exception.
+No exception; each unit includes tests/docs and rollback. Combined PR2B (391 lines; 6 focused/43 cumulative) is superseded non-credit; 9/21 earlier tasks remain complete.
 
-Evidence: PR1B: 399 lines. Combined PR2: 422 additions; RED collection errors; GREEN 12 passed; no refactor/cumulative. Non-credit; replacements unchecked.
+## Completed foundations
 
-## PR1A/6 — Contracts/foundation
+- [x] 1.1–1.3 PR1A — RED 2 failed/2 passed; GREEN/REFACTOR 4 passed.
+- [x] 2.1–2.3 PR1B — Catalog RED; 27 focused/31 cumulative; 399 lines.
+- [x] 3.1–3.3 PR2A — File-manager RED/GREEN/REFACTOR; 6 focused/37 cumulative; 313 lines.
 
-- [x] 1.1 RED — Mapping: 2 failed/2 passed.
-- [x] 1.2 GREEN — Four passed.
-- [x] 1.3 REFACTOR — Suite/scope green.
+Rollback: revert the affected PR.
 
-Rollback: PR1A revert.
+## PR2B-A — Run metadata + race-safe locks
 
-## PR1B/6 — Catalog/registry
+- [x] 4.1 RED — Cover durable `run.json`, collision/manual stale policy, same-path foreign replacement, and a generic lock acquired after release claims the old lock.
+- [x] 4.2 GREEN — Use a unique atomic tombstone claim, bounded Windows busy retry, token revalidation, and owned-only cleanup; ≤140 product, ≤150 tests.
+- [x] 4.3 REFACTOR — Centralize durable-replace/identity helpers; mypy, Ruff, `py_compile`, `git diff --check`, focused+cumulative green.
 
-- [x] 2.1 RED — Missing catalog/unsafe globs failed.
-- [x] 2.2 GREEN — Catalog/YAML/tests/plan added.
-- [x] 2.3 REFACTOR — 27 focused/31 cumulative passed; inert 399-line diff.
+Focused: `python -m pytest tests/orchestrator/test_run_store.py -q`. Cumulative: `python -m pytest tests/orchestrator -q`. Depends: PR2A. Rollback: revert PR2B-A; tombstones remain manual evidence.
 
-Rollback: PR1B revert.
+## PR2B-B — State promotion + durable recovery
 
-## Slice 2A — Sandbox/file management (PR2A/6)
+- [ ] 5.1 RED — Add `tests/orchestrator/test_state_store.py`: preflight-before-write; snapshot-before-current with directory fsync; partial promotion; failed `recovery.json` replace leaves fsynced fallback `recovery_required` evidence and blocks reruns.
+- [ ] 5.2 GREEN — Add `orchestrator/state_store.py` with durable same-volume replacements and replace-independent fallback marker; ≤150 product, ≤150 tests, ≤40 docs/evidence (≤340).
+- [ ] 5.3 REFACTOR — Centralize ordering/error translation; inject replace/fsync failures; mypy, Ruff, `py_compile`, `git diff --check`, focused+cumulative green.
 
-- [x] 3.1 RED — Excluding combined WIP, add `tests/orchestrator/test_file_manager.py` for sandbox directories, containment, extension-before-mutation, copy/hash/relative evidence, and output before/after diff.
-- [x] 3.2 GREEN — Add only `orchestrator/file_manager.py` and ≤10 sandbox lines in `docs/PLAN_MVP_ETL_UNIFICADOR_NARANJAX.md`; budget ≤105 product/≤135 tests/≤10 docs (≤250).
-- [x] 3.3 REFACTOR — Deduplicate containment/hash; verify deterministic diff, tests, `git diff --check`, <400 lines.
+Focused: `python -m pytest tests/orchestrator/test_state_store.py -q`. Cumulative: `python -m pytest tests/orchestrator -q`. Depends: PR2B-A. Rollback: revert PR2B-B.
 
-Focused: `python -m pytest tests/orchestrator/test_file_manager.py -q`. Cumulative: `python -m pytest tests/orchestrator/test_models.py tests/orchestrator/test_catalog.py tests/orchestrator/test_file_manager.py -q`. Depends: PR1B. Rollback: PR2A revert.
+## PR3 — Process evidence
 
-## Slice 2B — Run metadata/locks/state (PR2B/6)
+- [ ] 6.1 RED — Add `tests/support/fake_jobs.py` and `tests/orchestrator/{test_runner,test_logging_utils}.py` for interleaving, redaction, nonzero/spawn failure, legacy logs, terminate/grace/kill, and partial evidence.
+- [ ] 6.2 GREEN — Add `orchestrator/{runner,logging_utils}.py`; document timeout/evidence in `docs/PLAN_MVP_ETL_UNIFICADOR_NARANJAX.md`.
+- [ ] 6.3 REFACTOR — Deduplicate stream finalization/redaction, inject short test timeouts, and verify no secret reaches persisted results.
 
-- [ ] 4.1 RED — Excluding combined WIP, add `tests/orchestrator/test_run_store.py` for atomic `run.json`, lock collision/manual-stale/owned-token policy, snapshot/recovery prechecks, ordered/partial promotion, `recovery_required`.
-- [ ] 4.2 GREEN — Add only `orchestrator/run_store.py` and ≤10 lock/recovery plan lines; budget ≤175 product/≤175 tests/≤10 docs (≤360).
-- [ ] 4.3 REFACTOR — Extract helpers; inject replace/clock/UUID failures; audit evidence/tests, `git diff --check`, <400 lines.
+Focused: `python -m pytest tests/orchestrator/test_runner.py tests/orchestrator/test_logging_utils.py -q`. Cumulative: `python -m pytest tests/orchestrator/test_models.py tests/orchestrator/test_catalog.py tests/orchestrator/test_file_manager.py tests/orchestrator/test_run_store.py tests/orchestrator/test_state_store.py tests/orchestrator/test_runner.py tests/orchestrator/test_logging_utils.py -q`. Depends: PR2B-B. Rollback: revert PR3; state stays inert.
 
-Focused: `python -m pytest tests/orchestrator/test_run_store.py -q`. Cumulative: `python -m pytest tests/orchestrator/test_models.py tests/orchestrator/test_catalog.py tests/orchestrator/test_file_manager.py tests/orchestrator/test_run_store.py -q`. Depends: PR2A. Rollback: PR2B revert.
+## PR4 — Chat adapter/CLI
 
-## Slice 3 — Process evidence (PR3/6)
-
-- [ ] 5.1 RED — Add `tests/support/fake_jobs.py` and `tests/orchestrator/{test_runner,test_logging_utils}.py` for interleaving, redaction, nonzero/spawn failure, legacy logs, terminate/grace/kill, and partial evidence.
-- [ ] 5.2 GREEN — Add `orchestrator/{runner,logging_utils}.py`; document timeout/evidence in `docs/PLAN_MVP_ETL_UNIFICADOR_NARANJAX.md`.
-- [ ] 5.3 REFACTOR — Deduplicate stream finalization/redaction, inject short test timeouts, and verify no secret reaches persisted results.
-
-Focused: `python -m pytest tests/orchestrator/test_runner.py tests/orchestrator/test_logging_utils.py -q`. Cumulative: `python -m pytest tests/orchestrator/test_models.py tests/orchestrator/test_catalog.py tests/orchestrator/test_file_manager.py tests/orchestrator/test_run_store.py tests/orchestrator/test_runner.py tests/orchestrator/test_logging_utils.py -q`. Depends: PR2B. Rollback: revert PR3; state stays inert.
-
-## Slice 4 — Chat adapter/CLI (PR4/6)
-
-- [ ] 6.1 RED — Add table-driven `tests/adapters/naranjax/test_ma_chat.py` and `tests/support/synthetic_naranjax.py` for today/date args, no-PLANES, exact/ambiguous/missing/unchanged outputs, and service failures.
-- [ ] 6.2 GREEN — Add `adapters/{__init__,naranjax/__init__,naranjax/ma_chat}.py`, `orchestrator/{service,run}.py`, enable only Chat in YAML, and add one happy-path `tests/e2e/test_naranjax_ma_chat.py`; finalize plan status.
-- [ ] 6.3 REFACTOR — Keep adapter/service/CLI ≤190, generator ≤50, tests ≤145, docs ≤10; consolidate fixtures/cases and audit scope.
+- [ ] 7.1 RED — Add table-driven `tests/adapters/naranjax/test_ma_chat.py` and `tests/support/synthetic_naranjax.py` for today/date args, no-PLANES, exact/ambiguous/missing/unchanged outputs, and service failures.
+- [ ] 7.2 GREEN — Add `adapters/{__init__,naranjax/__init__,naranjax/ma_chat}.py`, `orchestrator/{service,run}.py`, enable only Chat in YAML, and add one happy-path `tests/e2e/test_naranjax_ma_chat.py`; finalize plan status.
+- [ ] 7.3 REFACTOR — Keep adapter/service/CLI ≤190, generator ≤50, tests ≤145, docs ≤10; consolidate fixtures/cases and audit scope.
 
 Focused: `python -m pytest tests/adapters/naranjax/test_ma_chat.py tests/e2e/test_naranjax_ma_chat.py -q`. Cumulative: `python -m pytest tests/orchestrator tests/adapters/naranjax/test_ma_chat.py tests/e2e/test_naranjax_ma_chat.py -q`. Depends: PR3. Rollback: revert readiness/wiring; no executable entry remains.
