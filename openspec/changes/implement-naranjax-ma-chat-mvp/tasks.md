@@ -30,9 +30,9 @@ Depends: planning PR. Focused/cumulative: model test. Rollback: revert PR1A.
 
 ## Slice 1B — Catalog/registry (PR1B/5)
 
-- [ ] 2.1 RED — On PR1A, retain catalog cases in `tests/orchestrator/test_catalog.py`; prove missing loader/registry fails.
-- [ ] 2.2 GREEN — Add only `orchestrator/catalog.py`, `registry/naranjax.yaml`, catalog tests, and ≤10 `docs/PLAN_MVP_ETL_UNIFICADOR_NARANJAX.md` lines (catalog ≤200, YAML ≤60, tests ≤125).
-- [ ] 2.3 REFACTOR — Centralize containment/validation; run focused catalog then cumulative models+catalog tests; audit inert entries and diff ≤395.
+- [x] 2.1 RED — On PR1A, retain catalog cases in `tests/orchestrator/test_catalog.py`; prove missing loader/registry fails.
+- [x] 2.2 GREEN — Add only `orchestrator/catalog.py`, `registry/naranjax.yaml`, catalog tests, and ≤10 `docs/PLAN_MVP_ETL_UNIFICADOR_NARANJAX.md` lines (catalog ≤200, YAML ≤60, tests ≤125).
+- [x] 2.3 REFACTOR — Centralize containment/validation; run focused catalog then cumulative models+catalog tests; audit inert entries and diff ≤395.
 
 Focused: `python -m pytest tests/orchestrator/test_catalog.py -q`. Cumulative: `python -m pytest tests/orchestrator/test_models.py tests/orchestrator/test_catalog.py -q`. Depends: PR1A. Rollback: revert PR1B.
 
