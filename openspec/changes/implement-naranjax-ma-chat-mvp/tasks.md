@@ -13,7 +13,7 @@ Chained PRs recommended: Yes
 Chain strategy: stacked-to-main
 400-line budget risk: High
 
-Delivery is stacked-to-main, in order, with no exception; every slice hard-stops at 399 changed lines including tests and hybrid evidence. The former combined PR4 (685 lines; 7 focused/70 cumulative) and its 7.1–7.3 GREEN claims are superseded non-credit. Status is truthfully 21/27 complete.
+Delivery is stacked-to-main, in order, with no exception; every slice hard-stops at 399 changed lines including tests and hybrid evidence. The former combined PR4 (685 lines; 7 focused/70 cumulative) and its 7.1–7.3 GREEN claims are superseded non-credit. Status is truthfully 24/27 complete.
 
 ## Completed foundation: 18 tasks
 
@@ -34,9 +34,9 @@ Focused: `python -m pytest tests/adapters/naranjax/test_ma_chat.py -q`. Cumulati
 
 ## PR4B — Service/evidence lifecycle
 
-- [ ] 8.1 RED — Add `tests/orchestrator/test_service.py` and `tests/support/synthetic_naranjax.py`; freshly fail terminal `run.json` for date/snapshot/lock/process/postcondition/promotion outcomes, including ambiguity no-promotion.
-- [ ] 8.2 GREEN — Implement only `orchestrator/service.py`; inject adapter/runner/store/state/file-manager/log persister/clock, create evidence before adapter preflight, and persist input hashes, lifecycle/timestamps, redacted relative process/log/legacy-log evidence, postconditions, blockers, and lineage on every terminal path.
-- [ ] 8.3 REFACTOR — Centralize terminalization/redaction and prove secrets/host paths never persist; no CLI or catalog promotion; focused+cumulative/static green; budget ≤390.
+- [x] 8.1 RED — Add `tests/orchestrator/test_service.py` and `tests/support/synthetic_naranjax.py`; freshly fail terminal `run.json` for date/snapshot/lock/process/postcondition/promotion outcomes, including ambiguity no-promotion.
+- [x] 8.2 GREEN — Implement only `orchestrator/service.py`; inject adapter/runner/store/state/file-manager/log persister/clock, create evidence before adapter preflight, and persist input hashes, lifecycle/timestamps, redacted relative process/log/legacy-log evidence, postconditions, blockers, and lineage on every terminal path.
+- [x] 8.3 REFACTOR — Centralize terminalization/redaction and prove secrets/host paths never persist; no CLI or catalog promotion; focused+cumulative/static green; budget ≤390.
 
 Focused: `python -m pytest tests/orchestrator/test_service.py -q`. Cumulative: `python -m pytest tests/orchestrator tests/adapters/naranjax/test_ma_chat.py -q`. Depends: PR4A merged to `main`. Rollback: revert PR4B; adapter stays unreachable.
 
