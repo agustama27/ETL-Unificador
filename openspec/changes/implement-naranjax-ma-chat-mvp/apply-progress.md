@@ -1,7 +1,7 @@
 # Apply Progress: Implement Guarded Naranja X MA Chat MVP
 ## Status
 
-PR1A–PR4A apply evidence is complete: 21/27 revised tasks; PR4B/C remain pending.
+PR1A–PR4B apply evidence is complete: 24/27 revised tasks; PR4C remains pending.
 
 ## Completed Tasks
 
@@ -14,6 +14,7 @@ PR1A–PR4A apply evidence is complete: 21/27 revised tasks; PR4B/C remain pendi
 - [x] 5.1–5.3 — PR2B-B snapshot-first promotion, Win32/POSIX directory durability, and recovery; 10 focused/55 cumulative passed.
 - [x] 6.1–6.3 — PR3 concurrent process capture, redacted deterministic logs, timeout escalation, and partial failure evidence; 8 focused/63 cumulative passed.
 - [x] 7.1–7.3 — PR4A adapter command/date/PLANES and output-classification contract; 18 focused/81 cumulative passed.
+- [x] 8.1–8.3 — PR4B lifecycle plus host-path remediation; 12 focused/93 cumulative passed.
 
 ## TDD Cycle Evidence
 
@@ -40,6 +41,9 @@ PR1A–PR4A apply evidence is complete: 21/27 revised tasks; PR4B/C remain pendi
 | 7.1 | `tests/adapters/naranjax/test_ma_chat.py` | Unit | `63 passed` cumulative | Fresh missing `adapters.naranjax.ma_chat`: collection error | `18 passed` | Exact optional/no-PLANES commands and date/omission rejection | Exact tuple retained |
 | 7.2 | Same PR4A slice | Unit | N/A — new product files | Same fresh missing-module RED | `18 passed in 0.75s` | Exact success plus 12 role/classification failures | Pure output classifier extracted |
 | 7.3 | Same PR4A slice | Unit | `18 passed` focused | Inherited fresh RED | `18 focused`; `81 cumulative` | ROMAN/CHAT/E1KIA × missing/unchanged/wrong-date/ambiguous | Ruff/mypy/compile/diff green |
+| 8.1 | `tests/orchestrator/test_service.py` | Integration | `81 passed` cumulative | Fresh missing `orchestrator.service` collection error | `12 passed` | Date, three blockers, three process failures, two output failures, two state failures | Scenario fakes centralized |
+| 8.2 | Same PR4B slice | Integration | N/A — new product file | Same fresh missing-module RED | `12 passed in 2.18s` | Success plus every rejected terminal path | Injected lifecycle boundary retained |
+| 8.3 | Same PR4B slice | Integration | `12 passed` focused | Arbitrary POSIX/Windows paths failed `1/12` | `12 focused`; `93 cumulative` | Known roots + absolute paths; relative paths/URLs preserved | Shared pre-persistence sanitizer; static/probe green |
 
 ## Superseded Non-Credit History
 
@@ -51,7 +55,7 @@ The combined PR2 WIP and later six-case metadata/state GREEN are non-credit.
 PR2B-A and PR2B-B now each have independent RED evidence.
 
 The former combined PR4 adapter/service/CLI/E2E evidence is superseded non-credit.
-PR4A has a fresh missing-module RED; PR4B/C remain deferred.
+PR4A/B have fresh missing-module RED cycles; PR4C remains deferred.
 
 ## Test Summary
 
@@ -61,12 +65,13 @@ PR4A has a fresh missing-module RED; PR4B/C remain deferred.
 - PR2B-B RED: missing module; Win32 remediation RED `3 failed, 7 passed`; final 10 focused/55 cumulative.
 - PR3 RED: missing runner/logging modules; final 8 focused/63 cumulative with synthetic jobs only.
 - PR4A RED: missing adapter module caused collection failure; final 18 focused/81 cumulative, preserving the 63-test safety net.
+- PR4B RED: missing service, legacy-secret, then host-path leak `1 failed/11 passed`; final 12 focused/93 cumulative.
 - Static: Ruff, mypy, `py_compile`, and `git diff --check` passed.
 
 ## Files / Budget
 
 - Foundation product: 144 lines; focused tests: 89 lines.
-- Revised tasks preserve all slices and mark only PR4A complete: 21/27 tasks.
+- Revised tasks preserve all slices and mark PR4A/B complete: 24/27 tasks.
 - PR1B exact diff against `4e57072`: 387 additions + 12 deletions = 399 lines.
 - `git diff --check` required; no commit created.
 - PR2A exact diff against `c506e16`: 274 additions + 39 deletions = 313 lines, including hybrid evidence.
@@ -74,9 +79,10 @@ PR4A has a fresh missing-module RED; PR4B/C remain deferred.
 - PR2B-B exact diff against `8e84861`: 385 additions + 10 deletions = 395 lines.
 - PR3 pre-report diff against `aa24b90`: 350 additions + 10 deletions = 360 lines; report-inclusive final: 388 + 10 = 398.
 - PR4A exact diff against `6332096`: 295 additions + 42 deletions = 337 lines; below forecast and hard stop.
+- PR4B exact diff against `39dc103`: 387 additions + 12 deletions = 399 lines, report-inclusive; hard stop passes.
 
 ## Remaining
-PR4B service/evidence and PR4C CLI/catalog/E2E remain pending.
+PR4C CLI/catalog/E2E remains pending.
 
 ## PR Boundary / Risks
-📍 PR3 → PR4A, stacked-to-main, no exception. Catalog remains inert; no service, CLI, E2E, legacy, or real-data change remains in scope.
+📍 PR4A → PR4B, stacked-to-main, no exception. Catalog remains inert; no CLI, E2E, legacy, or real-data change entered scope.
