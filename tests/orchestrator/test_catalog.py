@@ -26,7 +26,7 @@ def _write(tmp_path: Path, entry: dict[str, object], **root: object) -> Path:
     return path
 
 
-def test_repository_catalog_promotes_only_chat_daily() -> None:
+def test_repository_catalog_describes_complete_inert_voice_contract() -> None:
     catalog = Catalog.load(
         Path("registry/naranjax.yaml"), Path.cwd(),
         adapters={"naranjax.ma.chat": object()},
@@ -43,7 +43,26 @@ def test_repository_catalog_promotes_only_chat_daily() -> None:
     roles = tuple(output.role for output in chat.outputs)
     assert roles == (ArtifactRole.ROMAN, ArtifactRole.CHAT, ArtifactRole.E1KIA)
     assert chat.adapter == "naranjax.ma.chat"
-    assert all(not item.executable and item.adapter is None for item in tuple(catalog)[1:])
+    voice = catalog["naranjax.ma.voice.daily"]
+    assert (voice.readiness, voice.executable, voice.command) == (
+        Readiness.CANDIDATE, False, ("python", "back-base/ejecutar_dia.py")
+    )
+    assert voice.fixed_arguments == ()
+    assert voice.arguments == {
+        "business_date": "--fecha", "base": "--input", "planes": "--planes",
+        "pagos": "--pagos", "no_planes_today": "--sin-planes-hoy",
+    }
+    assert tuple((item.role, item.required) for item in voice.inputs) == (
+        ("base", True), ("planes", False), ("pagos", False)
+    )
+    assert tuple(output.role for output in voice.outputs) == (
+        ArtifactRole.ROMAN, ArtifactRole.E1KIA
+    )
+    assert (voice.adapter, voice.allowed_exits, voice.timeout_seconds) == (
+        "naranjax.ma.voice", (0,), 900
+    )
+    assert voice.environment_allowlist == ("NARANJAX_PLANES_MIN_COVERAGE",)
+    assert all(not item.executable and item.adapter is None for item in tuple(catalog)[2:])
 
 
 @pytest.mark.parametrize(

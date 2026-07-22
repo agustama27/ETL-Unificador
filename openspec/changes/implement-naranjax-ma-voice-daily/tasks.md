@@ -29,9 +29,9 @@ PR2 MUST NOT start until PR1 is merged to `main`, its cumulative suite passes, a
 
 ## Phase 1: PR1 — Adapter and Inert Contract
 
-- [ ] 1.1 RED — Create `tests/adapters/naranjax/test_ma_voice.py` for exact argument order/month, PLANES/PAGOS combinations, daily-directory equality, today/intent conflicts, and ROMAN/E1KIA missing/ambiguous/unchanged/wrong-date; update `tests/orchestrator/test_catalog.py` to require complete candidate/non-executable Voice metadata and inert PCT/MT. Run `python -m pytest tests/adapters/naranjax/test_ma_voice.py tests/orchestrator/test_catalog.py -q`; confirm failures are assertion-driven.
-- [ ] 1.2 GREEN — Create `adapters/naranjax/ma_voice.py`, composing `MaChatAdapter.validate/outputs` while owning staged-file isolation and the Voice command without `--chat`/`--sin_planes_hoy`; complete only the inert Voice daily entry in `registry/naranjax.yaml`. Rerun the focused command.
-- [ ] 1.3 REFACTOR — Keep shared exceptions/classification in `ma_chat.py` unchanged and simplify only new Voice/test helpers. Run `python -m pytest tests/adapters/naranjax/test_ma_voice.py tests/orchestrator/test_catalog.py tests/adapters/naranjax/test_ma_chat.py -q`; inspect `git diff --numstat main...HEAD` and revert PR1 to roll back adapter/metadata together.
+- [x] 1.1 RED — Create `tests/adapters/naranjax/test_ma_voice.py` for exact argument order/month, PLANES/PAGOS combinations, daily-directory equality, today/intent conflicts, and ROMAN/E1KIA missing/ambiguous/unchanged/wrong-date; update `tests/orchestrator/test_catalog.py` to require complete candidate/non-executable Voice metadata and inert PCT/MT. Run `python -m pytest tests/adapters/naranjax/test_ma_voice.py tests/orchestrator/test_catalog.py -q`; confirm failures are assertion-driven.
+- [x] 1.2 GREEN — Create `adapters/naranjax/ma_voice.py`, composing `MaChatAdapter.validate/outputs` while owning staged-file isolation and the Voice command without `--chat`/`--sin_planes_hoy`; complete only the inert Voice daily entry in `registry/naranjax.yaml`. Rerun the focused command.
+- [x] 1.3 REFACTOR — Keep shared exceptions/classification in `ma_chat.py` unchanged and simplify only new Voice/test helpers. Run `python -m pytest tests/adapters/naranjax/test_ma_voice.py tests/orchestrator/test_catalog.py tests/adapters/naranjax/test_ma_chat.py -q`; inspect `git diff --numstat main...HEAD` and revert PR1 to roll back adapter/metadata together.
 
 ## Phase 2: PR2 — Dispatch, Promotion, and E2E
 
