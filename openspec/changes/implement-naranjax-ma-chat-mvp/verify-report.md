@@ -106,3 +106,35 @@ Unit: 8 tests/1 file; integration/E2E: 0. Coverage skipped (`pytest_cov=False`, 
 ### Correctness and Coherence
 Source follows the scoped design except that directory fsync is explicitly best-effort/no-op on Windows; file fsync and atomic replace remain active. OpenSpec/Engram tasks and apply-progress are semantically synchronized. Exact diff is **349 additions + 49 deletions = 398**, hard **`<400` PASS**, no exception.
 ### Issues and Verdict — **CRITICAL:** None. **WARNING:** None. **SUGGESTION:** None. **Final verdict: PASS** for PR2B-A only; persisted tests carry all compliance credit, and final MVP acceptance remains excluded.
+
+---
+## PR2B-B State Promotion/Recovery Reverification (supersedes earlier verdicts above)
+**Change:** `implement-naranjax-ma-chat-mvp` | **Scope:** PR2B-B only at `8e84861` | **Mode:** Strict TDD | **Store:** hybrid | PR3/PR4 excluded.
+
+### Completeness
+Tasks 5.1–5.3 are implemented and checked; cumulative completion is 15/21, with the six PR3/PR4 tasks intentionally deferred.
+### Build & Tests Execution
+Focused `python -m pytest tests/orchestrator/test_state_store.py -q` → **10 passed in 0.21s**.
+Cumulative `python -m pytest tests/orchestrator -q` → **55 passed in 0.75s**.
+Ruff, mypy, `py_compile`, `git diff --check 8e84861`, changed-path audit, and forbidden-scope audit → **PASS**.
+Coverage → **N/A**: neither `pytest-cov` nor `coverage` is installed; no threshold is configured.
+### TDD Compliance
+Apply-progress has complete file/layer/safety-net/RED/GREEN/TRIANGULATE/REFACTOR evidence for 3/3 scoped tasks; the test file exists.
+RED is recorded as Windows API injection **3 failed/7 passed** after the prior seven-case GREEN; current GREEN is **10 focused/55 cumulative** with the truthful 45-test pre-slice safety net.
+### Test Layers, Changed Coverage, Assertion Quality, and Quality Metrics
+Unit: 10 cases/1 file; integration/E2E: 0. Changed-file coverage unavailable. Assertions exercise production behavior; no banned/trivial assertion or mock-heavy pattern found. Ruff/mypy passed both changed Python files.
+### Spec Compliance Matrix
+| Behavior | Runtime/static evidence | Result |
+|---|---|---|
+| Preflight before writes | Snapshot, primary marker, and fallback-directory blockers preserve current and emit no replace/file-fsync | ✅ COMPLIANT |
+| Ordered promotion and partial failure | File fsync → snapshot replace → directory flush precedes current; current failure persists `recovery_required` without retry/rollback | ✅ COMPLIANT |
+| Recovery fallback | Failed primary marker replace writes/fsyncs fallback, flushes fallback and lineage directories, and blocks reruns | ✅ COMPLIANT |
+| POSIX/Win32 directory durability | POSIX open/flush/close ordering; Win32 `CreateFileW`/`FlushFileBuffers`/`CloseHandle`; open, flush, and close errors propagate | ✅ COMPLIANT |
+| Repository boundary | No runner, adapter, CLI, catalog/registry, legacy, data, secret, build, API, or UI change | ✅ COMPLIANT |
+### Correctness, Coherence, Budget, and Hybrid Sync
+Static inspection confirms same-directory temporaries, file fsync before replace, parent flush after publication, snapshot-first/current-second order, typed error translation, and fail-closed recovery.
+Exact base diff: **385 additions + 10 deletions = 395 changed lines**; hard **`<400` PASS** with 4 lines of remaining capacity and no exception. OpenSpec tasks/apply-progress and Engram copies are semantically synchronized.
+### Issues and Verdict
+**CRITICAL:** None. **WARNING:** Task 5.2's internal targets are exceeded (`179 > 150` product lines; `158 > 150` test lines; planned slice `395 > 340`) although the governing hard `<400` gate passes. **SUGGESTION:** None.
+## Final Verdict — **PASS WITH WARNINGS**
+Windows durability remediation closes the former critical gap; all scoped runtime/spec/static/scope/hybrid gates pass, with only the non-functional internal size-target deviation remaining.
