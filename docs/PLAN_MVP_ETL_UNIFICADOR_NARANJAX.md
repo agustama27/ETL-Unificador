@@ -281,7 +281,7 @@ atómica; debe registrarse incluso si falla el preflight.
 | Concurrencia | Lock filesystem fail-fast por ETL/mes desde seed hasta commit | **Abierta:** espera máxima y recuperación de lock huérfano. |
 | PLANES omitido | Requiere intención explícita, no pasa `--planes`, usa `--sin_planes_hoy` y `diarios_dir` vacío | **Abierta:** confirmar que omisión es válida en operación normal. |
 | PAGOS omitido | No pasar `--pagos`; Chat lo deshabilita | Cerrada para Chat; Voice necesita política distinta. |
-| Timeout | 900 s; terminate y luego kill; conservar evidencia | **Abierta:** timeout productivo y grace period. |
+| Timeout | 900 s configurable; terminate, espera 10 s y kill; conserva streams, logs y parciales | Cerrada para piloto. |
 | Success | Exit permitido + outputs nuevos/cambiados ROMAN, CHAT y E1KIA | Cerrada para piloto. |
 | Fallo | Preservar parciales; no promover estado; error estable en metadata | Cerrada para piloto. |
 | PCT/MT | Bloqueo sólo del adapter afectado | **Abierta:** aprobación de release por catálogo parcial. |

@@ -1,7 +1,7 @@
 # Apply Progress: Implement Guarded Naranja X MA Chat MVP
 ## Status
 
-PR1A–PR2B state foundation is complete: 15/21 revised tasks.
+PR1A–PR3 process evidence is complete: 18/21 revised tasks.
 
 ## Completed Tasks
 
@@ -12,6 +12,7 @@ PR1A–PR2B state foundation is complete: 15/21 revised tasks.
 - [x] 3.1–3.3 — File-manager cycle plus changed-existing remediation; 6 focused/37 cumulative passed.
 - [x] 4.1–4.3 — PR2B-A lock-identity remediation; 8 focused/45 cumulative passed.
 - [x] 5.1–5.3 — PR2B-B snapshot-first promotion, Win32/POSIX directory durability, and recovery; 10 focused/55 cumulative passed.
+- [x] 6.1–6.3 — PR3 concurrent process capture, redacted deterministic logs, timeout escalation, and partial failure evidence; 8 focused/63 cumulative passed.
 
 ## TDD Cycle Evidence
 
@@ -32,6 +33,9 @@ PR1A–PR2B state foundation is complete: 15/21 revised tasks.
 | 5.1 | `tests/orchestrator/test_state_store.py` | Unit | `45 passed` cumulative | Missing-module collection error | `7 passed` | Snapshot/recovery preflights; second replace failure | Independent RED retained |
 | 5.2 | `tests/orchestrator/test_state_store.py` | Unit | N/A — new files | Fresh missing-module RED | `7 passed` | Primary and fallback recovery evidence | Same-volume sibling temporaries |
 | 5.3 | `tests/orchestrator/test_state_store.py` | Unit | `7 passed` focused | Windows API injection: `3 failed, 7 passed` | `10 focused`; `55 cumulative` | POSIX plus Win32 open/flush failures | CreateFileW/FlushFileBuffers/CloseHandle; static/diff green |
+| 6.1 | `tests/orchestrator/test_runner.py`, `test_logging_utils.py` | Unit/integration | `55 passed` cumulative | Missing runner/logging modules: 2 collection errors | `8 passed` | Success/nonzero, concurrent streams, timeout terminate/kill, spawn failure, legacy/partial evidence | Shared redactor and stream finalization |
+| 6.2 | Same PR3 slice | Unit/integration | N/A — new files | Fresh missing-module RED | `8 passed in 0.68s` | Controlled command/cwd/env plus deterministic persistence | Typed terminal result; 900s/10s defaults |
+| 6.3 | Same PR3 slice | Unit/integration | `8 passed` focused | Inherited fresh RED | `8 focused`; `63 cumulative` | Secrets absent from command/env/streams/errors/logs | Ruff/mypy/compile/diff and scope audits green |
 
 ## Superseded Non-Credit History
 
@@ -48,22 +52,24 @@ PR2B-A and PR2B-B now each have independent RED evidence.
 - PR2A RED: expected missing-module collection error; remediation RED `1 failed, 5 passed`; final 6 focused/37 cumulative.
 - PR2B-A remediation RED: same-path replacement produced `1 failed, 6 passed`; final 8 focused/45 cumulative.
 - PR2B-B RED: missing module; Win32 remediation RED `3 failed, 7 passed`; final 10 focused/55 cumulative.
+- PR3 RED: missing runner/logging modules; final 8 focused/63 cumulative with synthetic jobs only.
 - Static: Ruff, mypy, `py_compile`, and `git diff --check` passed.
 
 ## Files / Budget
 
 - Foundation product: 144 lines; focused tests: 89 lines.
-- Revised tasks preserve prior slices and mark PR2B state complete: 15/21 tasks.
+- Revised tasks preserve prior slices and mark PR3 process complete: 18/21 tasks.
 - PR1B exact diff against `4e57072`: 387 additions + 12 deletions = 399 lines.
 - `git diff --check` required; no commit created.
 - PR2A exact diff against `c506e16`: 274 additions + 39 deletions = 313 lines, including hybrid evidence.
 - PR2B-A exact diff against `3c2a9a5`: 349 additions + 49 deletions = 398 lines.
 - PR2B-B exact diff against `8e84861`: 385 additions + 10 deletions = 395 lines.
+- PR3 pre-report diff against `aa24b90`: 350 additions + 10 deletions = 360 lines; report-inclusive final: 388 + 10 = 398.
 
 ## Remaining
-- [ ] PR3 process; PR4 Chat/CLI.
+- [ ] PR4 Chat/CLI.
 
 ## PR Boundary / Risks
-📍 PR2B-B → PR3, stacked-to-main, 395 lines, no exception. Catalog remains inert; runner,
-adapter, CLI, and legacy changes stay deferred. Partial promotion durably blocks
-the lineage for evidence-led manual recovery; no rollback or retry is automatic.
+📍 PR3 → PR4, stacked-to-main, 398 final lines (360 pre-report), no exception. Catalog remains inert;
+adapter, CLI, real processes/data, and legacy changes stay deferred. Process
+failures preserve redacted stream/log/file evidence and never delete the sandbox.

@@ -138,3 +138,41 @@ Exact base diff: **385 additions + 10 deletions = 395 changed lines**; hard **`<
 **CRITICAL:** None. **WARNING:** Task 5.2's internal targets are exceeded (`179 > 150` product lines; `158 > 150` test lines; planned slice `395 > 340`) although the governing hard `<400` gate passes. **SUGGESTION:** None.
 ## Final Verdict — **PASS WITH WARNINGS**
 Windows durability remediation closes the former critical gap; all scoped runtime/spec/static/scope/hybrid gates pass, with only the non-functional internal size-target deviation remaining.
+
+---
+## PR3 Process Evidence Reverification (supersedes earlier verdicts above)
+**Change:** `implement-naranjax-ma-chat-mvp` | **Scope:** PR3 runner/logging at `aa24b90`; earlier slices are safety net and PR4 is excluded | **Mode:** Strict TDD | **Store:** hybrid
+**Completeness:** Tasks 6.1–6.3 checked; cumulative completion is 18/21. PR4 remains intentionally incomplete.
+### Build & Tests Execution
+| Check | Evidence | Result |
+|---|---|---|
+| Focused fake jobs | `python -m pytest tests/orchestrator/test_runner.py tests/orchestrator/test_logging_utils.py -q` → **8 passed in 0.98s** | PASS |
+| Cumulative safety net | Seven declared orchestrator test paths → **63 passed in 1.63s** | PASS |
+| Runtime runner/logging | Real success/nonzero/interleave/timeout jobs pass; defaults are 900s/10s; direct-child terminate→kill; repeated paths/hashes are equal and secret-free | PASS |
+| Static quality | Ruff, changed-file mypy, `py_compile`, tracked/untracked whitespace checks | PASS |
+| Diff/scope | Exact base audit contains only PR3 source/tests/support, plan, and SDD evidence; no legacy, registry, adapter, CLI, data, secret, build, API, or UI path | PASS |
+| Coverage | Neither `pytest-cov` nor `coverage` is installed; no threshold configured | N/A |
+### TDD Compliance
+| Check | Result | Details |
+|---|---|---|
+| Evidence/tests | PASS | 3/3 scoped rows have extant tests and RED/GREEN/TRIANGULATE/REFACTOR evidence |
+| RED | PASS | Base lacks both production modules; recorded fresh RED is two missing-module collection errors |
+| GREEN | PASS | Current focused 8/8 and cumulative 63/63 pass |
+| Safety/triangulation | PASS | Truthful 55-test baseline; success/nonzero/spawn/interleave/timeout/partial/redaction/log variants |
+### Test Layers / Changed Coverage / Assertion Quality
+Mixed pytest files contain **3 unit** and **5 integration** tests across two files; E2E is outside PR3. Changed-file coverage is unavailable.
+**Assertion quality:** ✅ All assertions call production behavior; no tautology, ghost loop, orphan-empty/type-only/smoke-only assertion, implementation-detail coupling, or mock-heavy pattern.
+### PR3 Compliance Matrix
+| Behavior | Runtime/static evidence | Result |
+|---|---|---|
+| Success, command/cwd/env, typed result | Real fake job plus frozen `ProcessEvidence`; `shell=False`, argument tuple, injected cwd, merged child env | ✅ COMPLIANT |
+| Nonzero/spawn failure and partial preservation | Exit 7 preserves streams and `partial.csv`; spawn `OSError` returns redacted typed evidence | ✅ COMPLIANT |
+| Concurrent/redacted/deterministic evidence | 2,000 lines/pipe without deadlock; secrets absent; repeated ordered paths and SHA-256 hashes match | ✅ COMPLIANT |
+| Timeout escalation and scope | 900s → terminate → 10s grace → kill, stream joins, direct child only | ✅ COMPLIANT |
+| Repository boundary | Catalog remains inert; PR4, legacy, real data, secrets, and builds are untouched | ✅ COMPLIANT |
+### Correctness, Coherence, Budget, and Hybrid Sync
+Source follows the process-boundary design; OpenSpec and Engram proposal/spec/design/tasks/apply artifacts are semantically synchronized. Exact pre-report delta is **350 additions + 10 deletions = 360**; report-inclusive final is **388 + 10 = 398**, hard **`<400` PASS** with one line of headroom and no exception.
+### Quality Metrics and Issues
+**CRITICAL:** None. **WARNING:** None. **SUGGESTION:** None.
+## Final Verdict — **PASS**
+PR3 passes runtime behavior, strict-TDD evidence, focused/cumulative execution, changed-file typing, static/diff/scope checks, exact budget, and hybrid synchronization. This is not final MVP acceptance.
