@@ -20,11 +20,15 @@ from tests.support.synthetic_naranjax import write_result
 
 
 TODAY = date(2026, 7, 21)
-CX = "encuestacx.base.daily"
+PETERSEN = "petersen.gestiones.daily"
 
 
 class RecordingService:
+    def __init__(self) -> None:
+        self.requests = []
+
     def execute(self, request):
+        self.requests.append(request)
         return RunResult("run-1", RunStatus.SUCCEEDED, None, (),
                          StateEffect("scope", StateStatus.NOT_STARTED))
 
@@ -36,9 +40,9 @@ class SyntheticRunner:
 
     def run(self, command, cwd, env, timeout, *, secret_values):
         self.command = tuple(command)
-        run = next(Path(value) for value in command if Path(value).name == "base.xlsx").parents[1]
-        if self.mode in {"success", "missing"}:
-            write_result(run, self.mode, channel="encuestacx")
+        run = next(Path(value) for value in command if Path(value).name == "base.csv").parents[1]
+        if self.mode == "success":
+            write_result(run, self.mode, channel="petersen")
         return ProcessEvidence(
             self.command, str(cwd), env, f"synthetic {run}", "",
             7 if self.mode == "nonzero" else 0, False, Termination.COMPLETED,
@@ -46,9 +50,9 @@ class SyntheticRunner:
         )
 
 
-def _survey(tmp_path: Path) -> Path:
-    path = tmp_path / "encuesta.xlsx"
-    path.write_bytes(b"synthetic")
+def _base(tmp_path: Path) -> Path:
+    path = tmp_path / "base.csv"
+    path.write_text("synthetic", encoding="utf-8")
     return path
 
 
@@ -72,17 +76,18 @@ def _adapters():
     }
 
 
-def test_cli_selects_encuestacx_adapter(tmp_path: Path) -> None:
+def test_cli_selects_petersen_adapter_and_forwards_optional_extras(tmp_path: Path) -> None:
     adapters = _adapters()
-    selected = []
+    service = RecordingService()
+    (tmp_path / "approach.csv").write_text("synthetic", encoding="utf-8")
 
     def factory(definition, adapter):
-        selected.append((definition.id, adapter))
-        return RecordingService()
+        return service
 
-    assert main(["--etl", CX, "--fecha", "20260721", "--base", str(_survey(tmp_path))],
+    assert main(["--etl", PETERSEN, "--fecha", "20260721", "--base", str(_base(tmp_path)),
+                 "--input", f"approach={tmp_path / 'approach.csv'}"],
                 adapters=adapters, service_factory=factory) == 0
-    assert selected == [(CX, adapters["encuestacx.base"])]
+    assert dict(service.requests[0].extras) == {"approach": tmp_path / "approach.csv"}
 
 
 @pytest.mark.parametrize(
@@ -94,12 +99,12 @@ def test_cli_selects_encuestacx_adapter(tmp_path: Path) -> None:
         ("missing", "20260721", 1, "failed", "postcondition_failed", True),
     ],
 )
-def test_synthetic_encuestacx_cli_writes_terminal_evidence_without_state(
+def test_petersen_cli_lifecycle(
     tmp_path: Path, mode: str, day: str,
     expected_exit: int, status: str, error: str | None, ran: bool,
 ) -> None:
     runner = SyntheticRunner(mode)
-    runs, state_root = tmp_path / "runs", tmp_path / "state"
+    runs, state_root = tmp_path / "r", tmp_path / "s"
 
     def factory(definition, adapter):
         state = StateStore(state_root)
@@ -108,7 +113,7 @@ def test_synthetic_encuestacx_cli_writes_terminal_evidence_without_state(
         return RunService(definition, adapter, runner, store, state, workspace=Path.cwd(),
                           now=lambda: "2026-07-21T15:00:00+00:00")
 
-    exit_code = main(["--etl", CX, "--fecha", day, "--base", str(_survey(tmp_path))],
+    exit_code = main(["--etl", PETERSEN, "--fecha", day, "--base", str(_base(tmp_path))],
                      adapters=_adapters(), service_factory=factory)
     evidence = json.loads(next(runs.rglob("run.json")).read_text("utf-8"))
 
@@ -120,10 +125,7 @@ def test_synthetic_encuestacx_cli_writes_terminal_evidence_without_state(
     assert tuple(state_root.rglob("estado_*.csv")) == ()
     if status == "succeeded":
         assert [(item["role"], item["path"]) for item in evidence["artifacts"]] == [
-            ("survey_base", "output/base_encuesta.csv"),
-            ("survey_base_e164", "output/base_encuesta_e164.csv"),
+            ("gestiones", "output/Gestiones_Petersen_20260721.zip"),
         ]
         assert evidence["postconditions"] == {"outputs": "passed", "state": "not_applicable"}
-        assert "--input" in runner.command and "--output_dir" in runner.command
-        staged = {item["role"]: item["path"] for item in evidence["inputs"]}
-        assert staged["base"].endswith("base.xlsx")
+        assert "--approach" not in runner.command

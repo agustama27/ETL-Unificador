@@ -11,6 +11,7 @@ from adapters.naranjax.ma_voice import MaVoiceAdapter
 from adapters.naranjax.ma_voice_pct import MaVoicePctAdapter
 from adapters.naranjax.mt_voice import MtVoiceAdapter
 from adapters.naranjax.mt_voice_back import MtVoiceBackAdapter
+from adapters.petersen.gestiones import PetersenGestionesAdapter
 
 from .catalog import Catalog, CatalogError
 from .models import ETLDefinition, RunRequest, RunResult, RunStatus
@@ -25,7 +26,7 @@ class Service(Protocol):
 
 
 Adapter = (MaChatAdapter | MaVoiceAdapter | MaVoicePctAdapter | MtVoiceAdapter
-           | MtVoiceBackAdapter)
+           | MtVoiceBackAdapter | PetersenGestionesAdapter)
 ServiceFactory = Callable[[ETLDefinition, Adapter], Service]
 
 
@@ -81,6 +82,7 @@ def _adapters() -> dict[str, Adapter]:
         "clarouy.base": MaVoicePctAdapter(),
         "social.argentina": MaVoicePctAdapter(),
         "social.chile": MaVoicePctAdapter(),
+        "petersen.gestiones": PetersenGestionesAdapter(),
     }
 
 
