@@ -8,7 +8,8 @@ import pytest
 from adapters.naranjax.ma_chat import MaChatAdapter
 from adapters.naranjax.ma_voice_pct import MaVoicePctAdapter
 from orchestrator.catalog import Catalog
-from orchestrator.models import RunRequest, RunStatus
+from orchestrator.models import (ETLDefinition, InputSpec, Readiness,
+                                 RepositoryStatus, RunRequest, RunStatus)
 from orchestrator.run_store import RunStore
 from orchestrator.runner import ProcessEvidence, Termination
 from orchestrator.service import RunService
@@ -227,3 +228,83 @@ def test_stateless_pct_run_skips_preflight_staging_and_promotion(tmp_path: Path)
     assert evidence["state"]["status"] == "not_started"
     assert evidence["inputs"][0]["path"].endswith("base.csv")
     assert {item["role"] for item in evidence["artifacts"]} == {"pct"}
+
+
+def _extras_fixture(tmp_path: Path):
+    definition = ETLDefinition(
+        id="synthetic.back", name="Synthetic back",
+        repository_status=RepositoryStatus.PRESENT, readiness=Readiness.READY,
+        executable=True, project_path=Path("p"),
+        command=("python", "job.py"), adapter="synthetic.back",
+        inputs=(InputSpec("base", (".txt",), True),
+                InputSpec("logcall", (".csv",), True),
+                InputSpec("historial", (".csv",), True)),
+        outputs=(), allowed_exits=(0,), timeout_seconds=900,
+    )
+
+    class ExtrasAdapter:
+        stateful = False
+        requires_state_change = False
+
+        def validate(self, request):
+            return None
+
+        def command(self, definition, request, run):
+            return ("noop", str(run / "input/base.txt"))
+
+        def outputs(self, definition, before, after):
+            return ()
+
+    class ExtrasRunner:
+        def run(self, command, cwd, env, timeout, *, secret_values):
+            return ProcessEvidence(command, str(cwd), env, "out", "err", 0, False,
+                                   Termination.COMPLETED, ("start", "finish"), None)
+
+    state = FakeState(tmp_path / "state")
+    store = RunStore(
+        tmp_path / "runs", state.root,
+        now=lambda: datetime(2026, 7, 21, 15, tzinfo=timezone.utc),
+        uuid_factory=iter((f"id-{n}" for n in range(30))).__next__,
+    )
+    subject = RunService(definition, ExtrasAdapter(), ExtrasRunner(), store, state,
+                         workspace=Path.cwd(), now=lambda: "2026-07-21T15:00:00+00:00")
+    outside = tmp_path / "outside"
+    outside.mkdir(exist_ok=True)
+    for name in ("base.txt", "LOGCALL_x.csv", "historial_x.csv"):
+        (outside / name).write_text("synthetic", encoding="utf-8")
+    return subject, store, state, outside
+
+
+def test_extras_stage_truthfully_with_validated_suffixes(tmp_path: Path) -> None:
+    subject, store, state, outside = _extras_fixture(tmp_path)
+
+    result = subject.execute(RunRequest(
+        "synthetic.back", TODAY, outside / "base.txt",
+        extras={"logcall": outside / "LOGCALL_x.csv",
+                "historial": outside / "historial_x.csv"},
+    ))
+    evidence = record(store)
+
+    assert result.status is RunStatus.SUCCEEDED
+    staged = {item["role"]: item["path"] for item in evidence["inputs"]}
+    assert staged["base"].endswith("base.txt")
+    assert staged["logcall"].endswith("logcall.csv")
+    assert staged["historial"].endswith("historial.csv")
+    run_dir = next(store.runs_root.glob("synthetic.back/*"))
+    assert (run_dir / "input/logcall.csv").exists()
+    assert (run_dir / "input/historial.csv").exists()
+    assert state.promotions == 0
+
+
+def test_extra_with_undeclared_extension_is_terminal(tmp_path: Path) -> None:
+    subject, store, _, outside = _extras_fixture(tmp_path)
+    (outside / "logcall.xlsx").write_text("synthetic", encoding="utf-8")
+
+    result = subject.execute(RunRequest(
+        "synthetic.back", TODAY, outside / "base.txt",
+        extras={"logcall": outside / "logcall.xlsx",
+                "historial": outside / "historial_x.csv"},
+    ))
+
+    assert (result.status, result.error_code) == (RunStatus.FAILED, "validation_error")
+    assert record(store)["error"]["code"] == "validation_error"

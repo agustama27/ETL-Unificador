@@ -133,7 +133,8 @@ class RunService:
             raise RunBlockedError("snapshot_exists", "state snapshot already exists")
 
     def _stage_inputs(self, manager: FileManager, request: RunRequest) -> tuple[FileEvidence, ...]:
-        sources = {"base": request.base, "planes": request.planes, "pagos": request.pagos}
+        sources = {**dict(request.extras), "base": request.base,
+                   "planes": request.planes, "pagos": request.pagos}
         fixed = {"planes": Path("input/diarios/planes.xlsx"),
                  "pagos": Path("input/diarios/pagos.csv")}
         evidence = []
@@ -141,7 +142,7 @@ class RunService:
             source = sources.get(spec.role)
             if source is not None:
                 destination = fixed.get(
-                    spec.role, Path("input") / f"base{source.suffix.casefold()}"
+                    spec.role, Path("input") / f"{spec.role}{source.suffix.casefold()}"
                 )
                 evidence.append(manager.copy_input(
                     source, destination, spec.role, set(spec.extensions)

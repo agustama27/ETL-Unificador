@@ -156,3 +156,10 @@ def test_rejects_each_invalid_output_classification(
 
     with pytest.raises(PostconditionError, match=f"{role.value}: {classification}"):
         MaChatAdapter(today=lambda: TODAY).outputs(_definition(), before, after)
+
+
+def test_rejects_extra_inputs(tmp_path: Path) -> None:
+    with pytest.raises(ValidationError, match="extra"):
+        MaChatAdapter(today=lambda: TODAY).validate(
+            _request(tmp_path, extras={"logcall": tmp_path / "x.csv"})
+        )

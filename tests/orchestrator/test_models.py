@@ -31,8 +31,20 @@ def test_status_and_role_enums_expose_stable_string_values() -> None:
         "not_started", "staged", "promoted", "recovery_required"
     ]
     assert [item.value for item in ArtifactRole] == [
-        "roman", "chat", "e1kia", "pct", "legacy_log"
+        "roman", "chat", "e1kia", "pct", "anomalies", "legacy_log"
     ]
+
+
+def test_run_request_defensively_freezes_extras(tmp_path: Path) -> None:
+    extras = {"logcall": tmp_path / "logcall.csv"}
+    request = RunRequest("etl", date(2026, 7, 21), tmp_path / "base.txt", extras=extras)
+
+    extras["historial"] = tmp_path / "historial.csv"
+
+    assert dict(request.extras) == {"logcall": tmp_path / "logcall.csv"}
+    with pytest.raises(TypeError):
+        request.extras["other"] = tmp_path / "other.csv"  # type: ignore[index]
+    assert RunRequest("etl", date(2026, 7, 21), tmp_path / "base.txt").extras == {}
 
 
 def test_etl_definition_is_frozen_and_defensively_freezes_arguments() -> None:
