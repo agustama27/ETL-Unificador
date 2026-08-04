@@ -6,12 +6,15 @@ subprocess. No cambia los ETLs legacy ni sus reglas de negocio.
 
 ### Estado de implementación
 
-Los cuatro ETLs del catálogo — Chat daily, Voice daily, Voice PCT y MT daily —
-están listos para verificación sintética desde el CLI unificado; no queda
-ninguna entrada inerte. PCT y MT son corridas stateless; sus suites de
-contrato quedaron verdes (27 y 7 passed) tras alinear `TIPIF_MAP` y
-`USUEVOLTIS`. MT se invoca mediante el wrapper del unificador
-`adapters/naranjax/mt_voice_job.py` sin editar legacy. Esta evidencia NO
+El catálogo expone seis ETLs ejecutables — Chat daily, Voice daily, Voice PCT,
+Chat PCT, MT PCT y MT daily — sin entradas inertes. Los cuatro jobs de
+tipificaciones/back son corridas stateless; las suites de contrato legacy
+quedaron verdes (27, 25 y 7 passed) tras alinear `TIPIF_MAP` y `USUEVOLTIS`.
+Chat PCT y MT PCT reusan el adapter PCT existente (promoción sólo por
+catálogo); MT daily se invoca mediante el wrapper del unificador
+`adapters/naranjax/mt_voice_job.py` sin editar legacy. Único job legacy fuera
+del catálogo: MT `--back` (LOGCALL+historial+M30), que carece de suite de
+contrato propia y requiere soporte multi-input en el core. Esta evidencia NO
 implica ejecución con datos reales, aceptación productiva ni UAT: las tres
 siguen pendientes.
 

@@ -28,7 +28,8 @@ def _write(tmp_path: Path, entry: dict[str, object], **root: object) -> Path:
 
 def test_repository_catalog_promotes_only_daily_chat_and_voice() -> None:
     adapters = {"naranjax.ma.chat": object(), "naranjax.ma.voice": object(),
-                "naranjax.ma.voice.pct": object(), "naranjax.mt.voice": object()}
+                "naranjax.ma.voice.pct": object(), "naranjax.mt.voice": object(),
+                  "naranjax.ma.chat.pct": object(), "naranjax.mt.voice.pct": object()}
     catalog = Catalog.load(
         Path("registry/naranjax.yaml"), Path.cwd(),
         adapters=adapters,
@@ -36,7 +37,9 @@ def test_repository_catalog_promotes_only_daily_chat_and_voice() -> None:
 
     assert tuple(item.id for item in catalog) == (
         "naranjax.ma.chat.daily", "naranjax.ma.voice.daily",
-        "naranjax.ma.voice.pct", "naranjax.mt.voice.daily")
+        "naranjax.ma.voice.pct", "naranjax.ma.chat.pct",
+        "naranjax.mt.voice.pct", "naranjax.mt.voice.daily")
+    assert all(item.executable and item.readiness is Readiness.READY for item in catalog)
     chat = catalog["naranjax.ma.chat.daily"]
     assert (chat.readiness, chat.executable, chat.command) == (Readiness.READY, True, (
         "python", "back-base/ejecutar_dia.py",
@@ -75,6 +78,17 @@ def test_repository_catalog_promotes_only_daily_chat_and_voice() -> None:
         "naranjax.ma.voice.pct", (0,), 900
     )
     assert pct.environment_allowlist == ()
+    chat_pct = catalog["naranjax.ma.chat.pct"]
+    assert (chat_pct.adapter, chat_pct.project_path) == (
+        "naranjax.ma.chat.pct", Path("SOHO-Chat-NX_MA-ETL")
+    )
+    assert tuple(output.glob for output in chat_pct.outputs) == ("NARANJAX_PCT_*.csv",)
+    mt_pct = catalog["naranjax.mt.voice.pct"]
+    assert (mt_pct.adapter, mt_pct.project_path) == (
+        "naranjax.mt.voice.pct", Path("soho-naranjaX-MT-etl")
+    )
+    assert tuple(output.glob for output in mt_pct.outputs) == ("DEELO_NAR_USUEVOLTIS_*.txt",)
+    assert tuple(output.role for output in mt_pct.outputs) == (ArtifactRole.PCT,)
     mt = catalog["naranjax.mt.voice.daily"]
     assert (mt.readiness, mt.executable, mt.command) == (
         Readiness.READY, True, ("python", "../adapters/naranjax/mt_voice_job.py")
