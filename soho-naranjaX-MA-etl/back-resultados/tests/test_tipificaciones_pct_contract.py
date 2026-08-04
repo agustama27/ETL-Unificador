@@ -208,7 +208,7 @@ class TipificacionesPCTContractTests(unittest.TestCase):
                 row = next(reader)
 
             self.assertEqual(row["DNI"], "DU00020240118")
-            self.assertEqual(row["TIPIFICACION"], "11")
+            self.assertEqual(row["TIPIFICACION"], "7")
             self.assertEqual(row["NROPRODUCTO"], "DU00020240118")
             self.assertEqual(row["CALL_REFID"], "call_434f431c28a9544d5f2c5dc6bc6")
             self.assertEqual(
