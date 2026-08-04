@@ -8,6 +8,7 @@ from adapters.naranjax.ma_chat import MaChatAdapter
 from adapters.naranjax.ma_voice import MaVoiceAdapter
 from adapters.naranjax.ma_voice_pct import MaVoicePctAdapter
 from adapters.naranjax.mt_voice import MtVoiceAdapter
+from adapters.naranjax.mt_voice_back import MtVoiceBackAdapter
 from orchestrator.models import RunResult, RunStatus, StateEffect, StateStatus
 from orchestrator.run import main
 from orchestrator.run_store import RunStore
@@ -60,6 +61,7 @@ def _adapters():
         "naranjax.mt.voice": MtVoiceAdapter(today=lambda: TODAY),
         "naranjax.ma.chat.pct": MaVoicePctAdapter(today=lambda: TODAY),
         "naranjax.mt.voice.pct": MaVoicePctAdapter(today=lambda: TODAY),
+        "naranjax.mt.voice.back": MtVoiceBackAdapter(today=lambda: TODAY),
     }
 
 

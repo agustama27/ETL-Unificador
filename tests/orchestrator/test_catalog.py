@@ -29,7 +29,8 @@ def _write(tmp_path: Path, entry: dict[str, object], **root: object) -> Path:
 def test_repository_catalog_promotes_only_daily_chat_and_voice() -> None:
     adapters = {"naranjax.ma.chat": object(), "naranjax.ma.voice": object(),
                 "naranjax.ma.voice.pct": object(), "naranjax.mt.voice": object(),
-                  "naranjax.ma.chat.pct": object(), "naranjax.mt.voice.pct": object()}
+                  "naranjax.ma.chat.pct": object(), "naranjax.mt.voice.pct": object(),
+                  "naranjax.mt.voice.back": object()}
     catalog = Catalog.load(
         Path("registry/naranjax.yaml"), Path.cwd(),
         adapters=adapters,
@@ -38,8 +39,10 @@ def test_repository_catalog_promotes_only_daily_chat_and_voice() -> None:
     assert tuple(item.id for item in catalog) == (
         "naranjax.ma.chat.daily", "naranjax.ma.voice.daily",
         "naranjax.ma.voice.pct", "naranjax.ma.chat.pct",
-        "naranjax.mt.voice.pct", "naranjax.mt.voice.daily")
-    assert all(item.executable and item.readiness is Readiness.READY for item in catalog)
+        "naranjax.mt.voice.pct", "naranjax.mt.voice.back",
+        "naranjax.mt.voice.daily")
+    assert all(item.executable and item.readiness is Readiness.READY
+               for item in catalog if item.id != "naranjax.mt.voice.back")
     chat = catalog["naranjax.ma.chat.daily"]
     assert (chat.readiness, chat.executable, chat.command) == (Readiness.READY, True, (
         "python", "back-base/ejecutar_dia.py",
@@ -89,6 +92,17 @@ def test_repository_catalog_promotes_only_daily_chat_and_voice() -> None:
     )
     assert tuple(output.glob for output in mt_pct.outputs) == ("DEELO_NAR_USUEVOLTIS_*.txt",)
     assert tuple(output.role for output in mt_pct.outputs) == (ArtifactRole.PCT,)
+    back = catalog["naranjax.mt.voice.back"]
+    assert (back.adapter, back.command, back.fixed_arguments) == (
+        "naranjax.mt.voice.back", ("python", "main.py"), ("--back",)
+    )
+    assert tuple((item.role, item.required) for item in back.inputs) == (
+        ("base", True), ("logcall", True), ("historial", True)
+    )
+    assert tuple((output.role, output.glob) for output in back.outputs) == (
+        (ArtifactRole.PCT, "DEELO_NAR_USUEVOLTIS_*.txt"),
+        (ArtifactRole.ANOMALIES, "_anomalias_*.txt"),
+    )
     mt = catalog["naranjax.mt.voice.daily"]
     assert (mt.readiness, mt.executable, mt.command) == (
         Readiness.READY, True, ("python", "../adapters/naranjax/mt_voice_job.py")

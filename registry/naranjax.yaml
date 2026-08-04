@@ -122,6 +122,32 @@ etls:
     request_date_format: YYYYMMDD
     output_date_source: system_date
     adapter: naranjax.mt.voice.pct
+  - id: naranjax.mt.voice.back
+    name: Naranja X MT Voice back (USUEVOLTIS)
+    repository_status: present
+    readiness: candidate
+    executable: false
+    project_path: soho-naranjaX-MT-etl
+    working_dir: soho-naranjaX-MT-etl
+    entrypoint: soho-naranjaX-MT-etl/main.py
+    command: [python, main.py]
+    fixed_arguments: [--back]
+    arguments:
+      base: --m30
+      logcall: --logcall
+      historial: --historial
+    inputs:
+      - {role: base, extensions: [.txt], required: true}
+      - {role: logcall, extensions: [.csv], required: true}
+      - {role: historial, extensions: [.csv], required: true}
+    outputs:
+      - {role: pct, glob: 'DEELO_NAR_USUEVOLTIS_*.txt', date_format: YYYYMMDD}
+      - {role: anomalies, glob: '_anomalias_*.txt', date_format: YYYYMMDD}
+    allowed_exits: [0]
+    timeout_seconds: 900
+    request_date_format: YYYYMMDD
+    output_date_source: system_date
+    adapter: naranjax.mt.voice.back
   - id: naranjax.mt.voice.daily
     name: Naranja X MT Voice daily
     repository_status: present
