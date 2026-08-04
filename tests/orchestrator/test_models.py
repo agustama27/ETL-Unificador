@@ -31,7 +31,7 @@ def test_status_and_role_enums_expose_stable_string_values() -> None:
         "not_started", "staged", "promoted", "recovery_required"
     ]
     assert [item.value for item in ArtifactRole] == [
-        "roman", "chat", "e1kia", "legacy_log"
+        "roman", "chat", "e1kia", "pct", "legacy_log"
     ]
 
 

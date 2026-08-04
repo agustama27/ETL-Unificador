@@ -6,6 +6,13 @@ OUTPUTS = {
              "NARANJAX_MA_E1KIA_260721_sinestrategia.csv"),
     "voice": ("NARANJAX_MA_ROMAN_20260721.csv",
               "NARANJAX_MA_E1KIA_260721_sinestrategia.csv"),
+    "pct": ("NARANJAX_PCT_20260721.csv",),
+}
+
+AMBIGUOUS = {
+    "chat": "NARANJAX_MA_CHAT_ROMAN_copy_260721.csv",
+    "voice": "NARANJAX_MA_ROMAN_copy_260721.csv",
+    "pct": "NARANJAX_PCT_copy_20260721.csv",
 }
 
 
@@ -14,7 +21,8 @@ def write_result(run: Path, mode: str = "success", *, channel: str = "chat") -> 
     if mode == "missing":
         names.pop()
     elif mode == "ambiguous":
-        names.append(f"NARANJAX_MA_{'CHAT_ROMAN_copy_' if channel == 'chat' else 'ROMAN_copy_'}260721.csv")
+        names.append(AMBIGUOUS[channel])
     for name in names:
         (run / "output" / name).write_text("synthetic", encoding="utf-8")
-    (run / "state" / "estado_202607.csv").write_text("state", encoding="utf-8")
+    if channel != "pct":
+        (run / "state" / "estado_202607.csv").write_text("state", encoding="utf-8")

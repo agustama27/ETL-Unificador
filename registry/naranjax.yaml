@@ -62,9 +62,24 @@ etls:
   - id: naranjax.ma.voice.pct
     name: Naranja X MA Voice PCT
     repository_status: present
-    readiness: blocked
+    readiness: candidate
     executable: false
     project_path: soho-naranjaX-MA-etl
+    working_dir: soho-naranjaX-MA-etl
+    entrypoint: soho-naranjaX-MA-etl/back-resultados/etl_tipificaciones_ia_voz_pct.py
+    command: [python, back-resultados/etl_tipificaciones_ia_voz_pct.py]
+    fixed_arguments: []
+    arguments:
+      base: --input
+    inputs:
+      - {role: base, extensions: [.csv], required: true}
+    outputs:
+      - {role: pct, glob: 'NARANJAX_PCT_*.csv', date_format: YYYYMMDD}
+    allowed_exits: [0]
+    timeout_seconds: 900
+    request_date_format: YYYYMMDD
+    output_date_source: system_date
+    adapter: naranjax.ma.voice.pct
   - id: naranjax.mt.voice.daily
     name: Naranja X MT Voice daily
     repository_status: present

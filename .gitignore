@@ -62,6 +62,9 @@ soho-naranjaX-MA-etl/[0-9]
 *.xls
 *.xlsm
 
+# Unifier runtime evidence (runs, state, locks)
+var/
+
 # Build / packaging artifacts
 build/
 dist/

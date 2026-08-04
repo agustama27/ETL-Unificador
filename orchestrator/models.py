@@ -38,6 +38,7 @@ class ArtifactRole(StrEnum):
     ROMAN = "roman"
     CHAT = "chat"
     E1KIA = "e1kia"
+    PCT = "pct"
     LEGACY_LOG = "legacy_log"
 
 
