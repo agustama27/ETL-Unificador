@@ -194,3 +194,37 @@ def test_catalog_rejects_symlink_escape_and_unregistered_executable(tmp_path: Pa
     )
     with pytest.raises(CatalogError, match="adapter"):
         Catalog.load(_write(tmp_path, executable), tmp_path, adapters={})
+
+
+def test_load_directory_merges_catalog_files_in_name_order(tmp_path: Path) -> None:
+    (tmp_path / "b-second.yaml").write_text(yaml.safe_dump(
+        {"schema_version": 1, "etls": [_entry(id="client.b.job")]}), encoding="utf-8")
+    (tmp_path / "a-first.yaml").write_text(yaml.safe_dump(
+        {"schema_version": 1, "etls": [_entry(id="client.a.job")]}), encoding="utf-8")
+
+    catalog = Catalog.load_directory(tmp_path, tmp_path)
+
+    assert tuple(item.id for item in catalog) == ("client.a.job", "client.b.job")
+    assert catalog["client.b.job"].id == "client.b.job"
+
+
+def test_load_directory_rejects_cross_file_duplicates_and_empty(tmp_path: Path) -> None:
+    with pytest.raises(CatalogError, match="no catalog files"):
+        Catalog.load_directory(tmp_path, tmp_path)
+    for name in ("one.yaml", "two.yaml"):
+        (tmp_path / name).write_text(yaml.safe_dump(
+            {"schema_version": 1, "etls": [_entry(id="client.same.job")]}), encoding="utf-8")
+
+    with pytest.raises(CatalogError, match="across catalog files"):
+        Catalog.load_directory(tmp_path, tmp_path)
+
+
+def test_repository_registry_directory_exposes_seven_entries() -> None:
+    adapters = {"naranjax.ma.chat": object(), "naranjax.ma.voice": object(),
+                "naranjax.ma.voice.pct": object(), "naranjax.mt.voice": object(),
+                "naranjax.ma.chat.pct": object(), "naranjax.mt.voice.pct": object(),
+                "naranjax.mt.voice.back": object()}
+
+    catalog = Catalog.load_directory(Path("registry"), Path.cwd(), adapters=adapters)
+
+    assert len(tuple(catalog)) == 7
