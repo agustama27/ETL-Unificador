@@ -42,6 +42,8 @@ class ArtifactRole(StrEnum):
     ANOMALIES = "anomalies"
     SURVEY_BASE = "survey_base"
     SURVEY_BASE_E164 = "survey_base_e164"
+    BASE_FILTRADA = "base_filtrada"
+    TELEFONOS = "telefonos"
     LEGACY_LOG = "legacy_log"
 
 
