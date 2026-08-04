@@ -75,7 +75,18 @@ def test_repository_catalog_promotes_only_daily_chat_and_voice() -> None:
         "naranjax.ma.voice.pct", (0,), 900
     )
     assert pct.environment_allowlist == ()
-    assert all(not item.executable and item.adapter is None for item in tuple(catalog)[3:])
+    mt = catalog["naranjax.mt.voice.daily"]
+    assert (mt.readiness, mt.executable, mt.command) == (
+        Readiness.CANDIDATE, False, ("python", "../adapters/naranjax/mt_voice_job.py")
+    )
+    assert mt.arguments == {"base": "--input"}
+    assert tuple((item.role, item.required) for item in mt.inputs) == (("base", True),)
+    assert tuple(output.role for output in mt.outputs) == (
+        ArtifactRole.ROMAN, ArtifactRole.E1KIA
+    )
+    assert (mt.adapter, mt.allowed_exits, mt.timeout_seconds) == (
+        "naranjax.mt.voice", (0,), 900
+    )
 
 
 @pytest.mark.parametrize(
