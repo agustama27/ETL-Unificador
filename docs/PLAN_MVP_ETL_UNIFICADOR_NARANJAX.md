@@ -6,17 +6,16 @@ subprocess. No cambia los ETLs legacy ni sus reglas de negocio.
 
 ### Estado de implementación
 
-El catálogo expone seis ETLs ejecutables — Chat daily, Voice daily, Voice PCT,
-Chat PCT, MT PCT y MT daily — sin entradas inertes. Los cuatro jobs de
-tipificaciones/back son corridas stateless; las suites de contrato legacy
-quedaron verdes (27, 25 y 7 passed) tras alinear `TIPIF_MAP` y `USUEVOLTIS`.
-Chat PCT y MT PCT reusan el adapter PCT existente (promoción sólo por
-catálogo); MT daily se invoca mediante el wrapper del unificador
-`adapters/naranjax/mt_voice_job.py` sin editar legacy. Único job legacy fuera
-del catálogo: MT `--back` (LOGCALL+historial+M30), que carece de suite de
-contrato propia y requiere soporte multi-input en el core. Esta evidencia NO
-implica ejecución con datos reales, aceptación productiva ni UAT: las tres
-siguen pendientes.
+El catálogo expone SIETE ETLs ejecutables — Chat daily, Voice daily, Voice
+PCT, Chat PCT, MT PCT, MT back (USUEVOLTIS) y MT daily — y no queda ningún
+job legacy fuera del catálogo. Los cinco jobs de tipificaciones/back son
+corridas stateless; las suites de contrato legacy quedaron verdes (27, 25 y
+10 passed) tras alinear `TIPIF_MAP`/`USUEVOLTIS` y agregar la suite de
+contrato de `--back`. Chat PCT y MT PCT reusan el adapter PCT (promoción sólo
+por catálogo); MT daily usa el wrapper `adapters/naranjax/mt_voice_job.py`;
+MT back estrenó el contrato multi-input del core (`RunRequest.extras`, CLI
+`--input ROLE=PATH`, rol `anomalies`). Esta evidencia NO implica ejecución
+con datos reales, aceptación productiva ni UAT: las tres siguen pendientes.
 
 **Resultado propuesto:** catálogo versionado, runner común desacoplado, sandbox
 auditable por corrida, estado mensual protegido y un primer CLI que envuelve el

@@ -41,8 +41,7 @@ def test_repository_catalog_promotes_only_daily_chat_and_voice() -> None:
         "naranjax.ma.voice.pct", "naranjax.ma.chat.pct",
         "naranjax.mt.voice.pct", "naranjax.mt.voice.back",
         "naranjax.mt.voice.daily")
-    assert all(item.executable and item.readiness is Readiness.READY
-               for item in catalog if item.id != "naranjax.mt.voice.back")
+    assert all(item.executable and item.readiness is Readiness.READY for item in catalog)
     chat = catalog["naranjax.ma.chat.daily"]
     assert (chat.readiness, chat.executable, chat.command) == (Readiness.READY, True, (
         "python", "back-base/ejecutar_dia.py",
