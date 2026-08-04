@@ -8,6 +8,7 @@ from typing import Protocol
 
 from adapters.naranjax.ma_chat import MaChatAdapter
 from adapters.naranjax.ma_voice import MaVoiceAdapter
+from adapters.naranjax.ma_voice_pct import MaVoicePctAdapter
 
 from .catalog import Catalog, CatalogError
 from .models import ETLDefinition, RunRequest, RunResult, RunStatus
@@ -21,7 +22,7 @@ class Service(Protocol):
     def execute(self, request: RunRequest) -> RunResult: ...
 
 
-Adapter = MaChatAdapter | MaVoiceAdapter
+Adapter = MaChatAdapter | MaVoiceAdapter | MaVoicePctAdapter
 ServiceFactory = Callable[[ETLDefinition, Adapter], Service]
 
 
@@ -53,7 +54,11 @@ def _service(definition: ETLDefinition, workspace: Path, adapter: Adapter) -> Ru
 
 
 def _adapters() -> dict[str, Adapter]:
-    return {"naranjax.ma.chat": MaChatAdapter(), "naranjax.ma.voice": MaVoiceAdapter()}
+    return {
+        "naranjax.ma.chat": MaChatAdapter(),
+        "naranjax.ma.voice": MaVoiceAdapter(),
+        "naranjax.ma.voice.pct": MaVoicePctAdapter(),
+    }
 
 
 def main(argv: Sequence[str] | None = None, *, adapters: Mapping[str, Adapter] | None = None,

@@ -66,7 +66,7 @@ def test_repository_catalog_promotes_only_daily_chat_and_voice() -> None:
     assert voice.environment_allowlist == ("NARANJAX_PLANES_MIN_COVERAGE",)
     pct = catalog["naranjax.ma.voice.pct"]
     assert (pct.readiness, pct.executable, pct.command) == (
-        Readiness.CANDIDATE, False, ("python", "back-resultados/etl_tipificaciones_ia_voz_pct.py")
+        Readiness.READY, True, ("python", "back-resultados/etl_tipificaciones_ia_voz_pct.py")
     )
     assert pct.arguments == {"base": "--input"}
     assert tuple((item.role, item.required) for item in pct.inputs) == (("base", True),)
