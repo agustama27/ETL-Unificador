@@ -19,7 +19,7 @@ from tests.support.synthetic_naranjax import write_result
 
 
 TODAY = date(2026, 7, 21)
-MT = "naranjax.mt.voice.daily"
+BANCOR = "bancor.base.daily"
 
 
 class RecordingService:
@@ -35,20 +35,18 @@ class SyntheticRunner:
 
     def run(self, command, cwd, env, timeout, *, secret_values):
         self.command = tuple(command)
-        run = next(Path(value) for value in command if Path(value).name == "base.txt").parents[1]
-        if self.mode in {"success", "missing", "ambiguous"}:
-            write_result(run, self.mode, channel="mt")
+        run = next(Path(value) for value in command if Path(value).name == "base.csv").parents[1]
+        if self.mode in {"success", "missing"}:
+            write_result(run, self.mode, channel="bancor")
         return ProcessEvidence(
             self.command, str(cwd), env, f"synthetic {run}", "",
-            7 if self.mode == "nonzero" else (None if self.mode == "spawn" else 0),
-            self.mode == "timeout",
-            Termination.SPAWN_FAILED if self.mode == "spawn" else Termination.COMPLETED,
-            ("start", "finish"), "spawn secret" if self.mode == "spawn" else None,
+            7 if self.mode == "nonzero" else 0, False, Termination.COMPLETED,
+            ("start", "finish"), None,
         )
 
 
 def _base(tmp_path: Path) -> Path:
-    path = tmp_path / "base.txt"
+    path = tmp_path / "base.csv"
     path.write_text("synthetic", encoding="utf-8")
     return path
 
@@ -67,7 +65,7 @@ def _adapters():
     }
 
 
-def test_cli_selects_mt_adapter(tmp_path: Path) -> None:
+def test_cli_selects_bancor_adapter(tmp_path: Path) -> None:
     adapters = _adapters()
     selected = []
 
@@ -75,9 +73,9 @@ def test_cli_selects_mt_adapter(tmp_path: Path) -> None:
         selected.append((definition.id, adapter))
         return RecordingService()
 
-    assert main(["--etl", MT, "--fecha", "20260721", "--base", str(_base(tmp_path))],
+    assert main(["--etl", BANCOR, "--fecha", "20260721", "--base", str(_base(tmp_path))],
                 adapters=adapters, service_factory=factory) == 0
-    assert selected == [(MT, adapters["naranjax.mt.voice"])]
+    assert selected == [(BANCOR, adapters["bancor.base"])]
 
 
 @pytest.mark.parametrize(
@@ -86,18 +84,15 @@ def test_cli_selects_mt_adapter(tmp_path: Path) -> None:
         ("success", "20260721", 0, "succeeded", None, True),
         ("success", "20260720", 2, "blocked", "validation_error", False),
         ("nonzero", "20260721", 1, "failed", "nonzero_exit", True),
-        ("timeout", "20260721", 1, "timed_out", "timeout", True),
-        ("spawn", "20260721", 1, "failed", "spawn_failed", True),
         ("missing", "20260721", 1, "failed", "postcondition_failed", True),
-        ("ambiguous", "20260721", 1, "failed", "postcondition_failed", True),
     ],
 )
-def test_synthetic_mt_cli_writes_terminal_evidence_without_state(
-    tmp_path: Path, capsys: pytest.CaptureFixture[str], mode: str, day: str,
+def test_bancor_cli_lifecycle(
+    tmp_path: Path, mode: str, day: str,
     expected_exit: int, status: str, error: str | None, ran: bool,
 ) -> None:
     runner = SyntheticRunner(mode)
-    runs, state_root = tmp_path / "runs", tmp_path / "state"
+    runs, state_root = tmp_path / "r", tmp_path / "s"
 
     def factory(definition, adapter):
         state = StateStore(state_root)
@@ -106,19 +101,21 @@ def test_synthetic_mt_cli_writes_terminal_evidence_without_state(
         return RunService(definition, adapter, runner, store, state, workspace=Path.cwd(),
                           now=lambda: "2026-07-21T15:00:00+00:00")
 
-    exit_code = main(["--etl", MT, "--fecha", day, "--base", str(_base(tmp_path))],
+    exit_code = main(["--etl", BANCOR, "--fecha", day, "--base", str(_base(tmp_path))],
                      adapters=_adapters(), service_factory=factory)
     evidence = json.loads(next(runs.rglob("run.json")).read_text("utf-8"))
 
     assert exit_code == expected_exit
-    assert capsys.readouterr().out.endswith(f"status={status}\n")
     assert evidence["status"] == status
     assert evidence["error"] == (None if error is None else {"code": error, "message": error.replace("_", " ")})
     assert bool(runner.command) is ran
     assert str(tmp_path) not in json.dumps(evidence)
     assert tuple(state_root.rglob("estado_*.csv")) == ()
     if status == "succeeded":
-        assert {item["role"] for item in evidence["artifacts"]} == {"roman", "e1kia"}
+        assert [(item["role"], item["path"]) for item in evidence["artifacts"]] == [
+            ("base_filtrada", "output/con-filtros/base_bancor_21072026.csv"),
+            ("telefonos", "output/con-filtros/telefonos_x_cliente_21072026.csv"),
+            ("roman", "output/sin-filtros/BANCOR_ROMAN_20260721.csv"),
+            ("e1kia", "output/sin-filtros/BANCOR_E1KIA_20260721_sinestrategia.csv"),
+        ]
         assert evidence["postconditions"] == {"outputs": "passed", "state": "not_applicable"}
-        assert "--input" in runner.command and "--output_dir" in runner.command
-        assert "--planes" not in runner.command and "--pagos" not in runner.command

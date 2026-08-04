@@ -25,7 +25,7 @@ _FIELDS = {
     "request_date_format", "output_date_source", "environment_allowlist",
 }
 _REQUIRED = {"id", "name", "repository_status", "readiness", "executable", "project_path"}
-_DATE_FORMATS = {"YYYYMMDD", "YYMMDD"}
+_DATE_FORMATS = {"YYYYMMDD", "YYMMDD", "DDMMYYYY"}
 _ENVIRONMENT_NAME = re.compile(r"^[A-Z_][A-Z0-9_]*$")
 
 

@@ -11,6 +11,10 @@ OUTPUTS = {
     "mt_pct": ("DEELO_NAR_USUEVOLTIS_20260721.txt",),
     "back": ("DEELO_NAR_USUEVOLTIS_20260721_15.txt", "_anomalias_20260721_153000.txt"),
     "encuestacx": ("base_encuesta.csv", "base_encuesta_e164.csv"),
+    "bancor": ("con-filtros/base_bancor_21072026.csv",
+               "con-filtros/telefonos_x_cliente_21072026.csv",
+               "sin-filtros/BANCOR_ROMAN_20260721.csv",
+               "sin-filtros/BANCOR_E1KIA_20260721_sinestrategia.csv"),
 }
 
 AMBIGUOUS = {
@@ -30,6 +34,8 @@ def write_result(run: Path, mode: str = "success", *, channel: str = "chat") -> 
     elif mode == "ambiguous":
         names.append(AMBIGUOUS[channel])
     for name in names:
-        (run / "output" / name).write_text("synthetic", encoding="utf-8")
+        target = run / "output" / name
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_text("synthetic", encoding="utf-8")
     if channel in {"chat", "voice"}:
         (run / "state" / "estado_202607.csv").write_text("state", encoding="utf-8")
