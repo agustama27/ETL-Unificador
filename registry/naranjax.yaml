@@ -83,6 +83,22 @@ etls:
   - id: naranjax.mt.voice.daily
     name: Naranja X MT Voice daily
     repository_status: present
-    readiness: blocked
+    readiness: candidate
     executable: false
     project_path: soho-naranjaX-MT-etl
+    working_dir: soho-naranjaX-MT-etl
+    entrypoint: adapters/naranjax/mt_voice_job.py
+    command: [python, ../adapters/naranjax/mt_voice_job.py]
+    fixed_arguments: []
+    arguments:
+      base: --input
+    inputs:
+      - {role: base, extensions: [.txt], required: true}
+    outputs:
+      - {role: roman, glob: 'NARANJAX_MT_ROMAN_*.csv', date_format: YYMMDD}
+      - {role: e1kia, glob: 'NARANJAX_MT_E1KIA_*.csv', date_format: YYMMDD}
+    allowed_exits: [0]
+    timeout_seconds: 900
+    request_date_format: YYYYMMDD
+    output_date_source: system_date
+    adapter: naranjax.mt.voice
