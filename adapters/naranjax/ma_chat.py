@@ -17,6 +17,8 @@ class PostconditionError(RuntimeError):
 
 
 class MaChatAdapter:
+    requires_state_change = False
+
     def __init__(self, *, today=date.today) -> None:
         self._today = today
 

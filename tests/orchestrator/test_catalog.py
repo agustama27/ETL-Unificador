@@ -26,10 +26,11 @@ def _write(tmp_path: Path, entry: dict[str, object], **root: object) -> Path:
     return path
 
 
-def test_repository_catalog_describes_complete_inert_voice_contract() -> None:
+def test_repository_catalog_promotes_only_daily_chat_and_voice() -> None:
+    adapters = {"naranjax.ma.chat": object(), "naranjax.ma.voice": object()}
     catalog = Catalog.load(
         Path("registry/naranjax.yaml"), Path.cwd(),
-        adapters={"naranjax.ma.chat": object()},
+        adapters=adapters,
     )
 
     assert tuple(item.id for item in catalog) == (
@@ -45,7 +46,7 @@ def test_repository_catalog_describes_complete_inert_voice_contract() -> None:
     assert chat.adapter == "naranjax.ma.chat"
     voice = catalog["naranjax.ma.voice.daily"]
     assert (voice.readiness, voice.executable, voice.command) == (
-        Readiness.CANDIDATE, False, ("python", "back-base/ejecutar_dia.py")
+        Readiness.READY, True, ("python", "back-base/ejecutar_dia.py")
     )
     assert voice.fixed_arguments == ()
     assert voice.arguments == {

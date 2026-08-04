@@ -75,7 +75,7 @@ def test_cli_maps_arguments_and_terminal_statuses(
     service = RecordingService(status)
     arguments = ["--etl", ETL, "--fecha", "20260721", "--base", str(_base(tmp_path)), *extras]
 
-    assert main(arguments, service_factory=lambda definition: service) == expected_exit
+    assert main(arguments, service_factory=lambda definition, adapter: service) == expected_exit
     request = service.request
     assert request is not None
     assert request.business_date == TODAY
@@ -94,7 +94,7 @@ def test_synthetic_cli_run_always_writes_terminal_evidence(
     runner = SyntheticRunner()
     runs, state_root = tmp_path / "runs", tmp_path / "state"
 
-    def factory(definition):
+    def factory(definition, adapter):
         state = StateStore(state_root)
         store = RunStore(runs, state_root,
                          now=lambda: datetime(2026, 7, 21, 15, tzinfo=timezone.utc))

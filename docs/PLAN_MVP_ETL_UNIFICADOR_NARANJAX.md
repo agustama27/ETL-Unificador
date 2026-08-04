@@ -1,9 +1,14 @@
 # Plan del MVP — ETL Unificador Naranja X
 ## Resultado y camino de revisión
 Este plan define un MVP conservador que registra los ETLs Naranja X y ejecuta
-solamente `naranjax.ma.chat.daily` mediante un adapter de subprocess. No cambia
-los ETLs legacy ni sus reglas de negocio. La ejecución funcional empieza recién
-después de aprobar este documento y resolver las decisiones abiertas.
+`naranjax.ma.chat.daily` y `naranjax.ma.voice.daily` mediante adapters de
+subprocess. No cambia los ETLs legacy ni sus reglas de negocio.
+
+### Estado de implementación
+
+Chat y Voice daily están listos para verificación sintética desde el CLI
+unificado. Voice PCT y MT permanecen inertes. Esta evidencia NO implica ejecución
+con datos reales, aceptación productiva ni UAT: las tres siguen pendientes.
 
 **Resultado propuesto:** catálogo versionado, runner común desacoplado, sandbox
 auditable por corrida, estado mensual protegido y un primer CLI que envuelve el
@@ -17,9 +22,9 @@ entry point real de Chat MA con guardas explícitas.
 5. Confirmar fases, PRs apilados, aceptación y fuera de alcance.
 
 ### Decisión solicitada
-- Aprobar Chat MA diario como único piloto ejecutable.
+- Revisar Chat y Voice MA daily como pilotos ejecutables con evidencia sintética.
 - Aprobar los defaults provisionales de fecha, estado, retry, lock y timeout.
-- Mantener Voice, PCT y MT catalogados pero no ejecutables hasta sus propios PRs.
+- Mantener Voice PCT y MT catalogados pero no ejecutables hasta sus propios PRs.
 
 ## Alcance y principios
 | Tema | Decisión de este plan |
@@ -143,8 +148,8 @@ etls:
   - id: naranjax.ma.chat.daily
     name: Naranja X MA Chat - Proceso diario
     repository_status: present
-    status: adapter_candidate_with_guardrails
-    executable: false  # true sólo después de Unit 4
+    status: ready
+    executable: true
     project_path: SOHO-Chat-NX_MA-ETL
     working_dir: SOHO-Chat-NX_MA-ETL
     command: [python, back-base/ejecutar_dia.py]
@@ -181,8 +186,8 @@ etls:
   - id: naranjax.ma.voice.daily
     name: Naranja X MA Voz - Proceso diario
     repository_status: present
-    status: adapter_candidate_with_guardrails
-    executable: false
+    status: ready
+    executable: true
     project_path: soho-naranjaX-MA-etl
 
   - id: naranjax.ma.voice.pct
@@ -336,7 +341,7 @@ Cada slice incluye sus tests y docs, apunta a no superar 400 líneas cambiadas o
 solicita una excepción explícita, y debe poder revisarse en menos de 60 minutos.
 
 ## Criterios de aceptación del MVP funcional futuro
-- [x] Catálogo con cuatro IDs; sólo Chat daily ejecutable por el comando documentado.
+- [x] Catálogo con cuatro IDs; Chat y Voice daily ejecutables, PCT y MT inertes.
 - [x] Paths mutables en sandbox; inputs con hash/tamaño y sin datos reales versionados.
 - [x] Cada corrida registra `run.json`, streams, log legacy, comando/cwd, exit/timeout/error.
 - [x] Diff detecta ROMAN/CHAT/E1KIA; exit `0` con faltantes termina `failed`.

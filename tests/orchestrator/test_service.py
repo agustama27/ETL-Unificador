@@ -45,8 +45,10 @@ class FakeState:
         self.error = error
         self.promotions = 0
 
-    def promote(self, etl_id: str, business_date: date, staged: Path, run_id: str) -> object:
+    def promote(self, etl_id: str, business_date: date, staged: Path, run_id: str,
+                *, require_change: bool = False) -> object:
         self.promotions += 1
+        assert require_change is False
         assert staged.read_text("utf-8") == "state"
         if self.error:
             raise self.error
@@ -62,7 +64,8 @@ def service(tmp_path: Path, mode: str = "success", state_error: Any = None):
         uuid_factory=iter((f"id-{n}" for n in range(30))).__next__,
     )
     definition = Catalog.load(Path("registry/naranjax.yaml"), Path.cwd(),
-                              adapters={"naranjax.ma.chat": object()})[ETL]
+                              adapters={"naranjax.ma.chat": object(),
+                                        "naranjax.ma.voice": object()})[ETL]
     subject = RunService(definition, MaChatAdapter(today=lambda: TODAY), runner, store, state,
                          workspace=Path.cwd(), now=lambda: "2026-07-21T15:00:00+00:00")
     return subject, runner, state, store
