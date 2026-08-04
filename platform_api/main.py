@@ -1,0 +1,337 @@
+"""FastAPI layer for the ETL Unificador web console.
+
+Wraps the existing orchestrator (catalog, service, stores) without touching
+it. Named ``platform_api`` instead of the handoff's ``platform`` because a
+top-level ``platform`` package would shadow the stdlib module of the same
+name (pandas imports it).
+"""
+
+from __future__ import annotations
+
+import io
+import json
+import shutil
+import threading
+import zipfile
+from datetime import date, datetime, timezone
+from pathlib import Path
+from typing import Any, Callable
+from uuid import uuid4
+
+from fastapi import FastAPI, Form, HTTPException, Request
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse, Response
+from starlette.datastructures import UploadFile
+
+from orchestrator.catalog import Catalog
+from orchestrator.models import ETLDefinition, RunRequest
+from orchestrator.run import _adapters
+from orchestrator.run_store import RunStore
+from orchestrator.runner import Runner
+from orchestrator.service import RunService
+from orchestrator.state_store import StateStore
+
+from .catalog_meta import DEADLINE_HINTS, INERT_REASONS, client_of
+
+LIVE_STATUSES = {"preparing", "running"}
+FILE_ROLES = ("base", "planes", "pagos", "logcall", "historial",
+              "approach", "clientes", "excluidos")
+
+
+class _ReservedRunStore:
+    """Store proxy whose first create_run returns a pre-reserved run dir."""
+
+    def __init__(self, store: RunStore, reserved: Path) -> None:
+        self._store, self._reserved = store, reserved
+
+    def create_run(self, etl_id: str) -> Path:
+        if self._reserved is not None:
+            reserved, self._reserved = self._reserved, None
+            return reserved
+        return self._store.create_run(etl_id)
+
+    def __getattr__(self, name: str) -> Any:
+        return getattr(self._store, name)
+
+
+def _default_service_factory(definition: ETLDefinition, adapter: Any,
+                             store: Any, workspace: Path) -> RunService:
+    return RunService(
+        definition, adapter, Runner(), store,
+        StateStore(workspace / "var/state"), workspace=workspace,
+        now=lambda: datetime.now(timezone.utc).isoformat(),
+    )
+
+
+def _default_executor(job: Callable[[], None]) -> None:
+    threading.Thread(target=job, daemon=True).start()
+
+
+def _read_run(run_dir: Path) -> dict[str, Any]:
+    return json.loads((run_dir / "run.json").read_text("utf-8"))
+
+
+def _run_summary(run_dir: Path, document: dict[str, Any]) -> dict[str, Any]:
+    lifecycle = document.get("lifecycle") or []
+    started = lifecycle[0]["at"] if lifecycle else None
+    finished = lifecycle[-1]["at"] if document.get("status") not in LIVE_STATUSES and lifecycle else None
+    return {
+        "run_id": run_dir.name,
+        "etl_id": document.get("etl_id"),
+        "client": client_of(document.get("etl_id", "")),
+        "business_date": document.get("business_date"),
+        "status": document.get("status"),
+        "error_code": (document.get("error") or {}).get("code"),
+        "started_at": started,
+        "finished_at": finished,
+        "artifacts_count": len(document.get("artifacts") or []),
+    }
+
+
+def _run_detail(run_dir: Path, document: dict[str, Any]) -> dict[str, Any]:
+    process = document.get("process") or {}
+    stdout = (process.get("stdout") or "").splitlines()
+    detail = _run_summary(run_dir, document)
+    detail.update({
+        "command": process.get("command") or [],
+        "exit_code": process.get("exit_code"),
+        "timed_out": process.get("timed_out"),
+        "inputs": [
+            {"role": item["role"], "name": Path(item["path"]).name,
+             "size": item["size"], "sha256": item["sha256"]}
+            for item in document.get("inputs") or []
+        ],
+        "artifacts": [
+            {"role": item["role"], "name": Path(item["path"]).name,
+             "size": item["size"], "path": item["path"]}
+            for item in document.get("artifacts") or []
+        ],
+        "logs": {
+            "stdout_tail": "\n".join(stdout[-40:]),
+            "stderr": process.get("stderr") or "",
+        },
+        "postconditions": document.get("postconditions"),
+        "state": document.get("state"),
+    })
+    return detail
+
+
+def create_app(workspace: Path | None = None, *,
+               adapters: dict[str, Any] | None = None,
+               service_factory: Callable[..., Any] | None = None,
+               executor: Callable[[Callable[[], None]], None] | None = None,
+               today: Callable[[], date] = date.today) -> FastAPI:
+    workspace = (workspace or Path(__file__).resolve().parents[1]).resolve()
+    registered = adapters if adapters is not None else _adapters()
+    build_service = service_factory or _default_service_factory
+    run_job = executor or _default_executor
+    runs_root = workspace / "var/runs"
+    state_root = workspace / "var/state"
+
+    app = FastAPI(title="ETL Unificador — Consola")
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=["http://localhost:5173", "http://127.0.0.1:5173"],
+        allow_methods=["*"], allow_headers=["*"],
+    )
+
+    def catalog() -> Catalog:
+        return Catalog.load_directory(workspace / "registry", workspace,
+                                      adapters=registered)
+
+    def find_run(run_id: str) -> Path:
+        if not runs_root.exists():
+            raise HTTPException(404, "corrida no encontrada")
+        for etl_dir in runs_root.iterdir():
+            candidate = etl_dir / run_id
+            if (candidate / "run.json").exists():
+                return candidate
+        raise HTTPException(404, "corrida no encontrada")
+
+    @app.get("/api/catalog")
+    def get_catalog() -> list[dict[str, Any]]:
+        entries = []
+        for item in catalog():
+            adapter = registered.get(item.adapter) if item.adapter else None
+            entries.append({
+                "id": item.id,
+                "name": item.name,
+                "client": client_of(item.id),
+                "readiness": item.readiness.value,
+                "executable": item.executable,
+                "reason": INERT_REASONS.get(item.id),
+                "stateful": bool(getattr(adapter, "stateful", False)),
+                "has_no_planes_flag": "no_planes_today" in item.arguments,
+                "inputs": [
+                    {"role": spec.role, "extensions": list(spec.extensions),
+                     "required": spec.required}
+                    for spec in item.inputs
+                ],
+                "outputs": [
+                    {"role": spec.role.value, "glob": spec.glob,
+                     "date_format": spec.date_format}
+                    for spec in item.outputs
+                ],
+                "timeout_seconds": item.timeout_seconds,
+                "deadline_hint": DEADLINE_HINTS.get(item.id),
+            })
+        return entries
+
+    @app.post("/api/runs", status_code=202)
+    async def post_run(request: Request,
+                       etl_id: str = Form(...),
+                       business_date: str = Form(...),
+                       no_planes_today: bool = Form(False)) -> dict[str, Any]:
+        try:
+            definition = catalog()[etl_id]
+        except Exception as error:
+            raise HTTPException(404, f"ETL desconocido: {etl_id}") from error
+        if not definition.executable or definition.adapter is None:
+            raise HTTPException(409, "El ETL no es ejecutable")
+        try:
+            parsed_date = date.fromisoformat(business_date)
+        except ValueError as error:
+            raise HTTPException(422, "Fecha inválida") from error
+        if parsed_date != today():
+            raise HTTPException(
+                422, "Solo se acepta la fecha de negocio de hoy")
+
+        form = await request.form()
+        uploads: dict[str, UploadFile] = {
+            role: value for role, value in form.items()
+            if role in FILE_ROLES and isinstance(value, UploadFile) and value.filename
+        }
+        declared = {spec.role: spec for spec in definition.inputs}
+        for role in uploads:
+            if role not in declared:
+                raise HTTPException(422, f"El ETL no declara la entrada '{role}'")
+        for role, spec in declared.items():
+            upload = uploads.get(role)
+            if upload is None:
+                if spec.required:
+                    raise HTTPException(422, f"Falta el archivo requerido: {role}")
+                continue
+            suffix = Path(upload.filename or "").suffix.casefold()
+            allowed = {ext.casefold() for ext in spec.extensions}
+            if suffix not in allowed:
+                raise HTTPException(
+                    422, f"Extensión inválida para {role}: se espera "
+                         f"{', '.join(sorted(allowed))}")
+
+        upload_dir = workspace / "var/uploads" / str(uuid4())
+        upload_dir.mkdir(parents=True, exist_ok=True)
+        staged: dict[str, Path] = {}
+        for role, upload in uploads.items():
+            suffix = Path(upload.filename or "").suffix.casefold()
+            target = upload_dir / f"{role}{suffix}"
+            with target.open("wb") as stream:
+                shutil.copyfileobj(upload.file, stream)
+            staged[role] = target
+
+        store = RunStore(runs_root, state_root)
+        reserved = store.create_run(etl_id)
+        adapter = registered[definition.adapter]
+        service = build_service(definition, adapter,
+                                _ReservedRunStore(store, reserved), workspace)
+        run_request = RunRequest(
+            etl_id, parsed_date, staged["base"],
+            planes=staged.get("planes"), pagos=staged.get("pagos"),
+            no_planes_today=no_planes_today,
+            extras={role: path for role, path in staged.items()
+                    if role not in ("base", "planes", "pagos")},
+        )
+        run_job(lambda: service.execute(run_request))
+        return {"run_id": reserved.name, "status": "preparing"}
+
+    @app.get("/api/runs/{run_id}")
+    def get_run(run_id: str) -> dict[str, Any]:
+        run_dir = find_run(run_id)
+        return _run_detail(run_dir, _read_run(run_dir))
+
+    @app.get("/api/runs")
+    def list_runs(client: str | None = None, etl_id: str | None = None,
+                  status: str | None = None, business_date: str | None = None,
+                  page: int = 1, page_size: int = 10) -> dict[str, Any]:
+        items = []
+        if runs_root.exists():
+            for etl_dir in sorted(runs_root.iterdir()):
+                for run_dir in etl_dir.iterdir():
+                    if not (run_dir / "run.json").exists():
+                        continue
+                    summary = _run_summary(run_dir, _read_run(run_dir))
+                    if etl_id and summary["etl_id"] != etl_id:
+                        continue
+                    if client and summary["client"] != client:
+                        continue
+                    if status and summary["status"] != status:
+                        continue
+                    if business_date and summary["business_date"] != business_date:
+                        continue
+                    items.append(summary)
+        items.sort(key=lambda item: item["run_id"], reverse=True)
+        total = len(items)
+        pages = max(1, -(-total // page_size))
+        start = (page - 1) * page_size
+        return {"items": items[start:start + page_size], "total": total,
+                "page": page, "pages": pages}
+
+    @app.get("/api/runs/{run_id}/artifacts.zip")
+    def download_all(run_id: str) -> Response:
+        run_dir = find_run(run_id)
+        document = _read_run(run_dir)
+        buffer = io.BytesIO()
+        with zipfile.ZipFile(buffer, "w", zipfile.ZIP_DEFLATED) as archive:
+            archive.write(run_dir / "run.json", "run.json")
+            for item in document.get("artifacts") or []:
+                source = run_dir / item["path"]
+                archive.write(source, Path(item["path"]).name)
+        headers = {"Content-Disposition":
+                   f'attachment; filename="{run_id}_artefactos.zip"'}
+        return Response(buffer.getvalue(), media_type="application/zip",
+                        headers=headers)
+
+    @app.get("/api/runs/{run_id}/artifacts/{role}")
+    def download_artifact(run_id: str, role: str) -> FileResponse:
+        run_dir = find_run(run_id)
+        for item in _read_run(run_dir).get("artifacts") or []:
+            if item["role"] == role:
+                path = run_dir / item["path"]
+                return FileResponse(path, filename=Path(item["path"]).name)
+        raise HTTPException(404, f"artefacto no encontrado: {role}")
+
+    @app.post("/api/runs/{run_id}/actions/{action}")
+    def run_action(run_id: str, action: str) -> dict[str, Any]:
+        run_dir = find_run(run_id)
+        document = _read_run(run_dir)
+        etl = document["etl_id"]
+        if action == "notify_dev":
+            log = workspace / "var/notifications.jsonl"
+            log.parent.mkdir(parents=True, exist_ok=True)
+            with log.open("a", encoding="utf-8") as stream:
+                stream.write(json.dumps({
+                    "at": datetime.now(timezone.utc).isoformat(),
+                    "run_id": run_id, "etl_id": etl,
+                    "error_code": (document.get("error") or {}).get("code"),
+                }) + "\n")
+            return {"ok": True, "action": action}
+        if action == "free_lock":
+            for etl_dir in runs_root.iterdir():
+                for other in etl_dir.iterdir():
+                    if not (other / "run.json").exists():
+                        continue
+                    live = _read_run(other)
+                    if live.get("etl_id") == etl and live.get("status") in LIVE_STATUSES:
+                        raise HTTPException(
+                            409, "Hay una corrida activa de este ETL; no se puede liberar el lock")
+            month = today().strftime("%Y%m")
+            lock = state_root / etl / month / ".lock"
+            if lock.exists():
+                lock.rmdir()
+                return {"ok": True, "action": action, "freed": True}
+            return {"ok": True, "action": action, "freed": False}
+        raise HTTPException(404, f"acción desconocida: {action}")
+
+    return app
+
+
+app = create_app()
