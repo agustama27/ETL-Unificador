@@ -39,6 +39,7 @@ class ArtifactRole(StrEnum):
     CHAT = "chat"
     E1KIA = "e1kia"
     PCT = "pct"
+    ANOMALIES = "anomalies"
     LEGACY_LOG = "legacy_log"
 
 
@@ -92,11 +93,15 @@ class RunRequest:
     planes: Path | None = None
     pagos: Path | None = None
     no_planes_today: bool = False
+    extras: Mapping[str, Path] = field(
+        default_factory=lambda: MappingProxyType({})
+    )
     environment: Mapping[str, str] = field(
         default_factory=lambda: MappingProxyType({})
     )
 
     def __post_init__(self) -> None:
+        object.__setattr__(self, "extras", MappingProxyType(dict(self.extras)))
         object.__setattr__(self, "environment", MappingProxyType(dict(self.environment)))
 
 

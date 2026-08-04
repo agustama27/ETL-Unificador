@@ -26,6 +26,8 @@ class MaChatAdapter:
     def validate(self, request: RunRequest) -> None:
         if request.business_date != self._today():
             raise ValidationError("business date must equal host-local today")
+        if request.extras:
+            raise ValidationError("unexpected extra inputs")
         if request.planes is None and not request.no_planes_today:
             raise ValidationError("omitted PLANES requires no_planes_today")
         if request.planes is not None and request.no_planes_today:

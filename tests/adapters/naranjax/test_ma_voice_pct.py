@@ -117,3 +117,8 @@ def test_rejects_each_invalid_pct_output(tmp_path: Path, classification: str) ->
 
     with pytest.raises(PostconditionError, match=f"pct: {classification}"):
         _adapter().outputs(_definition(), before, after)
+
+
+def test_rejects_extra_inputs(tmp_path: Path) -> None:
+    with pytest.raises(ValidationError, match="extra"):
+        _adapter().validate(_request(tmp_path, extras={"logcall": tmp_path / "x.csv"}))

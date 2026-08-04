@@ -34,6 +34,13 @@ def _business_date(value: str) -> date:
         raise argparse.ArgumentTypeError("must be a real date in YYYYMMDD format") from error
 
 
+def _extra_input(value: str) -> tuple[str, Path]:
+    role, separator, path = value.partition("=")
+    if not separator or not role.strip() or not path.strip():
+        raise argparse.ArgumentTypeError("must use ROLE=PATH format")
+    return role.strip(), Path(path.strip())
+
+
 def _parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Run a guarded ETL from the unifier catalog.")
     parser.add_argument("--etl", required=True)
@@ -42,6 +49,8 @@ def _parser() -> argparse.ArgumentParser:
     parser.add_argument("--planes", type=Path)
     parser.add_argument("--pagos", type=Path)
     parser.add_argument("--sin-planes-hoy", action="store_true")
+    parser.add_argument("--input", action="append", type=_extra_input, default=[],
+                        metavar="ROLE=PATH", dest="extras")
     return parser
 
 
@@ -81,6 +90,7 @@ def main(argv: Sequence[str] | None = None, *, adapters: Mapping[str, Adapter] |
         arguments.etl, arguments.fecha, arguments.base,
         planes=arguments.planes, pagos=arguments.pagos,
         no_planes_today=arguments.sin_planes_hoy,
+        extras=dict(arguments.extras),
     ))
     print(f"run={result.run_id} status={result.status.value}")
     if result.status is RunStatus.SUCCEEDED:
