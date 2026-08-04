@@ -224,11 +224,12 @@ def test_repository_registry_directory_exposes_all_client_entries() -> None:
                 "naranjax.ma.voice.pct": object(), "naranjax.mt.voice": object(),
                 "naranjax.ma.chat.pct": object(), "naranjax.mt.voice.pct": object(),
                 "naranjax.mt.voice.back": object(), "encuestacx.base": object(),
-                "bancor.base": object(), "epec.base": object(), "fravega.base": object(), "clarouy.base": object()}
+                "bancor.base": object(), "epec.base": object(), "fravega.base": object(), "clarouy.base": object(),
+                "social.argentina": object(), "social.chile": object()}
 
     catalog = Catalog.load_directory(Path("registry"), Path.cwd(), adapters=adapters)
 
-    assert len(tuple(catalog)) == 18
+    assert len(tuple(catalog)) == 20
     bancor = catalog["bancor.base.daily"]
     assert (bancor.adapter, bancor.project_path) == ("bancor.base", Path("soho-bancor-cobranzas-etl"))
     assert tuple((o.role.value, o.date_format) for o in bancor.outputs) == (

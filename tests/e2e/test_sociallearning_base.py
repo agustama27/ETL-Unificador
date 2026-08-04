@@ -19,7 +19,12 @@ from tests.support.synthetic_naranjax import write_result
 
 
 TODAY = date(2026, 7, 21)
-FRAVEGA = "fravega.base.daily"
+ENTRIES = {
+    "social.argentina.base": (
+        "social_arg", "SOCIAL_ARG_CARTERA_20260721.csv", "argentina"),
+    "social.chile.base": (
+        "social_chi", "SOCIAL_CHI_CARTERA_20260721.csv", "chile"),
+}
 
 
 class RecordingService:
@@ -29,15 +34,15 @@ class RecordingService:
 
 
 class SyntheticRunner:
-    def __init__(self, mode: str) -> None:
-        self.mode = mode
+    def __init__(self, mode: str, channel: str) -> None:
+        self.mode, self.channel = mode, channel
         self.command: tuple[str, ...] = ()
 
     def run(self, command, cwd, env, timeout, *, secret_values):
         self.command = tuple(command)
         run = next(Path(value) for value in command if Path(value).name == "base.csv").parents[1]
         if self.mode == "success":
-            write_result(run, self.mode, channel="fravega")
+            write_result(run, self.mode, channel=self.channel)
         return ProcessEvidence(
             self.command, str(cwd), env, f"synthetic {run}", "",
             7 if self.mode == "nonzero" else 0, False, Termination.COMPLETED,
@@ -70,7 +75,8 @@ def _adapters():
     }
 
 
-def test_cli_selects_fravega_adapter(tmp_path: Path) -> None:
+@pytest.mark.parametrize("etl_id", tuple(ENTRIES))
+def test_cli_selects_each_country_adapter(tmp_path: Path, etl_id: str) -> None:
     adapters = _adapters()
     selected = []
 
@@ -78,11 +84,13 @@ def test_cli_selects_fravega_adapter(tmp_path: Path) -> None:
         selected.append((definition.id, adapter))
         return RecordingService()
 
-    assert main(["--etl", FRAVEGA, "--fecha", "20260721", "--base", str(_base(tmp_path))],
+    assert main(["--etl", etl_id, "--fecha", "20260721", "--base", str(_base(tmp_path))],
                 adapters=adapters, service_factory=factory) == 0
-    assert selected == [(FRAVEGA, adapters["fravega.base"])]
+    key = etl_id.rsplit(".", 1)[0]
+    assert selected == [(etl_id, adapters[key])]
 
 
+@pytest.mark.parametrize("etl_id", tuple(ENTRIES))
 @pytest.mark.parametrize(
     ("mode", "day", "expected_exit", "status", "error", "ran"),
     [
@@ -92,11 +100,12 @@ def test_cli_selects_fravega_adapter(tmp_path: Path) -> None:
         ("missing", "20260721", 1, "failed", "postcondition_failed", True),
     ],
 )
-def test_fravega_cli_lifecycle(
-    tmp_path: Path, mode: str, day: str,
+def test_social_cli_lifecycle(
+    tmp_path: Path, etl_id: str, mode: str, day: str,
     expected_exit: int, status: str, error: str | None, ran: bool,
 ) -> None:
-    runner = SyntheticRunner(mode)
+    channel, artifact, country = ENTRIES[etl_id]
+    runner = SyntheticRunner(mode, channel)
     runs, state_root = tmp_path / "r", tmp_path / "s"
 
     def factory(definition, adapter):
@@ -106,7 +115,7 @@ def test_fravega_cli_lifecycle(
         return RunService(definition, adapter, runner, store, state, workspace=Path.cwd(),
                           now=lambda: "2026-07-21T15:00:00+00:00")
 
-    exit_code = main(["--etl", FRAVEGA, "--fecha", day, "--base", str(_base(tmp_path))],
+    exit_code = main(["--etl", etl_id, "--fecha", day, "--base", str(_base(tmp_path))],
                      adapters=_adapters(), service_factory=factory)
     evidence = json.loads(next(runs.rglob("run.json")).read_text("utf-8"))
 
@@ -117,7 +126,8 @@ def test_fravega_cli_lifecycle(
     assert str(tmp_path) not in json.dumps(evidence)
     assert tuple(state_root.rglob("estado_*.csv")) == ()
     if status == "succeeded":
+        assert ("--country", country) == (runner.command[2], runner.command[3])
         assert [(item["role"], item["path"]) for item in evidence["artifacts"]] == [
-            ("base_filtrada", "output/fravega_base.csv"),
+            ("base_filtrada", f"output/{artifact}"),
         ]
         assert evidence["postconditions"] == {"outputs": "passed", "state": "not_applicable"}

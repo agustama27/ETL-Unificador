@@ -18,6 +18,8 @@ OUTPUTS = {
     "epec": ("EPEC_ROMAN_260721.csv", "EPEC_E1KIA_260721.csv"),
     "fravega": ("fravega_base.csv",),
     "clarouy": ("base_clarouy_21072026.csv", "telefonos_x_cliente_21072026.csv"),
+    "social_arg": ("SOCIAL_ARG_CARTERA_20260721.csv",),
+    "social_chi": ("SOCIAL_CHI_CARTERA_20260721.csv",),
 }
 
 AMBIGUOUS = {

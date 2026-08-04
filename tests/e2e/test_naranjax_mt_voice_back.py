@@ -71,6 +71,8 @@ def _adapters():
         "epec.base": MaVoicePctAdapter(today=lambda: TODAY),
         "fravega.base": MaVoicePctAdapter(today=lambda: TODAY),
         "clarouy.base": MaVoicePctAdapter(today=lambda: TODAY),
+        "social.argentina": MaVoicePctAdapter(today=lambda: TODAY),
+        "social.chile": MaVoicePctAdapter(today=lambda: TODAY),
     }
 
 
