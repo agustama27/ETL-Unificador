@@ -62,8 +62,8 @@ etls:
   - id: naranjax.ma.voice.pct
     name: Naranja X MA Voice PCT
     repository_status: present
-    readiness: candidate
-    executable: false
+    readiness: ready
+    executable: true
     project_path: soho-naranjaX-MA-etl
     working_dir: soho-naranjaX-MA-etl
     entrypoint: soho-naranjaX-MA-etl/back-resultados/etl_tipificaciones_ia_voz_pct.py

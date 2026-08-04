@@ -6,9 +6,11 @@ subprocess. No cambia los ETLs legacy ni sus reglas de negocio.
 
 ### Estado de implementación
 
-Chat y Voice daily están listos para verificación sintética desde el CLI
-unificado. Voice PCT y MT permanecen inertes. Esta evidencia NO implica ejecución
-con datos reales, aceptación productiva ni UAT: las tres siguen pendientes.
+Chat daily, Voice daily y Voice PCT están listos para verificación sintética
+desde el CLI unificado; PCT es la primera corrida stateless de la plataforma y
+su suite de contrato quedó verde (27 passed) tras alinear `TIPIF_MAP`. MT
+permanece inerte. Esta evidencia NO implica ejecución con datos reales,
+aceptación productiva ni UAT: las tres siguen pendientes.
 
 **Resultado propuesto:** catálogo versionado, runner común desacoplado, sandbox
 auditable por corrida, estado mensual protegido y un primer CLI que envuelve el
@@ -24,7 +26,8 @@ entry point real de Chat MA con guardas explícitas.
 ### Decisión solicitada
 - Revisar Chat y Voice MA daily como pilotos ejecutables con evidencia sintética.
 - Aprobar los defaults provisionales de fecha, estado, retry, lock y timeout.
-- Mantener Voice PCT y MT catalogados pero no ejecutables hasta sus propios PRs.
+- Mantener MT catalogado pero no ejecutable hasta sus propios PRs; Voice PCT ya
+  fue promovido en su propia cadena (contrato fix + SDD + adapter/CLI).
 
 ## Alcance y principios
 | Tema | Decisión de este plan |

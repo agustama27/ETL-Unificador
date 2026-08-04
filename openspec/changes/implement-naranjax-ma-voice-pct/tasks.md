@@ -31,7 +31,7 @@ prohibited.
 
 ## Phase 1: PR1 — Adapter, Stateless Contract, Promotion, E2E
 
-- [ ] 1.1 RED — Create `tests/adapters/naranjax/test_ma_voice_pct.py` for the
+- [x] 1.1 RED — Create `tests/adapters/naranjax/test_ma_voice_pct.py` for the
       exact command, today gate, and PLANES/PAGOS/no-PLANES rejection; extend
       `tests/orchestrator/test_service.py` with a stateless adapter double
       proving preflight/staging/promotion are skipped, lock is held, and
@@ -40,17 +40,17 @@ prohibited.
       Run `python -m pytest tests/adapters/naranjax/test_ma_voice_pct.py
       tests/orchestrator/test_service.py tests/orchestrator/test_catalog.py -q`;
       confirm assertion-driven failures.
-- [ ] 1.2 GREEN — Create `adapters/naranjax/ma_voice_pct.py`; add
+- [x] 1.2 GREEN — Create `adapters/naranjax/ma_voice_pct.py`; add
       `ArtifactRole.PCT`; add `stateful` flags and the service skip branch;
       derive staged suffix from the validated source; promote PCT in
       `registry/naranjax.yaml`; register the adapter in `orchestrator/run.py`.
       Rerun the focused command.
-- [ ] 1.3 RED/GREEN — Create `tests/e2e/test_naranjax_ma_voice_pct.py`
+- [x] 1.3 RED/GREEN — Create `tests/e2e/test_naranjax_ma_voice_pct.py`
       covering CLI success (PCT artifact evidenced, no state lineage),
       non-today block, nonzero/timeout/spawn failures, missing and ambiguous
       outputs, and redaction; extend `tests/support/synthetic_naranjax.py` with
       a `pct` channel. Run `python -m pytest tests/e2e/test_naranjax_ma_voice_pct.py -q`.
-- [ ] 1.4 VERIFY — Run the full suite `python -m pytest tests -q`; run the
+- [x] 1.4 VERIFY — Run the full suite `python -m pytest tests -q`; run the
       legacy contract suite `python -m pytest back-resultados/tests -q` inside
       `soho-naranjaX-MA-etl` (expected 27 passed, untouched); inspect
       `git diff --numstat main...HEAD` below 400; update
