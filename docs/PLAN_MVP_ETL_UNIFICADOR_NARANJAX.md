@@ -6,11 +6,14 @@ subprocess. No cambia los ETLs legacy ni sus reglas de negocio.
 
 ### Estado de implementación
 
-Chat daily, Voice daily y Voice PCT están listos para verificación sintética
-desde el CLI unificado; PCT es la primera corrida stateless de la plataforma y
-su suite de contrato quedó verde (27 passed) tras alinear `TIPIF_MAP`. MT
-permanece inerte. Esta evidencia NO implica ejecución con datos reales,
-aceptación productiva ni UAT: las tres siguen pendientes.
+Los cuatro ETLs del catálogo — Chat daily, Voice daily, Voice PCT y MT daily —
+están listos para verificación sintética desde el CLI unificado; no queda
+ninguna entrada inerte. PCT y MT son corridas stateless; sus suites de
+contrato quedaron verdes (27 y 7 passed) tras alinear `TIPIF_MAP` y
+`USUEVOLTIS`. MT se invoca mediante el wrapper del unificador
+`adapters/naranjax/mt_voice_job.py` sin editar legacy. Esta evidencia NO
+implica ejecución con datos reales, aceptación productiva ni UAT: las tres
+siguen pendientes.
 
 **Resultado propuesto:** catálogo versionado, runner común desacoplado, sandbox
 auditable por corrida, estado mensual protegido y un primer CLI que envuelve el
@@ -26,8 +29,8 @@ entry point real de Chat MA con guardas explícitas.
 ### Decisión solicitada
 - Revisar Chat y Voice MA daily como pilotos ejecutables con evidencia sintética.
 - Aprobar los defaults provisionales de fecha, estado, retry, lock y timeout.
-- Mantener MT catalogado pero no ejecutable hasta sus propios PRs; Voice PCT ya
-  fue promovido en su propia cadena (contrato fix + SDD + adapter/CLI).
+- Los cuatro ETLs fueron promovidos en cadenas propias (contrato fix + SDD +
+  adapter + CLI); la unificación del catálogo está completa a nivel sintético.
 
 ## Alcance y principios
 | Tema | Decisión de este plan |

@@ -18,7 +18,7 @@ from tests.support.synthetic_naranjax import write_result
 
 
 TODAY = date(2026, 7, 21)
-PCT = "naranjax.ma.voice.pct"
+MT = "naranjax.mt.voice.daily"
 
 
 class RecordingService:
@@ -34,9 +34,9 @@ class SyntheticRunner:
 
     def run(self, command, cwd, env, timeout, *, secret_values):
         self.command = tuple(command)
-        run = next(Path(value) for value in command if Path(value).name == "base.csv").parents[1]
+        run = next(Path(value) for value in command if Path(value).name == "base.txt").parents[1]
         if self.mode in {"success", "missing", "ambiguous"}:
-            write_result(run, self.mode, channel="pct")
+            write_result(run, self.mode, channel="mt")
         return ProcessEvidence(
             self.command, str(cwd), env, f"synthetic {run}", "",
             7 if self.mode == "nonzero" else (None if self.mode == "spawn" else 0),
@@ -46,8 +46,8 @@ class SyntheticRunner:
         )
 
 
-def _historial(tmp_path: Path) -> Path:
-    path = tmp_path / "historial.csv"
+def _base(tmp_path: Path) -> Path:
+    path = tmp_path / "base.txt"
     path.write_text("synthetic", encoding="utf-8")
     return path
 
@@ -61,7 +61,7 @@ def _adapters():
     }
 
 
-def test_cli_selects_pct_adapter(tmp_path: Path) -> None:
+def test_cli_selects_mt_adapter(tmp_path: Path) -> None:
     adapters = _adapters()
     selected = []
 
@@ -69,9 +69,9 @@ def test_cli_selects_pct_adapter(tmp_path: Path) -> None:
         selected.append((definition.id, adapter))
         return RecordingService()
 
-    assert main(["--etl", PCT, "--fecha", "20260721", "--base", str(_historial(tmp_path))],
+    assert main(["--etl", MT, "--fecha", "20260721", "--base", str(_base(tmp_path))],
                 adapters=adapters, service_factory=factory) == 0
-    assert selected == [(PCT, adapters["naranjax.ma.voice.pct"])]
+    assert selected == [(MT, adapters["naranjax.mt.voice"])]
 
 
 @pytest.mark.parametrize(
@@ -86,7 +86,7 @@ def test_cli_selects_pct_adapter(tmp_path: Path) -> None:
         ("ambiguous", "20260721", 1, "failed", "postcondition_failed", True),
     ],
 )
-def test_synthetic_pct_cli_writes_terminal_evidence_without_state(
+def test_synthetic_mt_cli_writes_terminal_evidence_without_state(
     tmp_path: Path, capsys: pytest.CaptureFixture[str], mode: str, day: str,
     expected_exit: int, status: str, error: str | None, ran: bool,
 ) -> None:
@@ -100,7 +100,7 @@ def test_synthetic_pct_cli_writes_terminal_evidence_without_state(
         return RunService(definition, adapter, runner, store, state, workspace=Path.cwd(),
                           now=lambda: "2026-07-21T15:00:00+00:00")
 
-    exit_code = main(["--etl", PCT, "--fecha", day, "--base", str(_historial(tmp_path))],
+    exit_code = main(["--etl", MT, "--fecha", day, "--base", str(_base(tmp_path))],
                      adapters=_adapters(), service_factory=factory)
     evidence = json.loads(next(runs.rglob("run.json")).read_text("utf-8"))
 
@@ -112,7 +112,7 @@ def test_synthetic_pct_cli_writes_terminal_evidence_without_state(
     assert str(tmp_path) not in json.dumps(evidence)
     assert tuple(state_root.rglob("estado_*.csv")) == ()
     if status == "succeeded":
-        assert {item["role"] for item in evidence["artifacts"]} == {"pct"}
+        assert {item["role"] for item in evidence["artifacts"]} == {"roman", "e1kia"}
         assert evidence["postconditions"] == {"outputs": "passed", "state": "not_applicable"}
         assert "--input" in runner.command and "--output_dir" in runner.command
         assert "--planes" not in runner.command and "--pagos" not in runner.command
