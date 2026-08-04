@@ -62,6 +62,7 @@ def _adapters():
         "naranjax.ma.chat.pct": MaVoicePctAdapter(today=lambda: TODAY),
         "naranjax.mt.voice.pct": MaVoicePctAdapter(today=lambda: TODAY),
         "naranjax.mt.voice.back": MtVoiceBackAdapter(today=lambda: TODAY),
+        "encuestacx.base": MaVoicePctAdapter(today=lambda: TODAY),
     }
 
 

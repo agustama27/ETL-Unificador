@@ -219,15 +219,21 @@ def test_load_directory_rejects_cross_file_duplicates_and_empty(tmp_path: Path) 
         Catalog.load_directory(tmp_path, tmp_path)
 
 
-def test_repository_registry_directory_exposes_seven_entries() -> None:
+def test_repository_registry_directory_exposes_all_client_entries() -> None:
     adapters = {"naranjax.ma.chat": object(), "naranjax.ma.voice": object(),
                 "naranjax.ma.voice.pct": object(), "naranjax.mt.voice": object(),
                 "naranjax.ma.chat.pct": object(), "naranjax.mt.voice.pct": object(),
-                "naranjax.mt.voice.back": object()}
+                "naranjax.mt.voice.back": object(), "encuestacx.base": object()}
 
     catalog = Catalog.load_directory(Path("registry"), Path.cwd(), adapters=adapters)
 
-    assert len(tuple(catalog)) == 7
+    assert len(tuple(catalog)) == 8
+    survey = catalog["encuestacx.base.daily"]
+    assert (survey.adapter, survey.project_path) == ("encuestacx.base", Path("soho-encuestaCX"))
+    assert tuple((o.role.value, o.glob, o.date_format) for o in survey.outputs) == (
+        ("survey_base", "base_encuesta.csv", None),
+        ("survey_base_e164", "base_encuesta_e164.csv", None),
+    )
 
 
 def test_output_date_format_is_optional(tmp_path: Path) -> None:
