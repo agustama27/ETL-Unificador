@@ -62,6 +62,7 @@ def _adapters():
         "naranjax.mt.voice.back": MtVoiceBackAdapter(today=lambda: TODAY),
         "encuestacx.base": MaVoicePctAdapter(today=lambda: TODAY),
         "bancor.base": MaVoicePctAdapter(today=lambda: TODAY),
+        "epec.base": MaVoicePctAdapter(today=lambda: TODAY),
     }
 
 
