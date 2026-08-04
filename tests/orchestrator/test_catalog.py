@@ -224,11 +224,11 @@ def test_repository_registry_directory_exposes_all_client_entries() -> None:
                 "naranjax.ma.voice.pct": object(), "naranjax.mt.voice": object(),
                 "naranjax.ma.chat.pct": object(), "naranjax.mt.voice.pct": object(),
                 "naranjax.mt.voice.back": object(), "encuestacx.base": object(),
-                "bancor.base": object(), "epec.base": object(), "fravega.base": object()}
+                "bancor.base": object(), "epec.base": object(), "fravega.base": object(), "clarouy.base": object()}
 
     catalog = Catalog.load_directory(Path("registry"), Path.cwd(), adapters=adapters)
 
-    assert len(tuple(catalog)) == 16
+    assert len(tuple(catalog)) == 18
     bancor = catalog["bancor.base.daily"]
     assert (bancor.adapter, bancor.project_path) == ("bancor.base", Path("soho-bancor-cobranzas-etl"))
     assert tuple((o.role.value, o.date_format) for o in bancor.outputs) == (
@@ -237,7 +237,8 @@ def test_repository_registry_directory_exposes_all_client_entries() -> None:
     )
     inert = [item for item in catalog if not item.executable]
     assert {item.id for item in inert} == {"bancor.resultados.retell", "bancor.carga_masiva",
-                                       "bancor.cupones", "epec.tipif.retell", "fravega.resultados.retell"}
+                                       "bancor.cupones", "epec.tipif.retell", "fravega.resultados.retell",
+                                       "clarouy.encuestas.retell"}
     survey = catalog["encuestacx.base.daily"]
     assert (survey.adapter, survey.project_path) == ("encuestacx.base", Path("soho-encuestaCX"))
     assert tuple((o.role.value, o.glob, o.date_format) for o in survey.outputs) == (
