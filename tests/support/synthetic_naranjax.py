@@ -10,6 +10,7 @@ OUTPUTS = {
     "mt": ("NARANJAX_MT_ROMAN_260721.csv", "NARANJAX_MT_E1KIA_260721.csv"),
     "mt_pct": ("DEELO_NAR_USUEVOLTIS_20260721.txt",),
     "back": ("DEELO_NAR_USUEVOLTIS_20260721_15.txt", "_anomalias_20260721_153000.txt"),
+    "encuestacx": ("base_encuesta.csv", "base_encuesta_e164.csv"),
 }
 
 AMBIGUOUS = {
