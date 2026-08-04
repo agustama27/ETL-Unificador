@@ -47,7 +47,7 @@ def test_save_output_contract(tmp_path: Path) -> None:
     first = text.split("\n", 1)[0]
     assert first.count("|") == 39
     assert first.split("|")[2] == "NARANJA"
-    assert first.split("|")[7] == "USUOLOS"
+    assert first.split("|")[7] == "USUEVOLTIS"
     assert "\r\n" not in text
 
 
