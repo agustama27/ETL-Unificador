@@ -8,6 +8,8 @@ from orchestrator.models import ETLDefinition, FileEvidence, RunRequest
 
 
 class MaVoiceAdapter:
+    requires_state_change = True
+
     def __init__(self, *, today=date.today) -> None:
         self._shared = MaChatAdapter(today=today)
 

@@ -75,7 +75,10 @@ class RunService:
             document["artifacts"] = artifacts
             document["postconditions"]["outputs"] = "passed"
             staged = run / "state" / f"estado_{request.business_date:%Y%m}.csv"
-            self.state_store.promote(request.etl_id, request.business_date, staged, run_id)
+            self.state_store.promote(
+                request.etl_id, request.business_date, staged, run_id,
+                require_change=self.adapter.requires_state_change,
+            )
             document["state"]["status"] = StateStatus.PROMOTED
             document["postconditions"]["state"] = "promoted"
             return self._finish(run, document, RunStatus.SUCCEEDED, None)
@@ -87,6 +90,7 @@ class RunService:
             document["postconditions"]["outputs"] = "failed"
             return self._finish(run, document, RunStatus.FAILED, "postcondition_failed", error)
         except StatePromotionError as error:
+            document["postconditions"]["state"] = "failed"
             if error.code == "recovery_required":
                 document["state"]["status"] = StateStatus.RECOVERY_REQUIRED
                 return self._finish(run, document, RunStatus.BLOCKED, error.code, error)

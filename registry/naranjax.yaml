@@ -33,8 +33,8 @@ etls:
   - id: naranjax.ma.voice.daily
     name: Naranja X MA Voice daily
     repository_status: present
-    readiness: candidate
-    executable: false
+    readiness: ready
+    executable: true
     project_path: soho-naranjaX-MA-etl
     working_dir: soho-naranjaX-MA-etl
     entrypoint: soho-naranjaX-MA-etl/back-base/ejecutar_dia.py

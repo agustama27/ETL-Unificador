@@ -156,7 +156,8 @@ class StateStore:
         raise StatePromotionError("recovery_required",
                                   "snapshot was promoted but current state was not durably promoted; manual recovery required") from cause
 
-    def promote(self, etl_id: str, business_date: date, staged_state: Path, run_id: str) -> Promotion:
+    def promote(self, etl_id: str, business_date: date, staged_state: Path, run_id: str,
+                *, require_change: bool = False) -> Promotion:
         lineage = self._lineage(etl_id, business_date)
         snapshot = lineage / f"estado_{business_date:%Y%m%d}.csv"
         current = lineage / f"estado_{business_date:%Y%m}.csv"
@@ -164,6 +165,8 @@ class StateStore:
                     "business_date": business_date.strftime("%Y%m%d"),
                     "snapshot": snapshot.name, "current": current.name}
         self._preflight(lineage, snapshot)
+        if require_change and current.exists() and staged_state.read_bytes() == current.read_bytes():
+            raise StatePromotionError("state_unchanged", "staged state is unchanged")
         lineage.mkdir(parents=True, exist_ok=True)
         try:
             self._durable_copy(staged_state, snapshot)
