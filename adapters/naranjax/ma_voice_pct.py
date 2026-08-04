@@ -31,6 +31,7 @@ class MaVoicePctAdapter:
         return (
             sys.executable,
             definition.command[1],
+            *definition.fixed_arguments,
             "--input", str(run / f"input/base{suffix}"),
             "--output_dir", str(run / "output"),
         )

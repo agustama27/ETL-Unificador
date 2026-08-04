@@ -79,6 +79,8 @@ def _adapters() -> dict[str, Adapter]:
         "epec.base": MaVoicePctAdapter(),
         "fravega.base": MaVoicePctAdapter(),
         "clarouy.base": MaVoicePctAdapter(),
+        "social.argentina": MaVoicePctAdapter(),
+        "social.chile": MaVoicePctAdapter(),
     }
 
 
