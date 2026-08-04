@@ -9,6 +9,7 @@ OUTPUTS = {
     "pct": ("NARANJAX_PCT_20260721.csv",),
     "mt": ("NARANJAX_MT_ROMAN_260721.csv", "NARANJAX_MT_E1KIA_260721.csv"),
     "mt_pct": ("DEELO_NAR_USUEVOLTIS_20260721.txt",),
+    "back": ("DEELO_NAR_USUEVOLTIS_20260721_15.txt", "_anomalias_20260721_153000.txt"),
 }
 
 AMBIGUOUS = {
@@ -17,6 +18,7 @@ AMBIGUOUS = {
     "pct": "NARANJAX_PCT_copy_20260721.csv",
     "mt": "NARANJAX_MT_ROMAN_copy_260721.csv",
     "mt_pct": "DEELO_NAR_USUEVOLTIS_copy_20260721.txt",
+    "back": "DEELO_NAR_USUEVOLTIS_copy_20260721_15.txt",
 }
 
 
