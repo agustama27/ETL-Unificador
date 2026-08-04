@@ -66,6 +66,7 @@ def _adapters():
         "encuestacx.base": MaVoicePctAdapter(today=lambda: TODAY),
         "bancor.base": MaVoicePctAdapter(today=lambda: TODAY),
         "epec.base": MaVoicePctAdapter(today=lambda: TODAY),
+        "fravega.base": MaVoicePctAdapter(today=lambda: TODAY),
     }
 
 
