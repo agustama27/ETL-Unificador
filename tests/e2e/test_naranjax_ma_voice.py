@@ -9,6 +9,7 @@ from adapters.naranjax.ma_voice import MaVoiceAdapter
 from adapters.naranjax.ma_voice_pct import MaVoicePctAdapter
 from adapters.naranjax.mt_voice import MtVoiceAdapter
 from adapters.naranjax.mt_voice_back import MtVoiceBackAdapter
+from adapters.petersen.gestiones import PetersenGestionesAdapter
 from orchestrator.catalog import CatalogError
 from orchestrator.models import RunResult, RunStatus, StateEffect, StateStatus
 from orchestrator.run import main
@@ -70,6 +71,7 @@ def _adapters():
         "clarouy.base": MaVoicePctAdapter(today=lambda: TODAY),
         "social.argentina": MaVoicePctAdapter(today=lambda: TODAY),
         "social.chile": MaVoicePctAdapter(today=lambda: TODAY),
+        "petersen.gestiones": PetersenGestionesAdapter(today=lambda: TODAY),
     }
 
 

@@ -44,6 +44,7 @@ class ArtifactRole(StrEnum):
     SURVEY_BASE_E164 = "survey_base_e164"
     BASE_FILTRADA = "base_filtrada"
     TELEFONOS = "telefonos"
+    GESTIONES = "gestiones"
     LEGACY_LOG = "legacy_log"
 
 

@@ -20,6 +20,7 @@ OUTPUTS = {
     "clarouy": ("base_clarouy_21072026.csv", "telefonos_x_cliente_21072026.csv"),
     "social_arg": ("SOCIAL_ARG_CARTERA_20260721.csv",),
     "social_chi": ("SOCIAL_CHI_CARTERA_20260721.csv",),
+    "petersen": ("Gestiones_Petersen_20260721.zip",),
 }
 
 AMBIGUOUS = {
