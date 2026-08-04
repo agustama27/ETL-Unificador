@@ -16,6 +16,7 @@ OUTPUTS = {
                "sin-filtros/BANCOR_ROMAN_20260721.csv",
                "sin-filtros/BANCOR_E1KIA_20260721_sinestrategia.csv"),
     "epec": ("EPEC_ROMAN_260721.csv", "EPEC_E1KIA_260721.csv"),
+    "fravega": ("fravega_base.csv",),
 }
 
 AMBIGUOUS = {

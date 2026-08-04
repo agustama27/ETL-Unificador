@@ -77,6 +77,7 @@ def _adapters() -> dict[str, Adapter]:
         "encuestacx.base": MaVoicePctAdapter(),
         "bancor.base": MaVoicePctAdapter(),
         "epec.base": MaVoicePctAdapter(),
+        "fravega.base": MaVoicePctAdapter(),
     }
 
 
