@@ -64,6 +64,20 @@ class Catalog:
             raise CatalogError("duplicate ETL id")
         return cls(definitions)
 
+    @classmethod
+    def load_directory(cls, directory: Path, workspace: Path, *,
+                       adapters: Mapping[str, object] | None = None) -> Self:
+        files = sorted(directory.glob("*.yaml"))
+        if not files:
+            raise CatalogError(f"no catalog files found in: {directory}")
+        definitions: list[ETLDefinition] = []
+        for file in files:
+            definitions.extend(cls.load(file, workspace, adapters=adapters))
+        ids = [item.id for item in definitions]
+        if len(ids) != len(set(ids)):
+            raise CatalogError("duplicate ETL id across catalog files")
+        return cls(tuple(definitions))
+
 
 def _definition(raw: object, workspace: Path, adapters: Mapping[str, object]) -> ETLDefinition:
     if not isinstance(raw, dict):

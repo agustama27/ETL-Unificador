@@ -82,8 +82,8 @@ def main(argv: Sequence[str] | None = None, *, adapters: Mapping[str, Adapter] |
     arguments = _parser().parse_args(argv)
     workspace = Path(__file__).resolve().parents[1]
     registered = _adapters() if adapters is None else adapters
-    definition = Catalog.load(workspace / "registry/naranjax.yaml", workspace,
-                              adapters=registered)[arguments.etl]
+    definition = Catalog.load_directory(workspace / "registry", workspace,
+                                        adapters=registered)[arguments.etl]
     if not definition.executable or definition.adapter is None:
         raise CatalogError(f"ETL is not executable: {definition.id}")
     adapter = registered[definition.adapter]
