@@ -30,18 +30,18 @@ and production/UAT claims remain prohibited.
 
 ## Phase 1: Feat PR — Promotion, CLI, E2E
 
-- [ ] 1.1 RED — Update `tests/orchestrator/test_catalog.py` for six executable
+- [x] 1.1 RED — Update `tests/orchestrator/test_catalog.py` for six executable
       entries (Chat PCT and MT PCT metadata, adapter keys); create
       `tests/e2e/test_naranjax_remaining_pct.py` parametrized over both
       entries: CLI selection, success artifact/name, `state: not_applicable`,
       non-today block, nonzero, missing output, no lineage, redaction; extend
       `tests/support/synthetic_naranjax.py` with `chat_pct`/`mt_pct` channels.
       Confirm assertion-driven failures.
-- [ ] 1.2 GREEN — Add both entries to `registry/naranjax.yaml`; register
+- [x] 1.2 GREEN — Add both entries to `registry/naranjax.yaml`; register
       `naranjax.ma.chat.pct` and `naranjax.mt.voice.pct` as
       `MaVoicePctAdapter` instances in `orchestrator/run.py`; register stubs in
       existing catalog-loading tests. Rerun focused tests.
-- [ ] 1.3 VERIFY — Run `python -m pytest tests -q`; run both legacy suites
+- [x] 1.3 VERIFY — Run `python -m pytest tests -q`; run both legacy suites
       (Chat back-resultados expected 25 passed; MT back-resultados expected 7
       passed — both untouched); perform one real fixture-driven platform run
       per new entry; update `docs/PLAN_MVP_ETL_UNIFICADOR_NARANJAX.md`; record

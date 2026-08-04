@@ -60,6 +60,8 @@ def _adapters() -> dict[str, Adapter]:
         "naranjax.ma.voice": MaVoiceAdapter(),
         "naranjax.ma.voice.pct": MaVoicePctAdapter(),
         "naranjax.mt.voice": MtVoiceAdapter(),
+        "naranjax.ma.chat.pct": MaVoicePctAdapter(),
+        "naranjax.mt.voice.pct": MaVoicePctAdapter(),
     }
 
 

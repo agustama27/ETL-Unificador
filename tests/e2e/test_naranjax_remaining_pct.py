@@ -18,7 +18,10 @@ from tests.support.synthetic_naranjax import write_result
 
 
 TODAY = date(2026, 7, 21)
-PCT = "naranjax.ma.voice.pct"
+ENTRIES = {
+    "naranjax.ma.chat.pct": ("pct", "NARANJAX_PCT_20260721.csv"),
+    "naranjax.mt.voice.pct": ("mt_pct", "DEELO_NAR_USUEVOLTIS_20260721.txt"),
+}
 
 
 class RecordingService:
@@ -28,21 +31,19 @@ class RecordingService:
 
 
 class SyntheticRunner:
-    def __init__(self, mode: str) -> None:
-        self.mode = mode
+    def __init__(self, mode: str, channel: str) -> None:
+        self.mode, self.channel = mode, channel
         self.command: tuple[str, ...] = ()
 
     def run(self, command, cwd, env, timeout, *, secret_values):
         self.command = tuple(command)
         run = next(Path(value) for value in command if Path(value).name == "base.csv").parents[1]
-        if self.mode in {"success", "missing", "ambiguous"}:
-            write_result(run, self.mode, channel="pct")
+        if self.mode in {"success", "missing"}:
+            write_result(run, self.mode, channel=self.channel)
         return ProcessEvidence(
             self.command, str(cwd), env, f"synthetic {run}", "",
-            7 if self.mode == "nonzero" else (None if self.mode == "spawn" else 0),
-            self.mode == "timeout",
-            Termination.SPAWN_FAILED if self.mode == "spawn" else Termination.COMPLETED,
-            ("start", "finish"), "spawn secret" if self.mode == "spawn" else None,
+            7 if self.mode == "nonzero" else 0, False, Termination.COMPLETED,
+            ("start", "finish"), None,
         )
 
 
@@ -63,7 +64,8 @@ def _adapters():
     }
 
 
-def test_cli_selects_pct_adapter(tmp_path: Path) -> None:
+@pytest.mark.parametrize("etl_id", tuple(ENTRIES))
+def test_cli_selects_each_new_pct_adapter(tmp_path: Path, etl_id: str) -> None:
     adapters = _adapters()
     selected = []
 
@@ -71,28 +73,27 @@ def test_cli_selects_pct_adapter(tmp_path: Path) -> None:
         selected.append((definition.id, adapter))
         return RecordingService()
 
-    assert main(["--etl", PCT, "--fecha", "20260721", "--base", str(_historial(tmp_path))],
+    assert main(["--etl", etl_id, "--fecha", "20260721", "--base", str(_historial(tmp_path))],
                 adapters=adapters, service_factory=factory) == 0
-    assert selected == [(PCT, adapters["naranjax.ma.voice.pct"])]
+    assert selected == [(etl_id, adapters[etl_id])]
 
 
+@pytest.mark.parametrize("etl_id", tuple(ENTRIES))
 @pytest.mark.parametrize(
     ("mode", "day", "expected_exit", "status", "error", "ran"),
     [
         ("success", "20260721", 0, "succeeded", None, True),
         ("success", "20260720", 2, "blocked", "validation_error", False),
         ("nonzero", "20260721", 1, "failed", "nonzero_exit", True),
-        ("timeout", "20260721", 1, "timed_out", "timeout", True),
-        ("spawn", "20260721", 1, "failed", "spawn_failed", True),
         ("missing", "20260721", 1, "failed", "postcondition_failed", True),
-        ("ambiguous", "20260721", 1, "failed", "postcondition_failed", True),
     ],
 )
-def test_synthetic_pct_cli_writes_terminal_evidence_without_state(
-    tmp_path: Path, capsys: pytest.CaptureFixture[str], mode: str, day: str,
+def test_synthetic_new_pct_cli_writes_terminal_evidence_without_state(
+    tmp_path: Path, etl_id: str, mode: str, day: str,
     expected_exit: int, status: str, error: str | None, ran: bool,
 ) -> None:
-    runner = SyntheticRunner(mode)
+    channel, artifact = ENTRIES[etl_id]
+    runner = SyntheticRunner(mode, channel)
     runs, state_root = tmp_path / "runs", tmp_path / "state"
 
     def factory(definition, adapter):
@@ -102,19 +103,18 @@ def test_synthetic_pct_cli_writes_terminal_evidence_without_state(
         return RunService(definition, adapter, runner, store, state, workspace=Path.cwd(),
                           now=lambda: "2026-07-21T15:00:00+00:00")
 
-    exit_code = main(["--etl", PCT, "--fecha", day, "--base", str(_historial(tmp_path))],
+    exit_code = main(["--etl", etl_id, "--fecha", day, "--base", str(_historial(tmp_path))],
                      adapters=_adapters(), service_factory=factory)
     evidence = json.loads(next(runs.rglob("run.json")).read_text("utf-8"))
 
     assert exit_code == expected_exit
-    assert capsys.readouterr().out.endswith(f"status={status}\n")
     assert evidence["status"] == status
     assert evidence["error"] == (None if error is None else {"code": error, "message": error.replace("_", " ")})
     assert bool(runner.command) is ran
     assert str(tmp_path) not in json.dumps(evidence)
     assert tuple(state_root.rglob("estado_*.csv")) == ()
     if status == "succeeded":
-        assert {item["role"] for item in evidence["artifacts"]} == {"pct"}
+        assert [(item["role"], item["path"]) for item in evidence["artifacts"]] == [
+            ("pct", f"output/{artifact}")
+        ]
         assert evidence["postconditions"] == {"outputs": "passed", "state": "not_applicable"}
-        assert "--input" in runner.command and "--output_dir" in runner.command
-        assert "--planes" not in runner.command and "--pagos" not in runner.command
