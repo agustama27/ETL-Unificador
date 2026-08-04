@@ -125,8 +125,8 @@ etls:
   - id: naranjax.mt.voice.back
     name: Naranja X MT Voice back (USUEVOLTIS)
     repository_status: present
-    readiness: candidate
-    executable: false
+    readiness: ready
+    executable: true
     project_path: soho-naranjaX-MT-etl
     working_dir: soho-naranjaX-MT-etl
     entrypoint: soho-naranjaX-MT-etl/main.py
