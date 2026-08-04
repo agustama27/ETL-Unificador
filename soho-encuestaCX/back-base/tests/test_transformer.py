@@ -53,16 +53,17 @@ class TestDataTransformer:
 
         # Check output shape
         assert len(result) == 2
-        assert len(result.columns) == 14
+        assert len(result.columns) == 15
 
-        # Check all expected columns exist
+        # Check all expected columns exist (n8n workflow contract)
         expected_columns = [
-            'tier', 'cliente', 'gerencia_cliente', 'vertical_de_negocio',
-            'customer_name', 'puesto', 'referente', 'jerarquia', 'mail',
-            'phone_number', 'provincia', 'pais', 'referente_operativo',
-            'referente_negocio'
+            'Status de encuesta', 'Tier', 'cliente', 'Gerencia Cliente',
+            'Vertical de negocio', 'customer_name', 'Puesto', 'Referente',
+            'Jerarquia', 'Mail', 'phone number', 'Provincia', 'País',
+            'Evoltis: Referente operativo', 'Evoltis: Referente de negocio'
         ]
         assert list(result.columns) == expected_columns
+        assert (result['Status de encuesta'] == '').all()
 
     def test_customer_name_creation(self, transformer, sample_input_df):
         """Test customer_name field creation."""
@@ -75,19 +76,19 @@ class TestDataTransformer:
         """Test phone number normalization."""
         result = transformer.transform(sample_input_df)
 
-        assert result['phone_number'].iloc[0] == '5491112345678'
-        assert result['phone_number'].iloc[1] == '3454400185'
+        assert result['phone number'].iloc[0] == '5491112345678'
+        assert result['phone number'].iloc[1] == '3454400185'
 
     def test_column_mapping(self, transformer, sample_input_df):
         """Test column name mapping."""
         result = transformer.transform(sample_input_df)
 
         # Check direct mappings
-        assert result['tier'].iloc[0] == 'Premium'
+        assert result['Tier'].iloc[0] == 'Premium'
         assert result['cliente'].iloc[0] == 'Banco Galicia'
-        assert result['gerencia_cliente'].iloc[0] == 'Gerencia A'
-        assert result['vertical_de_negocio'].iloc[0] == 'Banking'
-        assert result['pais'].iloc[0] == 'Argentina'
+        assert result['Gerencia Cliente'].iloc[0] == 'Gerencia A'
+        assert result['Vertical de negocio'].iloc[0] == 'Banking'
+        assert result['País'].iloc[0] == 'Argentina'
 
     def test_transformation_with_missing_values(self, transformer):
         """Test transformation with missing values."""
@@ -114,7 +115,7 @@ class TestDataTransformer:
         # Check missing values are handled
         assert result['customer_name'].iloc[0] == 'Carolina'
         assert result['customer_name'].iloc[1] == 'Pérez'
-        assert result['phone_number'].iloc[1] == ''
+        assert result['phone number'].iloc[1] == ''
 
 
 class TestCreateCustomerName:
@@ -221,7 +222,7 @@ class TestTransformationSummary:
         assert summary['input_rows'] == 2
         assert summary['output_rows'] == 2
         assert summary['input_columns'] == 15
-        assert summary['output_columns'] == 14
+        assert summary['output_columns'] == 15
         assert summary['customer_names_created'] == 2
         assert summary['phone_numbers_normalized'] == 2
 
