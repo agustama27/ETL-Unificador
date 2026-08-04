@@ -40,6 +40,8 @@ class ArtifactRole(StrEnum):
     E1KIA = "e1kia"
     PCT = "pct"
     ANOMALIES = "anomalies"
+    SURVEY_BASE = "survey_base"
+    SURVEY_BASE_E164 = "survey_base_e164"
     LEGACY_LOG = "legacy_log"
 
 
@@ -54,7 +56,7 @@ class InputSpec:
 class OutputSpec:
     role: ArtifactRole
     glob: str
-    date_format: str
+    date_format: str | None = None
 
 
 @dataclass(frozen=True)

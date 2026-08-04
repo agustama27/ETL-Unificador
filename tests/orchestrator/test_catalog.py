@@ -228,3 +228,14 @@ def test_repository_registry_directory_exposes_seven_entries() -> None:
     catalog = Catalog.load_directory(Path("registry"), Path.cwd(), adapters=adapters)
 
     assert len(tuple(catalog)) == 7
+
+
+def test_output_date_format_is_optional(tmp_path: Path) -> None:
+    entry = _entry(outputs=[{"role": "survey_base", "glob": "base_encuesta.csv"}])
+
+    catalog = Catalog.load(_write(tmp_path, entry), tmp_path)
+
+    output = catalog["naranjax.ma.chat.daily"].outputs[0]
+    assert (output.role.value, output.glob, output.date_format) == (
+        "survey_base", "base_encuesta.csv", None
+    )
