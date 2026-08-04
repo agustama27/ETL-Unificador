@@ -7,6 +7,7 @@ import pytest
 from adapters.naranjax.ma_chat import MaChatAdapter
 from adapters.naranjax.ma_voice import MaVoiceAdapter
 from adapters.naranjax.ma_voice_pct import MaVoicePctAdapter
+from adapters.naranjax.mt_voice import MtVoiceAdapter
 from orchestrator.catalog import CatalogError
 from orchestrator.models import RunResult, RunStatus, StateEffect, StateStatus
 from orchestrator.run import main
@@ -57,6 +58,7 @@ def _adapters():
         "naranjax.ma.chat": MaChatAdapter(today=lambda: TODAY),
         "naranjax.ma.voice": MaVoiceAdapter(today=lambda: TODAY),
         "naranjax.ma.voice.pct": MaVoicePctAdapter(today=lambda: TODAY),
+        "naranjax.mt.voice": MtVoiceAdapter(today=lambda: TODAY),
     }
 
 
@@ -77,12 +79,14 @@ def test_cli_selects_catalog_adapter(tmp_path: Path, etl_id: str, adapter_key: s
     assert selected == [(etl_id, adapters[adapter_key])]
 
 
-@pytest.mark.parametrize("etl_id", ["naranjax.mt.voice.daily"])
-def test_cli_rejects_inert_catalog_entries_before_service(tmp_path: Path, etl_id: str) -> None:
+def test_cli_rejects_unregistered_executable_adapter_before_service(tmp_path: Path) -> None:
     called = []
-    with pytest.raises(CatalogError, match="not executable"):
-        main(["--etl", etl_id, "--fecha", "20260721", "--base", str(_base(tmp_path))],
-             adapters=_adapters(), service_factory=lambda definition, adapter: called.append(adapter))
+    incomplete = {key: value for key, value in _adapters().items()
+                  if key != "naranjax.mt.voice"}
+    with pytest.raises(CatalogError, match="adapter"):
+        main(["--etl", "naranjax.mt.voice.daily", "--fecha", "20260721",
+              "--base", str(_base(tmp_path))], adapters=incomplete,
+             service_factory=lambda definition, adapter: called.append(adapter))
     assert called == []
 
 

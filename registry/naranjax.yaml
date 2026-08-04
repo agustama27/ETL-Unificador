@@ -83,8 +83,8 @@ etls:
   - id: naranjax.mt.voice.daily
     name: Naranja X MT Voice daily
     repository_status: present
-    readiness: candidate
-    executable: false
+    readiness: ready
+    executable: true
     project_path: soho-naranjaX-MT-etl
     working_dir: soho-naranjaX-MT-etl
     entrypoint: adapters/naranjax/mt_voice_job.py

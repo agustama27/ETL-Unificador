@@ -31,30 +31,30 @@ Legacy/data edits, builds, and production/UAT claims remain prohibited.
 
 ## Phase 1: PR1 — Wrapper, Adapter, Inert Contract
 
-- [ ] 1.1 RED — Create `tests/adapters/naranjax/test_mt_voice.py` for the
+- [x] 1.1 RED — Create `tests/adapters/naranjax/test_mt_voice.py` for the
       exact wrapper command, today gate, daily-intent rejection, and
       ROMAN/E1KIA missing/unchanged/wrong-date/ambiguous classification;
       create wrapper tests driving `mt_voice_job.py` as a subprocess against
       the real `procesos` modules with synthetic TXT fixtures (valid,
       wrong-column-count, empty); update `tests/orchestrator/test_catalog.py`
       for complete inert MT metadata. Confirm assertion-driven failures.
-- [ ] 1.2 GREEN — Create `adapters/naranjax/mt_voice_job.py` and
+- [x] 1.2 GREEN — Create `adapters/naranjax/mt_voice_job.py` and
       `adapters/naranjax/mt_voice.py`; complete the inert MT entry in
       `registry/naranjax.yaml` (`.txt` input, MT globs, `YYMMDD`,
       `system_date`, exits `[0]`, timeout 900). Rerun focused tests.
-- [ ] 1.3 VERIFY — Run `python -m pytest tests -q`; inspect
+- [x] 1.3 VERIFY — Run `python -m pytest tests -q`; inspect
       `git diff --numstat main...HEAD` below 400.
 
 ## Phase 2: PR2 — Promotion, CLI, E2E
 
-- [ ] 2.1 RED — Create `tests/e2e/test_naranjax_mt_voice.py` covering CLI
+- [x] 2.1 RED — Create `tests/e2e/test_naranjax_mt_voice.py` covering CLI
       success (both artifacts, `state: not_applicable`, no lineage),
       non-today block, nonzero/timeout/spawn failures, missing output, and
       redaction; extend `tests/support/synthetic_naranjax.py` with an `mt`
       channel; update catalog/CLI tests for full promotion. Confirm failures.
-- [ ] 2.2 GREEN — Promote MT in `registry/naranjax.yaml`; register
+- [x] 2.2 GREEN — Promote MT in `registry/naranjax.yaml`; register
       `MtVoiceAdapter` in `orchestrator/run.py`. Rerun focused tests.
-- [ ] 2.3 VERIFY — Run `python -m pytest tests -q` and the MT legacy suite
+- [x] 2.3 VERIFY — Run `python -m pytest tests -q` and the MT legacy suite
       (expected 7 passed, untouched); perform one real fixture-driven platform
       run with a generated synthetic TXT; update
       `docs/PLAN_MVP_ETL_UNIFICADOR_NARANJAX.md`; record apply-progress and

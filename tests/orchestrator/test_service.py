@@ -67,7 +67,7 @@ def service(tmp_path: Path, mode: str = "success", state_error: Any = None):
     definition = Catalog.load(Path("registry/naranjax.yaml"), Path.cwd(),
                               adapters={"naranjax.ma.chat": object(),
                                         "naranjax.ma.voice": object(),
-                  "naranjax.ma.voice.pct": object()})[ETL]
+                  "naranjax.ma.voice.pct": object(), "naranjax.mt.voice": object()})[ETL]
     subject = RunService(definition, MaChatAdapter(today=lambda: TODAY), runner, store, state,
                          workspace=Path.cwd(), now=lambda: "2026-07-21T15:00:00+00:00")
     return subject, runner, state, store
@@ -206,7 +206,7 @@ def test_stateless_pct_run_skips_preflight_staging_and_promotion(tmp_path: Path)
     definition = Catalog.load(Path("registry/naranjax.yaml"), Path.cwd(),
                               adapters={"naranjax.ma.chat": object(),
                                         "naranjax.ma.voice": object(),
-                                        "naranjax.ma.voice.pct": object()})[PCT]
+                                        "naranjax.ma.voice.pct": object(), "naranjax.mt.voice": object()})[PCT]
     subject = RunService(definition, MaVoicePctAdapter(today=lambda: TODAY), runner, store,
                          state, workspace=Path.cwd(), now=lambda: "2026-07-21T15:00:00+00:00")
     lineage = state.root / PCT / "202607"

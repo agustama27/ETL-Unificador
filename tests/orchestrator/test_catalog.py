@@ -28,7 +28,7 @@ def _write(tmp_path: Path, entry: dict[str, object], **root: object) -> Path:
 
 def test_repository_catalog_promotes_only_daily_chat_and_voice() -> None:
     adapters = {"naranjax.ma.chat": object(), "naranjax.ma.voice": object(),
-                "naranjax.ma.voice.pct": object()}
+                "naranjax.ma.voice.pct": object(), "naranjax.mt.voice": object()}
     catalog = Catalog.load(
         Path("registry/naranjax.yaml"), Path.cwd(),
         adapters=adapters,
@@ -77,7 +77,7 @@ def test_repository_catalog_promotes_only_daily_chat_and_voice() -> None:
     assert pct.environment_allowlist == ()
     mt = catalog["naranjax.mt.voice.daily"]
     assert (mt.readiness, mt.executable, mt.command) == (
-        Readiness.CANDIDATE, False, ("python", "../adapters/naranjax/mt_voice_job.py")
+        Readiness.READY, True, ("python", "../adapters/naranjax/mt_voice_job.py")
     )
     assert mt.arguments == {"base": "--input"}
     assert tuple((item.role, item.required) for item in mt.inputs) == (("base", True),)
