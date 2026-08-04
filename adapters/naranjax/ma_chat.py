@@ -96,7 +96,8 @@ class MaChatAdapter:
             return "ambiguous"
         item = matches[0]
         if date_format is not None:
-            expected = today.strftime("%Y%m%d" if date_format == "YYYYMMDD" else "%y%m%d")
+            formats = {"YYYYMMDD": "%Y%m%d", "YYMMDD": "%y%m%d", "DDMMYYYY": "%d%m%Y"}
+            expected = today.strftime(formats[date_format])
             if re.search(rf"(?<!\d){expected}(?!\d)", item.path.name) is None:
                 return "wrong-date"
         if before.get(item.path) == item:
