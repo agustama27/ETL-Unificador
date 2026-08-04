@@ -26,7 +26,8 @@ def _definition():
     return Catalog.load(
         Path("registry/naranjax.yaml"),
         Path.cwd(),
-        adapters={"naranjax.ma.chat": object(), "naranjax.ma.voice": object()},
+        adapters={"naranjax.ma.chat": object(), "naranjax.ma.voice": object(),
+                  "naranjax.ma.voice.pct": object()},
     )["naranjax.ma.voice.daily"]
 
 

@@ -27,7 +27,8 @@ def _write(tmp_path: Path, entry: dict[str, object], **root: object) -> Path:
 
 
 def test_repository_catalog_promotes_only_daily_chat_and_voice() -> None:
-    adapters = {"naranjax.ma.chat": object(), "naranjax.ma.voice": object()}
+    adapters = {"naranjax.ma.chat": object(), "naranjax.ma.voice": object(),
+                "naranjax.ma.voice.pct": object()}
     catalog = Catalog.load(
         Path("registry/naranjax.yaml"), Path.cwd(),
         adapters=adapters,
@@ -63,7 +64,18 @@ def test_repository_catalog_promotes_only_daily_chat_and_voice() -> None:
         "naranjax.ma.voice", (0,), 900
     )
     assert voice.environment_allowlist == ("NARANJAX_PLANES_MIN_COVERAGE",)
-    assert all(not item.executable and item.adapter is None for item in tuple(catalog)[2:])
+    pct = catalog["naranjax.ma.voice.pct"]
+    assert (pct.readiness, pct.executable, pct.command) == (
+        Readiness.CANDIDATE, False, ("python", "back-resultados/etl_tipificaciones_ia_voz_pct.py")
+    )
+    assert pct.arguments == {"base": "--input"}
+    assert tuple((item.role, item.required) for item in pct.inputs) == (("base", True),)
+    assert tuple(output.role for output in pct.outputs) == (ArtifactRole.PCT,)
+    assert (pct.adapter, pct.allowed_exits, pct.timeout_seconds) == (
+        "naranjax.ma.voice.pct", (0,), 900
+    )
+    assert pct.environment_allowlist == ()
+    assert all(not item.executable and item.adapter is None for item in tuple(catalog)[3:])
 
 
 @pytest.mark.parametrize(

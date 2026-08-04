@@ -6,6 +6,7 @@ from typing import Any
 import pytest
 
 from adapters.naranjax.ma_chat import MaChatAdapter
+from adapters.naranjax.ma_voice_pct import MaVoicePctAdapter
 from orchestrator.catalog import Catalog
 from orchestrator.models import RunRequest, RunStatus
 from orchestrator.run_store import RunStore
@@ -65,7 +66,8 @@ def service(tmp_path: Path, mode: str = "success", state_error: Any = None):
     )
     definition = Catalog.load(Path("registry/naranjax.yaml"), Path.cwd(),
                               adapters={"naranjax.ma.chat": object(),
-                                        "naranjax.ma.voice": object()})[ETL]
+                                        "naranjax.ma.voice": object(),
+                  "naranjax.ma.voice.pct": object()})[ETL]
     subject = RunService(definition, MaChatAdapter(today=lambda: TODAY), runner, store, state,
                          workspace=Path.cwd(), now=lambda: "2026-07-21T15:00:00+00:00")
     return subject, runner, state, store
@@ -175,3 +177,51 @@ def test_state_failures_are_terminal(
         "recovery_required" if code == "recovery_required" else "staged"
     )
     assert state.promotions == 1
+
+
+PCT = "naranjax.ma.voice.pct"
+
+
+class PctRunner:
+    def __init__(self) -> None:
+        self.calls = 0
+
+    def run(self, command: tuple[str, ...], cwd: Path, env: dict[str, str],
+            timeout: int, *, secret_values: tuple[str, ...]) -> ProcessEvidence:
+        self.calls += 1
+        run = next(path for path in map(Path, command) if path.name == "base.csv").parents[1]
+        write_result(run, channel="pct")
+        return ProcessEvidence(command, str(cwd), env, "out", "err", 0, False,
+                               Termination.COMPLETED, ("start", "finish"), None)
+
+
+def test_stateless_pct_run_skips_preflight_staging_and_promotion(tmp_path: Path) -> None:
+    runner = PctRunner()
+    state = FakeState(tmp_path / "state")
+    store = RunStore(
+        tmp_path / "runs", state.root,
+        now=lambda: datetime(2026, 7, 21, 15, tzinfo=timezone.utc),
+        uuid_factory=iter((f"id-{n}" for n in range(30))).__next__,
+    )
+    definition = Catalog.load(Path("registry/naranjax.yaml"), Path.cwd(),
+                              adapters={"naranjax.ma.chat": object(),
+                                        "naranjax.ma.voice": object(),
+                                        "naranjax.ma.voice.pct": object()})[PCT]
+    subject = RunService(definition, MaVoicePctAdapter(today=lambda: TODAY), runner, store,
+                         state, workspace=Path.cwd(), now=lambda: "2026-07-21T15:00:00+00:00")
+    lineage = state.root / PCT / "202607"
+    lineage.mkdir(parents=True)
+    (lineage / "estado_20260721.csv").write_text("old", encoding="utf-8")
+    base = tmp_path / "outside" / "historial.csv"
+    base.parent.mkdir(exist_ok=True)
+    base.write_text("synthetic", encoding="utf-8")
+
+    result = subject.execute(RunRequest(PCT, TODAY, base))
+    evidence = record(store)
+
+    assert result.status is RunStatus.SUCCEEDED
+    assert (runner.calls, state.promotions) == (1, 0)
+    assert evidence["postconditions"] == {"outputs": "passed", "state": "not_applicable"}
+    assert evidence["state"]["status"] == "not_started"
+    assert evidence["inputs"][0]["path"].endswith("base.csv")
+    assert {item["role"] for item in evidence["artifacts"]} == {"pct"}

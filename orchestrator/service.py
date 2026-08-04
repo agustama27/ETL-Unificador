@@ -48,15 +48,18 @@ class RunService:
         }
         self._transition(run, document, RunStatus.PREPARING)
         lock: LockHandle | None = None
+        stateful = self.adapter.stateful
         try:
             self.adapter.validate(request)
-            self._state_preflight(request)
+            if stateful:
+                self._state_preflight(request)
             lock = self.store.acquire_lock(
                 request.etl_id, request.business_date.strftime("%Y%m"), run_id
             )
             document["inputs"] = self._stage_inputs(manager, request)
-            self._stage_current(run, request)
-            document["state"]["status"] = StateStatus.STAGED
+            if stateful:
+                self._stage_current(run, request)
+                document["state"]["status"] = StateStatus.STAGED
             before = manager.inventory(Path("output"), "output")
             command = self.adapter.command(self.definition, request, run)
             self._transition(run, document, RunStatus.RUNNING)
@@ -74,13 +77,16 @@ class RunService:
             artifacts = self.adapter.outputs(self.definition, before, after)
             document["artifacts"] = artifacts
             document["postconditions"]["outputs"] = "passed"
-            staged = run / "state" / f"estado_{request.business_date:%Y%m}.csv"
-            self.state_store.promote(
-                request.etl_id, request.business_date, staged, run_id,
-                require_change=self.adapter.requires_state_change,
-            )
-            document["state"]["status"] = StateStatus.PROMOTED
-            document["postconditions"]["state"] = "promoted"
+            if stateful:
+                staged = run / "state" / f"estado_{request.business_date:%Y%m}.csv"
+                self.state_store.promote(
+                    request.etl_id, request.business_date, staged, run_id,
+                    require_change=self.adapter.requires_state_change,
+                )
+                document["state"]["status"] = StateStatus.PROMOTED
+                document["postconditions"]["state"] = "promoted"
+            else:
+                document["postconditions"]["state"] = "not_applicable"
             return self._finish(run, document, RunStatus.SUCCEEDED, None)
         except ValidationError as error:
             return self._finish(run, document, RunStatus.BLOCKED, "validation_error", error)
@@ -128,14 +134,17 @@ class RunService:
 
     def _stage_inputs(self, manager: FileManager, request: RunRequest) -> tuple[FileEvidence, ...]:
         sources = {"base": request.base, "planes": request.planes, "pagos": request.pagos}
-        destinations = {"base": Path("input/base.xlsx"), "planes": Path("input/diarios/planes.xlsx"),
-                        "pagos": Path("input/diarios/pagos.csv")}
+        fixed = {"planes": Path("input/diarios/planes.xlsx"),
+                 "pagos": Path("input/diarios/pagos.csv")}
         evidence = []
         for spec in self.definition.inputs:
             source = sources.get(spec.role)
             if source is not None:
+                destination = fixed.get(
+                    spec.role, Path("input") / f"base{source.suffix.casefold()}"
+                )
                 evidence.append(manager.copy_input(
-                    source, destinations[spec.role], spec.role, set(spec.extensions)
+                    source, destination, spec.role, set(spec.extensions)
                 ))
         return tuple(evidence)
 
