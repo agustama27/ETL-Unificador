@@ -87,7 +87,7 @@ class MaChatAdapter:
     def _classify(
         matches: tuple[FileEvidence, ...],
         before: Mapping[Path, FileEvidence],
-        date_format: str,
+        date_format: str | None,
         today: date,
     ) -> FileEvidence | str:
         if not matches:
@@ -95,9 +95,10 @@ class MaChatAdapter:
         if len(matches) != 1:
             return "ambiguous"
         item = matches[0]
-        expected = today.strftime("%Y%m%d" if date_format == "YYYYMMDD" else "%y%m%d")
-        if re.search(rf"(?<!\d){expected}(?!\d)", item.path.name) is None:
-            return "wrong-date"
+        if date_format is not None:
+            expected = today.strftime("%Y%m%d" if date_format == "YYYYMMDD" else "%y%m%d")
+            if re.search(rf"(?<!\d){expected}(?!\d)", item.path.name) is None:
+                return "wrong-date"
         if before.get(item.path) == item:
             return "unchanged"
         return item

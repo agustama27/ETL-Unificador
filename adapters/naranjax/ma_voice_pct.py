@@ -27,10 +27,11 @@ class MaVoicePctAdapter:
         self, definition: ETLDefinition, request: RunRequest, run: Path
     ) -> tuple[str, ...]:
         self.validate(request)
+        suffix = definition.inputs[0].extensions[0]
         return (
             sys.executable,
             definition.command[1],
-            "--input", str(run / "input/base.csv"),
+            "--input", str(run / f"input/base{suffix}"),
             "--output_dir", str(run / "output"),
         )
 

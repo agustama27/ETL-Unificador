@@ -200,15 +200,16 @@ def _outputs(raw: object) -> tuple[OutputSpec, ...]:
         raise CatalogError("outputs must be a list")
     items: list[OutputSpec] = []
     for item in raw:
-        if not isinstance(item, dict) or set(item) != {"role", "glob", "date_format"}:
+        if not isinstance(item, dict) or not {"role", "glob"} <= set(item) <= {"role", "glob", "date_format"}:
             raise CatalogError("output has unknown or required fields")
         try:
             role = ArtifactRole(item["role"])
         except (TypeError, ValueError) as error:
             raise CatalogError("invalid output role") from error
-        if item["date_format"] not in _DATE_FORMATS:
+        date_format = item.get("date_format")
+        if date_format is not None and date_format not in _DATE_FORMATS:
             raise CatalogError("invalid output date_format")
-        items.append(OutputSpec(role, _relative_pattern(item["glob"], "output glob"), item["date_format"]))
+        items.append(OutputSpec(role, _relative_pattern(item["glob"], "output glob"), date_format))
     if len({item.role for item in items}) != len(items):
         raise CatalogError("duplicate output role")
     return tuple(items)
