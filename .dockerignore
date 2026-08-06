@@ -1,0 +1,45 @@
+# VCS y metadata local
+.git
+.gitignore
+.claude
+.atl
+.vscode
+.idea
+
+# Caches de Python y entornos virtuales (incluye los de cada legacy)
+**/__pycache__
+**/*.py[cod]
+**/.pytest_cache
+.mypy_cache
+.ruff_cache
+**/.venv
+**/venv
+
+# Evidencia de corridas y estado: se monta como volumen, nunca se hornea
+var/
+
+# Frontend: el servicio de dev monta ./frontend, no necesita estar en la imagen
+frontend/node_modules
+frontend/dist
+
+# Datos reales de clientes: jamás dentro de la imagen
+**/.env
+**/.env.*
+*.csv
+*.xlsx
+*.xls
+*.xlsm
+**/input/
+**/output/
+**/outputs/
+**/results/
+**/resultados/
+**/base_recibida/
+**/base_procesada/
+**/logs/
+**/*.log
+
+# Artefactos de build
+**/build/
+**/dist/
+**/*.exe
