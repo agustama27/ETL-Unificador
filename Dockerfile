@@ -4,15 +4,15 @@ ENV PYTHONUNBUFFERED=1 \
     PIP_DISABLE_PIP_VERSION_CHECK=1 \
     PIP_NO_CACHE_DIR=1
 
+RUN useradd --create-home --uid 1000 etl
+
 WORKDIR /app
 
-COPY . .
+COPY --chown=etl:etl . .
 
-RUN pip install -e ".[etl,api,test]"
-
-RUN useradd --create-home --uid 1000 etl \
+RUN pip install -e ".[etl,api,test]" \
     && mkdir -p var \
-    && chown -R etl:etl var
+    && chown etl:etl var
 
 USER etl
 
