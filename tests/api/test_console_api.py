@@ -16,7 +16,6 @@ WORKSPACE = Path(__file__).resolve().parents[2]
 
 
 def _workspace(tmp_path: Path) -> Path:
-    shutil.copytree(WORKSPACE / "registry", tmp_path / "registry")
     for manifest in WORKSPACE.glob("etls/*/manifest.yaml"):
         target = tmp_path / manifest.relative_to(WORKSPACE)
         target.parent.mkdir(parents=True, exist_ok=True)
