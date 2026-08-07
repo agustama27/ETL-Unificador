@@ -19,6 +19,9 @@ está en `docs/ADR-001-nucleo-hexagonal.md`.
    nada bajo `var/`. Los artefactos y logs pueden contener PII.
 4. **Mínimo blast radius:** ante la duda entre un cambio chico y uno prolijo, hacé el
    chico y anotá el prolijo como pendiente.
+5. **`business_date == hoy` NO es deuda técnica.** Es regla de negocio confirmada por
+   operaciones (ADR-001, decisión 7): no existe reproceso de días caídos. No propongas
+   backfill ni "arregles" ese check.
 
 ## ⚠️ SubprocessAdapter es compartido por 10 ETLs de 6 clientes
 

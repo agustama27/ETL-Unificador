@@ -246,6 +246,8 @@ def create_app(workspace: Path | None = None, *,
             parsed_date = date.fromisoformat(business_date)
         except ValueError as error:
             raise HTTPException(422, "Fecha inválida") from error
+        # Deliberado (ADR-001, decisión 7): no existe reproceso de días caídos y los
+        # legacy estampan la fecha del sistema en los nombres de salida.
         if parsed_date != today():
             raise HTTPException(
                 422, "Solo se acepta la fecha de negocio de hoy")

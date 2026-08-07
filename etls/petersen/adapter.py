@@ -19,6 +19,8 @@ class PetersenGestionesAdapter:
         self._today = today
 
     def validate(self, request: RunRequest) -> None:
+        # Deliberado (ADR-001, decisión 7): no existe reproceso de días caídos y los
+        # legacy estampan la fecha del sistema en los nombres de salida.
         if request.business_date != self._today():
             raise ValidationError("business date must equal host-local today")
         if request.params:
