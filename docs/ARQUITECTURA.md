@@ -24,28 +24,39 @@ del proyecto legacy del cliente. El núcleo sólo sabe de archivos, comandos, es
 ```
 ┌──────────────────────────────────────────────────────────────┐
 │  Interfaces                                                  │
-│  CLI · API REST (FastAPI) · UI web (React) · MCP (futuro)    │
+│  CLI · API REST (FastAPI) · UI web (React) · MCP (stdio)     │
 └──────────────────────────┬───────────────────────────────────┘
                            │  RunRequest / RunResult
 ┌──────────────────────────▼───────────────────────────────────┐
 │  Núcleo orquestador                                          │
 │  Catálogo · Servicio · Runner · Sandbox · Estado · Locks     │
 │  No conoce ningún cliente. Sólo archivos, procesos, estados. │
+│  Importa el contrato desde etl_core/contracts.py.            │
 └──────────────────────────┬───────────────────────────────────┘
-                           │  contrato de adapter
+                           │  Protocol ETLAdapter (etl_core)
 ┌──────────────────────────▼───────────────────────────────────┐
-│  Adapters por cliente                                        │
-│  Traducen el contrato genérico al CLI real de cada ETL       │
+│  Paquetes de cliente (etls/<cliente>/)                       │
+│  manifest.yaml · adapter · job.py · legacy/ · tests · README │
 └──────────────────────────┬───────────────────────────────────┘
                            │  subprocess
 ┌──────────────────────────▼───────────────────────────────────┐
-│  Proyectos ETL legacy (SOHO-*, soho-*)                       │
+│  Proyectos ETL legacy (etls/<cliente>/legacy/)               │
 │  Reglas de negocio del cliente. No se modifican.             │
 └──────────────────────────────────────────────────────────────┘
 ```
 
-El **catálogo declarativo** (`registry/*.yaml`) atraviesa las cuatro capas: define qué ETLs
-existen, qué comando ejecutan, qué entradas piden y qué salidas prometen.
+El **catálogo declarativo** (`etls/*/manifest.yaml`) atraviesa las cuatro capas: define qué
+ETLs existen, qué comando ejecutan, qué entradas piden y qué salidas prometen. El campo
+`adapter` es una ruta de importación `modulo:Clase` que el catálogo resuelve dinámicamente,
+validando que la clase satisfaga el Protocol antes de aceptar el ETL como ejecutable.
+Agregar un cliente = agregar una carpeta; ningún archivo del núcleo se toca.
+
+Sobre el núcleo, `platform_api/` agrega la capa operativa: índice SQLite de corridas
+(`var/index.sqlite` — `run.json` sigue siendo la fuente de verdad), recuperación de
+corridas huérfanas al arrancar (código `orphaned`), retención de evidencia con PII,
+autenticación por token fail-closed y notificaciones por webhook. `platform_mcp/` expone
+las mismas operaciones como servidor MCP stdio para agentes (`list_etls`, `describe_etl`,
+`run_etl`, `get_run`, `download_artifact`).
 
 ---
 
@@ -106,8 +117,10 @@ Se guardan en `run.json` bajo `error.code` y, si el estado es `blocked`, tambié
 
 ## 4. El catálogo declarativo
 
-Un YAML por cliente en `registry/`. `orchestrator/catalog.py` los carga todos, los valida
-estrictamente y falla al arrancar si algo no cierra.
+Un `manifest.yaml` por cliente en `etls/<cliente>/`. `orchestrator/catalog.py`
+(`Catalog.load_workspace`) los descubre todos, los valida estrictamente y falla al
+arrancar si algo no cierra. Las carpetas que empiezan con `_` (como `etls/_template/`)
+se ignoran.
 
 ### Campos
 
@@ -124,7 +137,7 @@ estrictamente y falla al arrancar si algo no cierra.
 | `command` | no | Comando base, por ejemplo `[python, back-base/ejecutar_dia.py]` |
 | `fixed_arguments` | no | Flags siempre presentes, por ejemplo `[--chat]` |
 | `arguments` | no | Mapa rol → flag CLI |
-| `adapter` | no | Clave del adapter registrado |
+| `adapter` | no | Ruta de importación `modulo:Clase` (ej. `etl_core.contracts:SubprocessAdapter`); debe satisfacer el Protocol `ETLAdapter` |
 | `inputs` | no | Lista de `{role, extensions, required}` |
 | `outputs` | no | Lista de `{role, glob, date_format}` |
 | `allowed_exits` | no | Exit codes aceptados |
@@ -148,8 +161,10 @@ estrictamente y falla al arrancar si algo no cierra.
 
 ## 5. El contrato de adapter
 
-Un adapter es cualquier objeto que exponga esta superficie. No hay clase base ni `Protocol`
-formal todavía: el contrato es implícito (ver ADR-001, decisión 1).
+El contrato es el `Protocol` `ETLAdapter` de `etl_core/contracts.py` (runtime-checkable:
+el catálogo valida con `isinstance` al resolver la referencia del manifiesto). Ahí también
+viven las excepciones compartidas (`ValidationError`, `PostconditionError`) y el
+`SubprocessAdapter` genérico.
 
 ```python
 class MiAdapter:
@@ -177,32 +192,37 @@ class MiAdapter:
 2. **`validate()` se llama dos veces** (desde el servicio y desde `command()`). Tiene que ser idempotente y sin efectos.
 3. **No metas lógica de negocio.** Si estás implementando una regla de cobranza, va en el legacy.
 4. **`outputs()` es la línea de defensa.** El exit code `0` no significa que el ETL hizo lo suyo.
-5. **Si el ETL legacy no tiene CLI usable**, no lo parchees desde el adapter: escribí un `*_job.py`
-   en la carpeta del cliente que exponga una CLI limpia y llamá a eso. Es lo que hacen Bancor,
+5. **Si el ETL legacy no tiene CLI usable**, no lo parchees desde el adapter: escribí un
+   `etls/<cliente>/job.py` que exponga una CLI limpia y llamá a eso. Es lo que hacen Bancor,
    EPEC, Frávega, Claro UY, Encuesta CX, Social Learning, Petersen y Naranja X MT.
+
+Un adapter puede además exponer un hook opcional `input_destination(role, source) -> Path`
+para controlar dónde se copia cada entrada dentro del sandbox (lo usa Naranja X para
+anclar PLANES/PAGOS en `input/diarios/`); sin el hook, el servicio usa
+`input/<rol><extensión>`.
 
 ### Adapters existentes
 
-| Clave registrada | Clase | Nota |
+| Referencia del manifiesto | Clase | Nota |
 |---|---|---|
-| `naranjax.ma.chat` | `MaChatAdapter` | Stateful. Único con la variante `--chat` y `--sin_planes_hoy` |
-| `naranjax.ma.voice` | `MaVoiceAdapter` | Stateful |
-| `naranjax.mt.voice` | `MtVoiceAdapter` | Vía `mt_voice_job.py` |
-| `naranjax.mt.voice.back` | `MtVoiceBackAdapter` | Tres entradas obligatorias |
-| `petersen.gestiones` | `PetersenGestionesAdapter` | Extras opcionales `approach`, `clientes`, `excluidos` |
-| `naranjax.ma.voice.pct` y otros 8 | `MaVoicePctAdapter` | **Es el adapter genérico de facto.** Ver ADR-001, decisión 2 |
+| `etls.naranjax.ma_chat:MaChatAdapter` | `MaChatAdapter` | Stateful. `--chat` viaja como `fixed_arguments` del manifiesto |
+| `etls.naranjax.ma_voice:MaVoiceAdapter` | `MaVoiceAdapter` | Stateful, exige cambio de estado |
+| `etls.naranjax.mt_voice:MtVoiceAdapter` | `MtVoiceAdapter` | Vía `mt_voice_job.py` |
+| `etls.naranjax.mt_voice_back:MtVoiceBackAdapter` | `MtVoiceBackAdapter` | Tres entradas obligatorias |
+| `etls.petersen.adapter:PetersenGestionesAdapter` | `PetersenGestionesAdapter` | Entradas opcionales `approach`, `clientes`, `excluidos` |
+| `etl_core.contracts:SubprocessAdapter` | `SubprocessAdapter` | **El genérico**: 10 ETLs de 6 clientes |
 
-> **Advertencia.** `MaVoicePctAdapter` está mapeado a `bancor.base`, `epec.base`, `fravega.base`,
-> `clarouy.base`, `encuestacx.base`, `social.argentina`, `social.chile`, `naranjax.ma.chat.pct` y
-> `naranjax.mt.voice.pct`. Si lo tocás para arreglar algo de Naranja X, estás tocando seis clientes.
-> Hasta que se resuelva la decisión 2 del ADR-001, cualquier cambio ahí requiere correr los 13 e2e.
+> **Advertencia.** `SubprocessAdapter` está mapeado a las bases de Bancor, EPEC, Frávega,
+> Claro UY, Encuesta CX y Social Learning (AR/CL) y a los tres PCT de Naranja X. Si lo
+> tocás para arreglar algo de un cliente, estás tocando a los otros cinco: cualquier
+> cambio ahí requiere correr los 13 e2e (`pytest etls/`).
 
 ---
 
 ## 6. Puente con el legacy: los `*_job.py`
 
 Cuando el proyecto legacy no tiene una CLI que acepte rutas de entrada y salida, se escribe un
-wrapper propio en `adapters/<cliente>/<proceso>_job.py`. El wrapper:
+wrapper propio en `etls/<cliente>/job.py`. El wrapper:
 
 1. Recibe `--input` y `--output_dir` apuntando al sandbox.
 2. Importa las funciones del legacy.
@@ -212,7 +232,7 @@ wrapper propio en `adapters/<cliente>/<proceso>_job.py`. El wrapper:
 
 ### El punto frágil
 
-`adapters/bancor/base_job.py` reasigna el `__file__` de un módulo importado para que el legacy
+`etls/bancor/job.py` reasigna el `__file__` de un módulo importado para que el legacy
 derive su `base_dir` hacia el sandbox:
 
 ```python

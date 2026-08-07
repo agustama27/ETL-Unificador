@@ -186,7 +186,8 @@ ningún archivo del núcleo.
 
 | Archivo | Responsabilidad |
 |---|---|
-| `orchestrator/catalog.py` | Carga y valida los YAML de `registry/`. Rechaza rutas fuera del workspace, roles duplicados, formatos de fecha desconocidos y ETLs marcados ejecutables sin metadata completa. |
+| `etl_core/contracts.py` | Único punto de acoplamiento núcleo ↔ clientes: Protocol `ETLAdapter`, excepciones con `code` y el `SubprocessAdapter` genérico que comparten 10 ETLs. |
+| `orchestrator/catalog.py` | Descubre y valida los manifiestos (`etls/*/manifest.yaml`); resuelve el adapter por import dinámico (`modulo:Clase`) y exige que satisfaga el Protocol. Rechaza rutas fuera del workspace, roles duplicados, formatos de fecha desconocidos y ETLs marcados ejecutables sin metadata completa. |
 | `orchestrator/models.py` | Contratos de datos: `ETLDefinition`, `RunRequest`, `RunResult`, `FileEvidence`, y los enums de estado. Todo inmutable (`frozen=True`). |
 | `orchestrator/service.py` | Orquesta la corrida completa y escribe `run.json` en cada transición. Es la máquina de estados. |
 | `orchestrator/runner.py` | Ejecuta el subprocess con `cwd` controlado, timeout, drenado de stdout/stderr en hilos y escalada terminate → kill. |
@@ -194,7 +195,7 @@ ningún archivo del núcleo.
 | `orchestrator/state_store.py` | Promoción durable del estado persistente: snapshot del día + estado corriente del mes, con marcador de recovery si la promoción queda a medias. |
 | `orchestrator/file_manager.py` | Copia inputs al sandbox validando extensión, e inventaría el directorio de salida antes y después. |
 | `orchestrator/logging_utils.py` | Persiste logs y aplica el `Redactor` sobre secretos y rutas absolutas. |
-| `orchestrator/run.py` | CLI y registro de adapters. |
+| `orchestrator/run.py` | CLI genérica: `--etl`, `--fecha`, `--base`, `--input ROL=RUTA`, `--param NOMBRE[=VALOR]`. |
 
 ---
 
