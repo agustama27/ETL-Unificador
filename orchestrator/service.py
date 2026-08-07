@@ -4,7 +4,7 @@ import shutil
 from pathlib import Path
 from typing import Any, Callable
 
-from adapters.naranjax.ma_chat import PostconditionError, ValidationError
+from etl_core.contracts import PostconditionError, ValidationError
 
 from .file_manager import FileManager
 from .logging_utils import Redactor, persist_logs

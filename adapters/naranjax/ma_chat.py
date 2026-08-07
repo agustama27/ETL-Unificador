@@ -5,15 +5,10 @@ from pathlib import Path
 import re
 import sys
 
+from etl_core.contracts import PostconditionError, ValidationError
 from orchestrator.models import ETLDefinition, FileEvidence, RunRequest
 
-
-class ValidationError(ValueError):
-    """The request cannot safely cross the legacy adapter boundary."""
-
-
-class PostconditionError(RuntimeError):
-    """Legacy outputs do not satisfy the adapter contract."""
+__all__ = ["MaChatAdapter", "PostconditionError", "ValidationError"]
 
 
 class MaChatAdapter:
