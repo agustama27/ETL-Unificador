@@ -80,7 +80,7 @@ def request(tmp_path: Path, day: date = TODAY) -> RunRequest:
     base = tmp_path / "outside" / "base.xlsx"
     base.parent.mkdir(exist_ok=True)
     base.write_bytes(b"synthetic base")
-    return RunRequest(ETL, day, base, no_planes_today=True,
+    return RunRequest(ETL, day, inputs={"base": base}, params={"no_planes_today": True},
                       environment={"NARANJAX_PLANES_MIN_COVERAGE": SECRET})
 
 
@@ -221,7 +221,7 @@ def test_stateless_pct_run_skips_preflight_staging_and_promotion(tmp_path: Path)
     base.parent.mkdir(exist_ok=True)
     base.write_text("synthetic", encoding="utf-8")
 
-    result = subject.execute(RunRequest(PCT, TODAY, base))
+    result = subject.execute(RunRequest(PCT, TODAY, inputs={"base": base}))
     evidence = record(store)
 
     assert result.status is RunStatus.SUCCEEDED
@@ -281,8 +281,9 @@ def test_extras_stage_truthfully_with_validated_suffixes(tmp_path: Path) -> None
     subject, store, state, outside = _extras_fixture(tmp_path)
 
     result = subject.execute(RunRequest(
-        "synthetic.back", TODAY, outside / "base.txt",
-        extras={"logcall": outside / "LOGCALL_x.csv",
+        "synthetic.back", TODAY,
+        inputs={"base": outside / "base.txt",
+                "logcall": outside / "LOGCALL_x.csv",
                 "historial": outside / "historial_x.csv"},
     ))
     evidence = record(store)
@@ -303,8 +304,9 @@ def test_extra_with_undeclared_extension_is_terminal(tmp_path: Path) -> None:
     (outside / "logcall.xlsx").write_text("synthetic", encoding="utf-8")
 
     result = subject.execute(RunRequest(
-        "synthetic.back", TODAY, outside / "base.txt",
-        extras={"logcall": outside / "logcall.xlsx",
+        "synthetic.back", TODAY,
+        inputs={"base": outside / "base.txt",
+                "logcall": outside / "logcall.xlsx",
                 "historial": outside / "historial_x.csv"},
     ))
 
