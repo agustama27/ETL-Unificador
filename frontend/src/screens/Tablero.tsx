@@ -2,7 +2,7 @@ import { Download, Play } from "@phosphor-icons/react";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { LIVE, artifactsZipUrl, fetchCatalog, fetchHistory, todayIso } from "../api";
+import { LIVE, downloadArtifactsZip, fetchCatalog, fetchHistory, todayIso } from "../api";
 import type { RunStatus, RunSummary } from "../api";
 import { StatusBadge, useToast } from "../components/shared";
 
@@ -99,9 +99,9 @@ export default function Tablero() {
                 <div className="actions">
                   {run && <Link className="btn-ghost" to={`/runs/${run.run_id}`}>Ver corrida</Link>}
                   {run?.status === "succeeded" && (
-                    <a className="btn-secondary" href={artifactsZipUrl(run.run_id)} download>
+                    <button className="btn-secondary" onClick={() => downloadArtifactsZip(run.run_id)}>
                       <Download size={13} /> Descargar
-                    </a>
+                    </button>
                   )}
                   {runLabel && (
                     <button className="btn-primary" onClick={() => navigate(`/lanzar/${entry.id}`)}>

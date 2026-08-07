@@ -57,8 +57,8 @@ El directorio `var/` (corridas, estado, uploads) se monta como volumen desde el 
 ### API + UI web
 
 ```bash
-# Terminal 1 — backend
-uvicorn platform_api.main:app --reload --port 8000
+# Terminal 1 — backend (ETL_AUTH_DISABLED=1 sólo en desarrollo)
+ETL_AUTH_DISABLED=1 uvicorn "platform_api.main:create_app" --factory --reload --port 8000
 
 # Terminal 2 — frontend
 cd frontend
@@ -131,7 +131,8 @@ POST /api/runs/{run_id}/actions/free_lock  Libera un lock huérfano (rechaza si 
 
 | Variable | Default | Efecto |
 |---|---|---|
-| `ETL_CONSOLE_TOKEN` | vacío (sin auth) | Si está seteada, todo `/api/*` exige `Authorization: Bearer <token>` o `X-Api-Token`. La consola lo toma de `localStorage("etl_token")`. |
+| `ETL_CONSOLE_TOKEN` | — (**fail-closed**) | Todo `/api/*` exige `Authorization: Bearer <token>` o `X-Api-Token`. Sin token configurado la API responde 503 en `/api/*`, salvo opt-out explícito de desarrollo con `ETL_AUTH_DISABLED=1` (el compose lo setea por defecto). La consola toma el token de `localStorage("etl_token")` y descarga artefactos vía fetch con el header. |
+| `ETL_AUTH_DISABLED` | vacío | `1` desactiva la autenticación. **Sólo para desarrollo local.** |
 | `ETL_RETENTION_DAYS` | `30` | Al arrancar borra corridas terminales y uploads más viejos que N días (contienen PII). `0` desactiva. |
 | `ETL_NOTIFY_WEBHOOK` | vacío | URL a la que `notify_dev` postea el JSON de la notificación (Slack/Teams/n8n). Siempre queda registro en `var/notifications.jsonl`. |
 | `ETL_MAX_CONCURRENT_RUNS` | `2` | Tamaño del pool de ejecución (hilos no-daemon: las corridas en curso terminan antes de apagar). |
@@ -310,7 +311,7 @@ Son deudas asumidas, no bugs sorpresa. Están priorizadas en `docs/ADR-001-nucle
 2. **`SubprocessAdapter` es compartido por 10 ETLs de 6 clientes.** Ya tiene nombre honesto y
    vive en `etl_core`, pero un cambio ahí sigue exigiendo correr los 13 e2e completos.
 3. **La autenticación es un token único compartido** (`ETL_CONSOLE_TOKEN`), sin usuarios ni
-   roles. Los links de descarga de artefactos no adjuntan el token (usá la API con header).
+   roles.
 4. **El scheduling es informativo:** `/api/schedule` cruza deadlines declarados con las
    corridas del día, pero nadie dispara ETLs automáticamente todavía.
 
