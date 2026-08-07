@@ -5,10 +5,10 @@ etls:
     repository_status: present
     readiness: ready
     executable: true
-    project_path: soho-petersen-cobranzas-resultados
-    working_dir: soho-petersen-cobranzas-resultados
-    entrypoint: adapters/petersen/gestiones_job.py
-    command: [python, ../adapters/petersen/gestiones_job.py]
+    project_path: etls/petersen/legacy
+    working_dir: etls/petersen/legacy
+    entrypoint: etls/petersen/job.py
+    command: [python, ../job.py]
     fixed_arguments: []
     arguments:
       base: --input
@@ -26,10 +26,10 @@ etls:
     timeout_seconds: 900
     request_date_format: YYYYMMDD
     output_date_source: system_date
-    adapter: adapters.petersen.gestiones:PetersenGestionesAdapter
+    adapter: etls.petersen.adapter:PetersenGestionesAdapter
   - id: petersen.retell
     name: Petersen - Enriquecimiento Retell.ai (requiere API y credenciales)
     repository_status: present
     readiness: blocked
     executable: false
-    project_path: soho-petersen-cobranzas-resultados
+    project_path: etls/petersen/legacy

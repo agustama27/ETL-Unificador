@@ -228,7 +228,7 @@ def test_repository_registry_directory_exposes_all_client_entries() -> None:
                 "social.argentina": object(), "social.chile": object(),
                 "petersen.gestiones": object()}
 
-    catalog = Catalog.load_directory(Path("registry"), Path.cwd(), adapters=adapters)
+    catalog = Catalog.load_workspace(Path.cwd(), adapters=adapters)
 
     assert len(tuple(catalog)) == 22
     bancor = catalog["bancor.base.daily"]

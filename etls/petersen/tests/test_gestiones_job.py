@@ -7,8 +7,8 @@ from pathlib import Path
 
 
 WORKSPACE = Path(__file__).resolve().parents[3]
-WRAPPER = WORKSPACE / "adapters/petersen/gestiones_job.py"
-LEGACY = WORKSPACE / "soho-petersen-cobranzas-resultados"
+WRAPPER = WORKSPACE / "etls/petersen/job.py"
+LEGACY = WORKSPACE / "etls/petersen/legacy"
 AG002 = ["AG002_45.csv", "AG002_46.csv", "AG002_47.csv", "AG002_48.csv"]
 
 
