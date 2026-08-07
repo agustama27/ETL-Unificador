@@ -1,3 +1,11 @@
+"""Log persistence and redaction of secrets and host paths.
+
+El ``Redactor`` enmascara secretos declarados y rutas absolutas del host. **NO
+enmascara datos personales del negocio** (DNI, teléfonos, montos): los artefactos
+y logs pueden contener PII y ``var/`` debe tratarse como material sensible, con
+la política de retención de la API activa (``ETL_RETENTION_DAYS``).
+"""
+
 from __future__ import annotations
 
 import os

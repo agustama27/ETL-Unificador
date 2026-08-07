@@ -122,9 +122,23 @@ GET  /api/runs                             Lista corridas, con filtros y paginad
 GET  /api/runs/{run_id}                    Detalle de una corrida
 GET  /api/runs/{run_id}/artifacts.zip      Descarga todos los artefactos + run.json
 GET  /api/runs/{run_id}/artifacts/{rol}    Descarga un artefacto puntual
-POST /api/runs/{run_id}/actions/notify_dev Registra una notificación a desarrollo
+GET  /api/schedule                         Deadlines de hoy + corridas huérfanas recuperadas
+POST /api/runs/{run_id}/actions/notify_dev Notifica a desarrollo (webhook + registro durable)
 POST /api/runs/{run_id}/actions/free_lock  Libera un lock huérfano (rechaza si hay corrida viva)
 ```
+
+### Configuración de la API (variables de entorno)
+
+| Variable | Default | Efecto |
+|---|---|---|
+| `ETL_CONSOLE_TOKEN` | vacío (sin auth) | Si está seteada, todo `/api/*` exige `Authorization: Bearer <token>` o `X-Api-Token`. La consola lo toma de `localStorage("etl_token")`. |
+| `ETL_RETENTION_DAYS` | `30` | Al arrancar borra corridas terminales y uploads más viejos que N días (contienen PII). `0` desactiva. |
+| `ETL_NOTIFY_WEBHOOK` | vacío | URL a la que `notify_dev` postea el JSON de la notificación (Slack/Teams/n8n). Siempre queda registro en `var/notifications.jsonl`. |
+| `ETL_MAX_CONCURRENT_RUNS` | `2` | Tamaño del pool de ejecución (hilos no-daemon: las corridas en curso terminan antes de apagar). |
+
+Al arrancar, la API además marca como `failed`/`orphaned` las corridas que quedaron vivas
+de un proceso anterior, y sirve el listado desde un índice SQLite (`var/index.sqlite`)
+en vez de escanear el filesystem.
 
 ---
 
@@ -280,10 +294,10 @@ Son deudas asumidas, no bugs sorpresa. Están priorizadas en `docs/ADR-001-nucle
    de salida. No hay reproceso ni backfill.
 2. **`SubprocessAdapter` es compartido por 10 ETLs de 6 clientes.** Ya tiene nombre honesto y
    vive en `etl_core`, pero un cambio ahí sigue exigiendo correr los 13 e2e completos.
-3. **La API no está endurecida:** sin autenticación, ejecución en hilos daemon sin recuperación
-   ante reinicio, listado de corridas por escaneo completo del filesystem.
-4. **Sin política de retención.** `var/runs/` y `var/uploads/` crecen indefinidamente con archivos
-   que contienen datos personales.
+3. **La autenticación es un token único compartido** (`ETL_CONSOLE_TOKEN`), sin usuarios ni
+   roles. Los links de descarga de artefactos no adjuntan el token (usá la API con header).
+4. **El scheduling es informativo:** `/api/schedule` cruza deadlines declarados con las
+   corridas del día, pero nadie dispara ETLs automáticamente todavía.
 
 ---
 
