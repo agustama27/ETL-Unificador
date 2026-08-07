@@ -248,6 +248,14 @@ preparing → running → succeeded
           → blocked                (validación, lock tomado, snapshot existente, recovery)
 ```
 
+### Sólo se opera con la fecha de hoy
+
+Regla de negocio, no limitación (ADR-001, decisión 7): **no existe reproceso de días
+caídos** — si una entrega falla, no se reprocesa ese día; al día siguiente llegan
+archivos nuevos y se corre con esos. Los adapters y la API rechazan cualquier
+`business_date` distinta de hoy, y los ETLs legacy estampan la fecha del sistema en los
+nombres de salida.
+
 ### Lock por período
 
 Antes de ejecutar, el servicio toma un lock en `var/state/<etl_id>/<YYYYMM>/.lock`. Impide dos
@@ -306,14 +314,11 @@ cambiaste comportamiento observable, no sólo estructura.
 
 Son deudas asumidas, no bugs sorpresa. Están priorizadas en `docs/ADR-001-nucleo-hexagonal.md`.
 
-1. **Sólo se acepta la fecha de hoy.** Los adapters y la API rechazan cualquier `business_date`
-   distinta de `date.today()`, porque los ETLs legacy estampan la fecha del sistema en los nombres
-   de salida. No hay reproceso ni backfill.
-2. **`SubprocessAdapter` es compartido por 10 ETLs de 6 clientes.** Ya tiene nombre honesto y
+1. **`SubprocessAdapter` es compartido por 10 ETLs de 6 clientes.** Ya tiene nombre honesto y
    vive en `etl_core`, pero un cambio ahí sigue exigiendo correr los 13 e2e completos.
-3. **La autenticación es un token único compartido** (`ETL_CONSOLE_TOKEN`), sin usuarios ni
+2. **La autenticación es un token único compartido** (`ETL_CONSOLE_TOKEN`), sin usuarios ni
    roles.
-4. **El scheduling es informativo:** `/api/schedule` cruza deadlines declarados con las
+3. **El scheduling es informativo:** `/api/schedule` cruza deadlines declarados con las
    corridas del día, pero nadie dispara ETLs automáticamente todavía.
 
 ---

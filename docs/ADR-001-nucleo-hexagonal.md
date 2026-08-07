@@ -144,6 +144,18 @@ El import de `ctypes.wintypes` se mueve dentro de la rama Windows de `_windows_d
 La abstracción ya existe en el código; sólo el import quedó afuera. Se agrega Dockerfile y pipeline
 de CI que corra los trece e2e en Linux.
 
+### Decisión 7 — `business_date == hoy` es regla de negocio (resuelta 2026-08-07)
+
+Respuesta de operaciones a la pregunta abierta #1: **no existe reproceso de días
+caídos**. Si una entrega falla, no se reprocesa ese día — al día siguiente llegan
+archivos nuevos y se corre con esos. La restricción es correcta y deliberada, no una
+simplificación del MVP.
+
+Refuerzo técnico: los legacy estampan la fecha del sistema en los nombres de salida
+(`output_date_source: system_date`), así que un backfill produciría artefactos con la
+fecha equivocada. El check vive en los adapters y en la API, comentado con referencia a
+esta decisión. **No diseñar backfill ni reproceso.**
+
 ---
 
 ## Alternativas consideradas
@@ -271,9 +283,8 @@ una carpeta bajo `etls/`.
 
 Hay que responderlas antes de la Fase 2, porque cambian el diseño.
 
-1. **¿La regla `business_date == today` es una restricción real del negocio o una simplificación
-   del MVP?** Si las bases sólo existen el día que llegan, se queda. Si es una simplificación, hay
-   que diseñar reproceso y backfill, y eso afecta el contrato de `RunRequest`.
+1. **Resuelta (2026-08-07):** la regla `business_date == today` es una restricción real
+   del negocio — ver la Decisión 7.
 2. **Los ETLs bloqueados por credenciales de Retell.ai** (Bancor resultados, Claro UY encuestas,
    EPEC tipificaciones, Frávega resultados, Petersen Retell) son el bloqueante que afecta a más
    clientes a la vez. ¿Está trabado por acceso, presupuesto o decisión?
