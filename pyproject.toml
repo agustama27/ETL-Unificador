@@ -23,7 +23,7 @@ api = [
 ]
 
 [tool.setuptools.packages.find]
-include = ["orchestrator*", "adapters*", "platform_api*"]
+include = ["etl_core*", "orchestrator*", "adapters*", "platform_api*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
