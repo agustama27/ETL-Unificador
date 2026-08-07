@@ -50,10 +50,10 @@ class SubprocessAdapter:
     def validate(self, request: RunRequest) -> None:
         if request.business_date != self._today():
             raise ValidationError("business date must equal host-local today")
-        if request.planes is not None or request.pagos is not None or request.no_planes_today:
-            raise ValidationError("PCT accepts no PLANES, PAGOS, or no-PLANES intent")
-        if request.extras:
-            raise ValidationError("PCT accepts no extra inputs")
+        if set(request.inputs) - {"base"}:
+            raise ValidationError("adapter accepts only the base input")
+        if request.params:
+            raise ValidationError("adapter accepts no parameters")
 
     def command(
         self, definition: ETLDefinition, request: RunRequest, run: Path
@@ -85,7 +85,7 @@ class SubprocessAdapter:
                 matches, before, output.date_format, self._today()
             )
             if isinstance(classification, str):
-                raise PostconditionError(f"{output.role.value}: {classification}")
+                raise PostconditionError(f"{output.role}: {classification}")
             selected.append(replace(classification, role=output.role))
         return tuple(selected)
 

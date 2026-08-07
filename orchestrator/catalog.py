@@ -8,7 +8,6 @@ import yaml  # type: ignore[import-untyped]
 
 from etl_core.contracts import ETLAdapter
 from orchestrator.models import (
-    ArtifactRole,
     ETLDefinition,
     InputSpec,
     OutputSpec,
@@ -78,6 +77,7 @@ _FIELDS = {
 _REQUIRED = {"id", "name", "repository_status", "readiness", "executable", "project_path"}
 _DATE_FORMATS = {"YYYYMMDD", "YYMMDD", "DDMMYYYY"}
 _ENVIRONMENT_NAME = re.compile(r"^[A-Z_][A-Z0-9_]*$")
+_ROLE_NAME = re.compile(r"^[a-z][a-z0-9_]*$")
 
 
 class Catalog:
@@ -253,10 +253,9 @@ def _outputs(raw: object) -> tuple[OutputSpec, ...]:
     for item in raw:
         if not isinstance(item, dict) or not {"role", "glob"} <= set(item) <= {"role", "glob", "date_format"}:
             raise CatalogError("output has unknown or required fields")
-        try:
-            role = ArtifactRole(item["role"])
-        except (TypeError, ValueError) as error:
-            raise CatalogError("invalid output role") from error
+        role = item["role"]
+        if not isinstance(role, str) or not _ROLE_NAME.fullmatch(role):
+            raise CatalogError("invalid output role")
         date_format = item.get("date_format")
         if date_format is not None and date_format not in _DATE_FORMATS:
             raise CatalogError("invalid output date_format")

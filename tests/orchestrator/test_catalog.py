@@ -146,7 +146,7 @@ def test_catalog_rejects_invalid_root_schema_ids_and_fields(
         ({"fixed_arguments": "--chat"}, "fixed_arguments"),
         ({"arguments": {"business_date": 7}}, "arguments"),
         ({"inputs": [{"role": "base", "extensions": [], "required": True}]}, "extensions"),
-        ({"outputs": [{"role": "invalid", "glob": "*.csv", "date_format": "YYMMDD"}]}, "role"),
+        ({"outputs": [{"role": "Invalid Role", "glob": "*.csv", "date_format": "YYMMDD"}]}, "role"),
         ({"outputs": [{"role": "chat", "glob": "*.csv", "date_format": "ISO"}]}, "date_format"),
         ({"timeout_seconds": 0}, "timeout_seconds"),
         ({"environment_allowlist": ["lower-case"]}, "environment"),
@@ -234,7 +234,7 @@ def test_repository_registry_directory_exposes_all_client_entries() -> None:
     bancor = catalog["bancor.base.daily"]
     assert (bancor.adapter, bancor.project_path) == (
         "etl_core.contracts:SubprocessAdapter", Path("soho-bancor-cobranzas-etl"))
-    assert tuple((o.role.value, o.date_format) for o in bancor.outputs) == (
+    assert tuple((o.role, o.date_format) for o in bancor.outputs) == (
         ("base_filtrada", "DDMMYYYY"), ("telefonos", "DDMMYYYY"),
         ("roman", "YYYYMMDD"), ("e1kia", "YYYYMMDD"),
     )
@@ -245,7 +245,7 @@ def test_repository_registry_directory_exposes_all_client_entries() -> None:
     survey = catalog["encuestacx.base.daily"]
     assert (survey.adapter, survey.project_path) == (
         "etl_core.contracts:SubprocessAdapter", Path("soho-encuestaCX"))
-    assert tuple((o.role.value, o.glob, o.date_format) for o in survey.outputs) == (
+    assert tuple((o.role, o.glob, o.date_format) for o in survey.outputs) == (
         ("survey_base", "base_encuesta.csv", None),
         ("survey_base_e164", "base_encuesta_e164.csv", None),
     )
@@ -257,6 +257,6 @@ def test_output_date_format_is_optional(tmp_path: Path) -> None:
     catalog = Catalog.load(_write(tmp_path, entry), tmp_path)
 
     output = catalog["naranjax.ma.chat.daily"].outputs[0]
-    assert (output.role.value, output.glob, output.date_format) == (
+    assert (output.role, output.glob, output.date_format) == (
         "survey_base", "base_encuesta.csv", None
     )

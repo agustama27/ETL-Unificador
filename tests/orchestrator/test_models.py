@@ -36,16 +36,22 @@ def test_status_and_role_enums_expose_stable_string_values() -> None:
     ]
 
 
-def test_run_request_defensively_freezes_extras(tmp_path: Path) -> None:
-    extras = {"logcall": tmp_path / "logcall.csv"}
-    request = RunRequest("etl", date(2026, 7, 21), tmp_path / "base.txt", extras=extras)
+def test_run_request_defensively_freezes_inputs_and_params(tmp_path: Path) -> None:
+    inputs = {"logcall": tmp_path / "logcall.csv"}
+    params = {"no_planes_today": True}
+    request = RunRequest("etl", date(2026, 7, 21), inputs=inputs, params=params)
 
-    extras["historial"] = tmp_path / "historial.csv"
+    inputs["historial"] = tmp_path / "historial.csv"
+    params["other"] = False
 
-    assert dict(request.extras) == {"logcall": tmp_path / "logcall.csv"}
+    assert dict(request.inputs) == {"logcall": tmp_path / "logcall.csv"}
+    assert dict(request.params) == {"no_planes_today": True}
     with pytest.raises(TypeError):
-        request.extras["other"] = tmp_path / "other.csv"  # type: ignore[index]
-    assert RunRequest("etl", date(2026, 7, 21), tmp_path / "base.txt").extras == {}
+        request.inputs["other"] = tmp_path / "other.csv"  # type: ignore[index]
+    with pytest.raises(TypeError):
+        request.params["flag"] = True  # type: ignore[index]
+    assert RunRequest("etl", date(2026, 7, 21)).inputs == {}
+    assert RunRequest("etl", date(2026, 7, 21)).params == {}
 
 
 def test_etl_definition_is_frozen_and_defensively_freezes_arguments() -> None:
@@ -76,7 +82,7 @@ def test_request_defensively_freezes_environment() -> None:
     request = RunRequest(
         "naranjax.ma.chat.daily",
         date(2026, 7, 21),
-        Path("input/base.xlsx"),
+        inputs={"base": Path("input/base.xlsx")},
         environment=environment,
     )
 
