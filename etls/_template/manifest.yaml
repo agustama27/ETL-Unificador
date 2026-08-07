@@ -1,0 +1,29 @@
+# Manifiesto de catálogo — reglas de validación en docs/ARQUITECTURA.md §4.
+# Esta carpeta empieza con "_" así que el catálogo la ignora: al copiarla con el
+# nombre real del cliente, el ETL aparece solo.
+schema_version: 1
+etls:
+  - id: cliente.proceso.daily            # <cliente>.<canal o proceso>.<variante>
+    name: Cliente - Proceso diario       # se muestra en la consola
+    repository_status: present
+    readiness: ready                     # ready | candidate | blocked
+    executable: true                     # true exige adapter + metadata completa
+    project_path: etls/cliente/legacy
+    working_dir: etls/cliente/legacy     # cwd del subprocess
+    entrypoint: etls/cliente/job.py
+    command: [python, ../job.py]         # relativo al working_dir
+    fixed_arguments: []                  # flags siempre presentes, ej. [--pais, ar]
+    arguments:
+      base: --input                      # rol -> flag CLI; los roles no-input son params
+    inputs:
+      - {role: base, extensions: [.csv], required: true}
+    outputs:
+      # glob relativo a output/; date_format: YYYYMMDD | YYMMDD | DDMMYYYY (opcional)
+      - {role: base_filtrada, glob: 'CLIENTE_BASE_*.csv', date_format: YYYYMMDD}
+    allowed_exits: [0]
+    timeout_seconds: 900                 # duración típica con margen
+    request_date_format: YYYYMMDD
+    output_date_source: system_date
+    # Ruta de importación modulo:Clase. Para CLIs limpias alcanza el genérico:
+    adapter: etl_core.contracts:SubprocessAdapter
+    # environment_allowlist: [MI_VARIABLE]   # variables que pasan al subprocess

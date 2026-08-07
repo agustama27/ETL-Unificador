@@ -140,6 +140,21 @@ Al arrancar, la API además marca como `failed`/`orphaned` las corridas que qued
 de un proceso anterior, y sirve el listado desde un índice SQLite (`var/index.sqlite`)
 en vez de escanear el filesystem.
 
+### Desde un agente (MCP)
+
+```bash
+pip install -e ".[mcp]"
+```
+
+```json
+{"command": "python", "args": ["-m", "platform_mcp.server"],
+ "env": {"ETL_API_URL": "http://localhost:8000", "ETL_CONSOLE_TOKEN": "..."}}
+```
+
+Herramientas: `list_etls`, `describe_etl`, `run_etl`, `get_run`, `download_artifact`.
+Para que un agente dé de alta un cliente nuevo: copiar `etls/_template/` y seguir
+`docs/GUIA_NUEVO_CLIENTE.md`.
+
 ---
 
 ## Estructura del repositorio

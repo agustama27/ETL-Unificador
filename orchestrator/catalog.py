@@ -126,8 +126,12 @@ class Catalog:
     @classmethod
     def load_workspace(cls, workspace: Path, *,
                        adapters: Mapping[str, object] | None = None) -> Self:
-        """Load every manifest: etls/*/manifest.yaml plus transitional registry/*.yaml."""
-        files = sorted(workspace.glob("etls/*/manifest.yaml"))
+        """Load every manifest: etls/*/manifest.yaml plus transitional registry/*.yaml.
+
+        Directories starting with underscore (templates, drafts) are skipped.
+        """
+        files = sorted(path for path in workspace.glob("etls/*/manifest.yaml")
+                       if not path.parent.name.startswith("_"))
         files.extend(sorted((workspace / "registry").glob("*.yaml")))
         if not files:
             raise CatalogError(f"no catalog files found in workspace: {workspace}")
