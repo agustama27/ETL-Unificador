@@ -12,7 +12,7 @@ COPY --chown=etl:etl . .
 
 RUN pip install -e ".[etl,api,test]" \
     && mkdir -p var \
-    && chown etl:etl var
+    && chown etl:etl /app var
 
 USER etl
 
