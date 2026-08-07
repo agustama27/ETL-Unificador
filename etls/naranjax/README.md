@@ -21,6 +21,10 @@ El cliente más grande: siete ETLs sobre tres proyectos legacy.
 - **PLANES/PAGOS**: entradas opcionales de los daily MA; el hook `input_destination` de
   `MaChatAdapter` las ancla en `input/diarios/`. `no_planes_today` es el único parámetro.
 - `--chat` viaja como `fixed_arguments` del manifiesto, no está hardcodeado en el adapter.
+- **Nombre de hoja de la base mensual**: los archivos de operaciones llegan con la hoja
+  `Hoja1`; el legacy usa la hoja `Asignacion` si existe y, si no, tolera la **hoja única**
+  del libro validando los encabezados obligatorios (queda constancia en el log). Detalle y
+  UAT en `docs/tolerancia-hoja-asignacion.md`.
 
 ## Estructura
 

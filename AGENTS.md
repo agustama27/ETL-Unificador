@@ -9,7 +9,9 @@ está en `docs/ADR-001-nucleo-hexagonal.md`.
 
 1. **No modifiques los proyectos legacy** (`etls/*/legacy/`). Son cajas negras en
    producción, invocadas por subprocess. La lógica de negocio del cliente vive ahí, no en
-   el núcleo.
+   el núcleo. La única excepción hasta hoy (tolerancia del nombre de hoja en Naranja X MA,
+   `docs/tolerancia-hoja-asignacion.md`) requirió OK explícito de operaciones y UAT byte a
+   byte antes/después: ese es el estándar para cualquier otra.
 2. **No modifiques los tests existentes.** Los 13 tests de `tests/e2e/` son la red de
    seguridad: si un refactor obliga a tocar uno, cambiaste comportamiento observable, no
    estructura. Corrélos antes y después de cualquier cambio al núcleo.
