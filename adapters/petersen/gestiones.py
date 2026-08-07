@@ -3,7 +3,7 @@ from datetime import date
 from pathlib import Path
 import sys
 
-from adapters.naranjax.ma_chat import MaChatAdapter, ValidationError
+from etl_core.contracts import SubprocessAdapter, ValidationError
 from orchestrator.models import ETLDefinition, FileEvidence, RunRequest
 
 
@@ -15,7 +15,7 @@ class PetersenGestionesAdapter:
                        "excluidos": "--excluidos"}
 
     def __init__(self, *, today=date.today) -> None:
-        self._shared = MaChatAdapter(today=today)
+        self._shared = SubprocessAdapter(today=today)
         self._today = today
 
     def validate(self, request: RunRequest) -> None:
