@@ -4,7 +4,7 @@ from pathlib import Path
 
 import pytest
 
-from adapters.naranjax.ma_chat import MaChatAdapter
+from etls.naranjax.ma_chat import MaChatAdapter
 from orchestrator.models import RunRequest, RunResult, RunStatus, StateEffect, StateStatus
 from orchestrator.run import main
 from orchestrator.run_store import RunStore

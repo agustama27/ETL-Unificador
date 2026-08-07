@@ -62,7 +62,7 @@ def test_etl_definition_is_frozen_and_defensively_freezes_arguments() -> None:
         repository_status=RepositoryStatus.PRESENT,
         readiness=Readiness.CANDIDATE,
         executable=False,
-        project_path=Path("SOHO-Chat-NX_MA-ETL"),
+        project_path=Path("etls/naranjax/legacy/chat"),
         arguments=arguments,
         inputs=(InputSpec("base", (".xlsx",), True),),
         outputs=(OutputSpec(ArtifactRole.CHAT, "CHAT_*.csv", "YYMMDD"),),
@@ -70,7 +70,7 @@ def test_etl_definition_is_frozen_and_defensively_freezes_arguments() -> None:
 
     arguments["business_date"] = "--changed"
     assert definition.arguments == {"business_date": "--fecha"}
-    assert definition.project_path == Path("SOHO-Chat-NX_MA-ETL")
+    assert definition.project_path == Path("etls/naranjax/legacy/chat")
     with pytest.raises(TypeError):
         definition.arguments["new"] = "--new"  # type: ignore[index]
     with pytest.raises(FrozenInstanceError):

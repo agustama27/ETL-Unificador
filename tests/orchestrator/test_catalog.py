@@ -32,7 +32,7 @@ def test_repository_catalog_promotes_only_daily_chat_and_voice() -> None:
                   "naranjax.ma.chat.pct": object(), "naranjax.mt.voice.pct": object(),
                   "naranjax.mt.voice.back": object()}
     catalog = Catalog.load(
-        Path("registry/naranjax.yaml"), Path.cwd(),
+        Path("etls/naranjax/manifest.yaml"), Path.cwd(),
         adapters=adapters,
     )
 
@@ -49,7 +49,7 @@ def test_repository_catalog_promotes_only_daily_chat_and_voice() -> None:
     assert chat.arguments["business_date"] == "--fecha"
     roles = tuple(output.role for output in chat.outputs)
     assert roles == (ArtifactRole.ROMAN, ArtifactRole.CHAT, ArtifactRole.E1KIA)
-    assert chat.adapter == "adapters.naranjax.ma_chat:MaChatAdapter"
+    assert chat.adapter == "etls.naranjax.ma_chat:MaChatAdapter"
     voice = catalog["naranjax.ma.voice.daily"]
     assert (voice.readiness, voice.executable, voice.command) == (
         Readiness.READY, True, ("python", "back-base/ejecutar_dia.py")
@@ -66,7 +66,7 @@ def test_repository_catalog_promotes_only_daily_chat_and_voice() -> None:
         ArtifactRole.ROMAN, ArtifactRole.E1KIA
     )
     assert (voice.adapter, voice.allowed_exits, voice.timeout_seconds) == (
-        "adapters.naranjax.ma_voice:MaVoiceAdapter", (0,), 900
+        "etls.naranjax.ma_voice:MaVoiceAdapter", (0,), 900
     )
     assert voice.environment_allowlist == ("NARANJAX_PLANES_MIN_COVERAGE",)
     pct = catalog["naranjax.ma.voice.pct"]
@@ -82,18 +82,18 @@ def test_repository_catalog_promotes_only_daily_chat_and_voice() -> None:
     assert pct.environment_allowlist == ()
     chat_pct = catalog["naranjax.ma.chat.pct"]
     assert (chat_pct.adapter, chat_pct.project_path) == (
-        "etl_core.contracts:SubprocessAdapter", Path("SOHO-Chat-NX_MA-ETL")
+        "etl_core.contracts:SubprocessAdapter", Path("etls/naranjax/legacy/chat")
     )
     assert tuple(output.glob for output in chat_pct.outputs) == ("NARANJAX_PCT_*.csv",)
     mt_pct = catalog["naranjax.mt.voice.pct"]
     assert (mt_pct.adapter, mt_pct.project_path) == (
-        "etl_core.contracts:SubprocessAdapter", Path("soho-naranjaX-MT-etl")
+        "etl_core.contracts:SubprocessAdapter", Path("etls/naranjax/legacy/mt")
     )
     assert tuple(output.glob for output in mt_pct.outputs) == ("DEELO_NAR_USUEVOLTIS_*.txt",)
     assert tuple(output.role for output in mt_pct.outputs) == (ArtifactRole.PCT,)
     back = catalog["naranjax.mt.voice.back"]
     assert (back.adapter, back.command, back.fixed_arguments) == (
-        "adapters.naranjax.mt_voice_back:MtVoiceBackAdapter", ("python", "main.py"), ("--back",)
+        "etls.naranjax.mt_voice_back:MtVoiceBackAdapter", ("python", "main.py"), ("--back",)
     )
     assert tuple((item.role, item.required) for item in back.inputs) == (
         ("base", True), ("logcall", True), ("historial", True)
@@ -104,7 +104,7 @@ def test_repository_catalog_promotes_only_daily_chat_and_voice() -> None:
     )
     mt = catalog["naranjax.mt.voice.daily"]
     assert (mt.readiness, mt.executable, mt.command) == (
-        Readiness.READY, True, ("python", "../adapters/naranjax/mt_voice_job.py")
+        Readiness.READY, True, ("python", "../../mt_voice_job.py")
     )
     assert mt.arguments == {"base": "--input"}
     assert tuple((item.role, item.required) for item in mt.inputs) == (("base", True),)
@@ -112,7 +112,7 @@ def test_repository_catalog_promotes_only_daily_chat_and_voice() -> None:
         ArtifactRole.ROMAN, ArtifactRole.E1KIA
     )
     assert (mt.adapter, mt.allowed_exits, mt.timeout_seconds) == (
-        "adapters.naranjax.mt_voice:MtVoiceAdapter", (0,), 900
+        "etls.naranjax.mt_voice:MtVoiceAdapter", (0,), 900
     )
 
 

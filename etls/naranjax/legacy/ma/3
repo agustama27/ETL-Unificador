@@ -1,0 +1,8 @@
+file tmp_nonprod\out_verify\NARANJAX_PCT_20260504.csv
+has_pipe True
+has_quote False
+has_crlf False
+header DNI|TIPIFICACION|NROPRODUCTO|FECHA_PROMESA|MONTO_PROMESA|CALL_REFID|OBSERVACIONES
+col_count 7
+date_col 20260502
+date_format_ok False

@@ -4,7 +4,7 @@ import sys
 
 import pytest
 
-from adapters.naranjax.ma_chat import MaChatAdapter, PostconditionError, ValidationError
+from etls.naranjax.ma_chat import MaChatAdapter, PostconditionError, ValidationError
 from orchestrator.catalog import Catalog
 from orchestrator.file_manager import FileManager
 from orchestrator.models import ArtifactRole, RunRequest
@@ -19,7 +19,7 @@ NAMES = {
 
 
 def _definition():
-    return Catalog.load(Path("registry/naranjax.yaml"), Path.cwd(),
+    return Catalog.load(Path("etls/naranjax/manifest.yaml"), Path.cwd(),
                         adapters={"naranjax.ma.chat": object(), "naranjax.ma.voice": object(),
                   "naranjax.ma.voice.pct": object(), "naranjax.mt.voice": object(),
                   "naranjax.ma.chat.pct": object(), "naranjax.mt.voice.pct": object(),

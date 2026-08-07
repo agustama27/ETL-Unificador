@@ -5,8 +5,8 @@ from typing import Any
 
 import pytest
 
-from adapters.naranjax.ma_chat import MaChatAdapter
-from adapters.naranjax.ma_voice_pct import MaVoicePctAdapter
+from etls.naranjax.ma_chat import MaChatAdapter
+from etls.naranjax.ma_voice_pct import MaVoicePctAdapter
 from orchestrator.catalog import Catalog
 from orchestrator.models import (ETLDefinition, InputSpec, Readiness,
                                  RepositoryStatus, RunRequest, RunStatus)
@@ -65,7 +65,7 @@ def service(tmp_path: Path, mode: str = "success", state_error: Any = None):
         now=lambda: datetime(2026, 7, 21, 15, tzinfo=timezone.utc),
         uuid_factory=iter((f"id-{n}" for n in range(30))).__next__,
     )
-    definition = Catalog.load(Path("registry/naranjax.yaml"), Path.cwd(),
+    definition = Catalog.load(Path("etls/naranjax/manifest.yaml"), Path.cwd(),
                               adapters={"naranjax.ma.chat": object(),
                                         "naranjax.ma.voice": object(),
                   "naranjax.ma.voice.pct": object(), "naranjax.mt.voice": object(),
@@ -206,7 +206,7 @@ def test_stateless_pct_run_skips_preflight_staging_and_promotion(tmp_path: Path)
         now=lambda: datetime(2026, 7, 21, 15, tzinfo=timezone.utc),
         uuid_factory=iter((f"id-{n}" for n in range(30))).__next__,
     )
-    definition = Catalog.load(Path("registry/naranjax.yaml"), Path.cwd(),
+    definition = Catalog.load(Path("etls/naranjax/manifest.yaml"), Path.cwd(),
                               adapters={"naranjax.ma.chat": object(),
                                         "naranjax.ma.voice": object(),
                                         "naranjax.ma.voice.pct": object(), "naranjax.mt.voice": object(),

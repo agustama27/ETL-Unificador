@@ -66,10 +66,10 @@ hasta intervención humana.
 
 ## Important Constraints
 
-- **`MaVoicePctAdapter` es compartido por nueve ETLs de seis clientes** (bases de Bancor,
-  EPEC, Frávega, Claro UY, Encuesta CX, Social Learning AR/CL y los PCT de Naranja X).
-  Tocarlo exige correr los 13 e2e. Ver ADR-001, decisión 2.
-- Los legacy (`SOHO-*`, `soho-*`) no se modifican; se invocan por subprocess.
+- **`SubprocessAdapter` (etl_core) es compartido por 10 ETLs de seis clientes** (bases de
+  Bancor, EPEC, Frávega, Claro UY, Encuesta CX, Social Learning AR/CL y los PCT de
+  Naranja X). Tocarlo exige correr los 13 e2e. Ver ADR-001, decisión 2.
+- Los legacy (`etls/*/legacy/`) no se modifican; se invocan por subprocess.
 - Sólo se acepta `business_date == hoy` (los legacy estampan la fecha del sistema).
 - La API no está endurecida: sin autenticación ni recuperación ante reinicio (Fase 4).
 

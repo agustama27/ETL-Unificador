@@ -6,8 +6,8 @@ import pytest
 
 
 WORKSPACE = Path(__file__).resolve().parents[3]
-WRAPPER = WORKSPACE / "adapters/naranjax/mt_voice_job.py"
-LEGACY = WORKSPACE / "soho-naranjaX-MT-etl"
+WRAPPER = WORKSPACE / "etls/naranjax/mt_voice_job.py"
+LEGACY = WORKSPACE / "etls/naranjax/legacy/mt"
 
 
 def _run(input_path: Path, output_dir: Path) -> subprocess.CompletedProcess[str]:

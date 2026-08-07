@@ -4,11 +4,11 @@ from pathlib import Path
 
 import pytest
 
-from adapters.naranjax.ma_chat import MaChatAdapter
-from adapters.naranjax.ma_voice import MaVoiceAdapter
-from adapters.naranjax.ma_voice_pct import MaVoicePctAdapter
-from adapters.naranjax.mt_voice import MtVoiceAdapter
-from adapters.naranjax.mt_voice_back import MtVoiceBackAdapter
+from etls.naranjax.ma_chat import MaChatAdapter
+from etls.naranjax.ma_voice import MaVoiceAdapter
+from etls.naranjax.ma_voice_pct import MaVoicePctAdapter
+from etls.naranjax.mt_voice import MtVoiceAdapter
+from etls.naranjax.mt_voice_back import MtVoiceBackAdapter
 from etls.petersen.adapter import PetersenGestionesAdapter
 from orchestrator.models import RunResult, RunStatus, StateEffect, StateStatus
 from orchestrator.run import main

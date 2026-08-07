@@ -3,7 +3,7 @@ from datetime import date
 from pathlib import Path
 import sys
 
-from adapters.naranjax.ma_chat import MaChatAdapter, ValidationError
+from etls.naranjax.ma_chat import MaChatAdapter, ValidationError
 from orchestrator.models import ETLDefinition, FileEvidence, RunRequest
 
 
