@@ -66,7 +66,7 @@ class FakeService:
 @pytest.fixture()
 def client(tmp_path: Path) -> TestClient:
     app = create_app(
-        _workspace(tmp_path),
+        _workspace(tmp_path), token="",
         service_factory=FakeService, executor=lambda job: job(),
         today=lambda: TODAY,
     )

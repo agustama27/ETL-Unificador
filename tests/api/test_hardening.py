@@ -39,6 +39,7 @@ def _write_run(workspace: Path, etl_id: str, run_id: str, status: str,
 
 
 def _client(tmp_path: Path, **overrides) -> TestClient:
+    overrides.setdefault("token", "")
     app = create_app(
         _workspace(tmp_path), executor=lambda job: job(),
         today=lambda: TODAY, **overrides,
@@ -51,17 +52,33 @@ def test_token_guards_every_api_route(tmp_path: Path) -> None:
 
     assert client.get("/api/catalog").status_code == 401
     assert client.get("/api/runs").status_code == 401
+    assert client.get("/api/runs/x/artifacts.zip").status_code == 401
+    assert client.get("/api/runs/x/artifacts/pct").status_code == 401
     allowed = client.get("/api/catalog", headers={"Authorization": "Bearer secreto"})
     assert allowed.status_code == 200
     header_variant = client.get("/api/runs", headers={"X-Api-Token": "secreto"})
     assert header_variant.status_code == 200
 
 
+def test_unconfigured_auth_fails_closed(tmp_path: Path, monkeypatch) -> None:
+    monkeypatch.delenv("ETL_CONSOLE_TOKEN", raising=False)
+    monkeypatch.delenv("ETL_AUTH_DISABLED", raising=False)
+
+    closed = TestClient(create_app(_workspace(tmp_path), today=lambda: TODAY))
+    response = closed.get("/api/catalog")
+    assert response.status_code == 503
+    assert "ETL_CONSOLE_TOKEN" in response.json()["detail"]
+
+    monkeypatch.setenv("ETL_AUTH_DISABLED", "1")
+    dev = TestClient(create_app(_workspace(tmp_path / "dev"), today=lambda: TODAY))
+    assert dev.get("/api/catalog").status_code == 200
+
+
 def test_orphaned_live_runs_are_failed_at_startup(tmp_path: Path) -> None:
     workspace = _workspace(tmp_path)
     _write_run(workspace, "bancor.base.daily", "run-huerfana", "running")
 
-    client = TestClient(create_app(workspace, today=lambda: TODAY))
+    client = TestClient(create_app(workspace, token="", today=lambda: TODAY))
     detail = client.get("/api/runs/run-huerfana").json()
 
     assert detail["status"] == "failed"
@@ -114,7 +131,7 @@ def test_notify_dev_delivers_to_webhook_and_appends_jsonl(tmp_path: Path) -> Non
     _write_run(workspace, "bancor.base.daily", "run-err", "failed")
     received = []
 
-    client = TestClient(create_app(workspace, today=lambda: TODAY,
+    client = TestClient(create_app(workspace, token="", today=lambda: TODAY,
                                    notifier=received.append))
     response = client.post("/api/runs/run-err/actions/notify_dev").json()
 

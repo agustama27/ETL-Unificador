@@ -137,7 +137,14 @@ def create_app(workspace: Path | None = None, *,
     runs_root = workspace / "var/runs"
     state_root = workspace / "var/state"
 
-    required_token = token if token is not None else os.environ.get("ETL_CONSOLE_TOKEN", "")
+    # Fail-closed: sin token configurado la API rechaza /api/*, salvo opt-out
+    # explícito de desarrollo (ETL_AUTH_DISABLED=1) o token="" inyectado en tests.
+    if token is not None:
+        required_token, auth_unconfigured = token, False
+    else:
+        required_token = os.environ.get("ETL_CONSOLE_TOKEN", "")
+        auth_unconfigured = (not required_token and os.environ.get(
+            "ETL_AUTH_DISABLED", "").lower() not in ("1", "true"))
     if notifier is None:
         webhook = os.environ.get("ETL_NOTIFY_WEBHOOK", "")
         notifier = webhook_notifier(webhook) if webhook else None
@@ -156,14 +163,21 @@ def create_app(workspace: Path | None = None, *,
 
     @app.middleware("http")
     async def _authenticate(request: Request, call_next: Callable[..., Any]) -> Any:
-        if required_token and request.url.path.startswith("/api"):
-            supplied = request.headers.get("authorization", "")
-            supplied = supplied.removeprefix("Bearer ").strip() or request.headers.get(
-                "x-api-token", "")
-            if supplied != required_token:
+        if request.url.path.startswith("/api"):
+            if auth_unconfigured:
                 return Response(
-                    json.dumps({"detail": "Token inválido o ausente"}),
-                    status_code=401, media_type="application/json")
+                    json.dumps({"detail": "Autenticación no configurada: seteá "
+                                "ETL_CONSOLE_TOKEN o, sólo para desarrollo, "
+                                "ETL_AUTH_DISABLED=1"}),
+                    status_code=503, media_type="application/json")
+            if required_token:
+                supplied = request.headers.get("authorization", "")
+                supplied = supplied.removeprefix("Bearer ").strip() or request.headers.get(
+                    "x-api-token", "")
+                if supplied != required_token:
+                    return Response(
+                        json.dumps({"detail": "Token inválido o ausente"}),
+                        status_code=401, media_type="application/json")
         return await call_next(request)
     app.add_middleware(
         CORSMiddleware,
@@ -401,4 +415,6 @@ def create_app(workspace: Path | None = None, *,
     return app
 
 
-app = create_app()
+# Sin instancia a nivel de módulo: create_app() purga retención y recupera
+# huérfanas al construirse, y eso no debe dispararse por un simple import.
+# Levantar con: uvicorn "platform_api.main:create_app" --factory
