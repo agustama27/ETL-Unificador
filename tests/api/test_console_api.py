@@ -8,7 +8,6 @@ from pathlib import Path
 import pytest
 from fastapi.testclient import TestClient
 
-from orchestrator.run import _adapters
 from platform_api.main import create_app
 
 
@@ -17,7 +16,10 @@ WORKSPACE = Path(__file__).resolve().parents[2]
 
 
 def _workspace(tmp_path: Path) -> Path:
-    shutil.copytree(WORKSPACE / "registry", tmp_path / "registry")
+    for manifest in WORKSPACE.glob("etls/*/manifest.yaml"):
+        target = tmp_path / manifest.relative_to(WORKSPACE)
+        target.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(manifest, target)
     return tmp_path
 
 
@@ -64,7 +66,7 @@ class FakeService:
 @pytest.fixture()
 def client(tmp_path: Path) -> TestClient:
     app = create_app(
-        _workspace(tmp_path), adapters=_adapters(),
+        _workspace(tmp_path),
         service_factory=FakeService, executor=lambda job: job(),
         today=lambda: TODAY,
     )
@@ -78,7 +80,7 @@ def test_catalog_exposes_all_entries_with_metadata(client: TestClient) -> None:
     by_id = {entry["id"]: entry for entry in entries}
     chat = by_id["naranjax.ma.chat.daily"]
     assert (chat["client"], chat["executable"], chat["stateful"],
-            chat["has_no_planes_flag"]) == ("Naranja X", True, True, True)
+            chat["params"]) == ("Naranja X", True, True, ["no_planes_today"])
     retell = by_id["petersen.retell"]
     assert retell["executable"] is False
     assert "Retell" in retell["reason"]
@@ -88,7 +90,7 @@ def test_catalog_exposes_all_entries_with_metadata(client: TestClient) -> None:
 
 def _launch(client: TestClient, **overrides):
     data = {"etl_id": "naranjax.ma.voice.pct",
-            "business_date": "2026-07-21", "no_planes_today": "false"}
+            "business_date": "2026-07-21", "params": "{}"}
     data.update({k: v for k, v in overrides.items() if not k.startswith("_")})
     files = overrides.get("_files",
                           {"base": ("historial.csv", b"synthetic", "text/csv")})

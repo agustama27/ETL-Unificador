@@ -10,9 +10,11 @@ from __future__ import annotations
 
 import io
 import json
+import os
 import shutil
 import threading
 import zipfile
+from concurrent.futures import ThreadPoolExecutor
 from datetime import date, datetime, timezone
 from pathlib import Path
 from typing import Any, Callable
@@ -23,19 +25,17 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, Response
 from starlette.datastructures import UploadFile
 
-from orchestrator.catalog import Catalog
+from orchestrator.catalog import Catalog, CatalogError, adapter_for
 from orchestrator.models import ETLDefinition, RunRequest
-from orchestrator.run import _adapters
 from orchestrator.run_store import RunStore
 from orchestrator.runner import Runner
 from orchestrator.service import RunService
 from orchestrator.state_store import StateStore
 
-from .catalog_meta import DEADLINE_HINTS, INERT_REASONS, client_of
+from .catalog_meta import DEADLINE_HINTS, DEADLINES, INERT_REASONS, client_of
+from .hardening import RunIndex, purge_expired, recover_orphans, webhook_notifier
 
 LIVE_STATUSES = {"preparing", "running"}
-FILE_ROLES = ("base", "planes", "pagos", "logcall", "historial",
-              "approach", "clientes", "excluidos")
 
 
 class _ReservedRunStore:
@@ -63,8 +63,14 @@ def _default_service_factory(definition: ETLDefinition, adapter: Any,
     )
 
 
+_WORKERS = ThreadPoolExecutor(
+    max_workers=int(os.environ.get("ETL_MAX_CONCURRENT_RUNS", "2")),
+    thread_name_prefix="etl-run")
+
+
 def _default_executor(job: Callable[[], None]) -> None:
-    threading.Thread(target=job, daemon=True).start()
+    """Non-daemon pool: pending runs finish before the interpreter exits."""
+    _WORKERS.submit(job)
 
 
 def _read_run(run_dir: Path) -> dict[str, Any]:
@@ -120,15 +126,45 @@ def create_app(workspace: Path | None = None, *,
                adapters: dict[str, Any] | None = None,
                service_factory: Callable[..., Any] | None = None,
                executor: Callable[[Callable[[], None]], None] | None = None,
-               today: Callable[[], date] = date.today) -> FastAPI:
+               today: Callable[[], date] = date.today,
+               token: str | None = None,
+               notifier: Callable[[dict[str, Any]], None] | None = None,
+               retention_days: int | None = None) -> FastAPI:
     workspace = (workspace or Path(__file__).resolve().parents[1]).resolve()
-    registered = adapters if adapters is not None else _adapters()
+    registered = adapters
     build_service = service_factory or _default_service_factory
     run_job = executor or _default_executor
     runs_root = workspace / "var/runs"
     state_root = workspace / "var/state"
 
+    required_token = token if token is not None else os.environ.get("ETL_CONSOLE_TOKEN", "")
+    if notifier is None:
+        webhook = os.environ.get("ETL_NOTIFY_WEBHOOK", "")
+        notifier = webhook_notifier(webhook) if webhook else None
+    if retention_days is None:
+        retention_days = int(os.environ.get("ETL_RETENTION_DAYS", "30"))
+
+    recovery_store = RunStore(runs_root, state_root)
+    orphaned = recover_orphans(
+        runs_root, recovery_store.write_metadata,
+        now=lambda: datetime.now(timezone.utc).isoformat())
+    purge_expired((runs_root, workspace / "var/uploads"), retention_days)
+    index = RunIndex(workspace / "var/index.sqlite", runs_root)
+    index.refresh_full()
+
     app = FastAPI(title="ETL Unificador — Consola")
+
+    @app.middleware("http")
+    async def _authenticate(request: Request, call_next: Callable[..., Any]) -> Any:
+        if required_token and request.url.path.startswith("/api"):
+            supplied = request.headers.get("authorization", "")
+            supplied = supplied.removeprefix("Bearer ").strip() or request.headers.get(
+                "x-api-token", "")
+            if supplied != required_token:
+                return Response(
+                    json.dumps({"detail": "Token inválido o ausente"}),
+                    status_code=401, media_type="application/json")
+        return await call_next(request)
     app.add_middleware(
         CORSMiddleware,
         allow_origins=["http://localhost:5173", "http://127.0.0.1:5173"],
@@ -136,8 +172,7 @@ def create_app(workspace: Path | None = None, *,
     )
 
     def catalog() -> Catalog:
-        return Catalog.load_directory(workspace / "registry", workspace,
-                                      adapters=registered)
+        return Catalog.load_workspace(workspace, adapters=registered)
 
     def find_run(run_id: str) -> Path:
         if not runs_root.exists():
@@ -152,7 +187,10 @@ def create_app(workspace: Path | None = None, *,
     def get_catalog() -> list[dict[str, Any]]:
         entries = []
         for item in catalog():
-            adapter = registered.get(item.adapter) if item.adapter else None
+            try:
+                adapter = adapter_for(item, registered) if item.adapter else None
+            except CatalogError:
+                adapter = None
             entries.append({
                 "id": item.id,
                 "name": item.name,
@@ -161,14 +199,16 @@ def create_app(workspace: Path | None = None, *,
                 "executable": item.executable,
                 "reason": INERT_REASONS.get(item.id),
                 "stateful": bool(getattr(adapter, "stateful", False)),
-                "has_no_planes_flag": "no_planes_today" in item.arguments,
+                "params": sorted(set(item.arguments)
+                                 - {spec.role for spec in item.inputs}
+                                 - {"business_date"}),
                 "inputs": [
                     {"role": spec.role, "extensions": list(spec.extensions),
                      "required": spec.required}
                     for spec in item.inputs
                 ],
                 "outputs": [
-                    {"role": spec.role.value, "glob": spec.glob,
+                    {"role": spec.role, "glob": spec.glob,
                      "date_format": spec.date_format}
                     for spec in item.outputs
                 ],
@@ -181,7 +221,7 @@ def create_app(workspace: Path | None = None, *,
     async def post_run(request: Request,
                        etl_id: str = Form(...),
                        business_date: str = Form(...),
-                       no_planes_today: bool = Form(False)) -> dict[str, Any]:
+                       params: str = Form("{}")) -> dict[str, Any]:
         try:
             definition = catalog()[etl_id]
         except Exception as error:
@@ -195,11 +235,20 @@ def create_app(workspace: Path | None = None, *,
         if parsed_date != today():
             raise HTTPException(
                 422, "Solo se acepta la fecha de negocio de hoy")
+        try:
+            parsed_params = json.loads(params)
+        except ValueError as error:
+            raise HTTPException(422, "Parámetros inválidos") from error
+        if not isinstance(parsed_params, dict) or not all(
+            isinstance(name, str) and isinstance(value, (str, bool))
+            for name, value in parsed_params.items()
+        ):
+            raise HTTPException(422, "Parámetros inválidos")
 
         form = await request.form()
         uploads: dict[str, UploadFile] = {
             role: value for role, value in form.items()
-            if role in FILE_ROLES and isinstance(value, UploadFile) and value.filename
+            if isinstance(value, UploadFile) and value.filename
         }
         declared = {spec.role: spec for spec in definition.inputs}
         for role in uploads:
@@ -230,17 +279,20 @@ def create_app(workspace: Path | None = None, *,
 
         store = RunStore(runs_root, state_root)
         reserved = store.create_run(etl_id)
-        adapter = registered[definition.adapter]
+        adapter = adapter_for(definition, registered)
         service = build_service(definition, adapter,
                                 _ReservedRunStore(store, reserved), workspace)
         run_request = RunRequest(
-            etl_id, parsed_date, staged["base"],
-            planes=staged.get("planes"), pagos=staged.get("pagos"),
-            no_planes_today=no_planes_today,
-            extras={role: path for role, path in staged.items()
-                    if role not in ("base", "planes", "pagos")},
+            etl_id, parsed_date, inputs=staged, params=parsed_params,
         )
-        run_job(lambda: service.execute(run_request))
+
+        def job() -> None:
+            try:
+                service.execute(run_request)
+            finally:
+                index.upsert(reserved)
+
+        run_job(job)
         return {"run_id": reserved.name, "status": "preparing"}
 
     @app.get("/api/runs/{run_id}")
@@ -252,28 +304,35 @@ def create_app(workspace: Path | None = None, *,
     def list_runs(client: str | None = None, etl_id: str | None = None,
                   status: str | None = None, business_date: str | None = None,
                   page: int = 1, page_size: int = 10) -> dict[str, Any]:
-        items = []
-        if runs_root.exists():
-            for etl_dir in sorted(runs_root.iterdir()):
-                for run_dir in etl_dir.iterdir():
-                    if not (run_dir / "run.json").exists():
-                        continue
-                    summary = _run_summary(run_dir, _read_run(run_dir))
-                    if etl_id and summary["etl_id"] != etl_id:
-                        continue
-                    if client and summary["client"] != client:
-                        continue
-                    if status and summary["status"] != status:
-                        continue
-                    if business_date and summary["business_date"] != business_date:
-                        continue
-                    items.append(summary)
-        items.sort(key=lambda item: item["run_id"], reverse=True)
+        items = [
+            {**row, "client": client_of(row["etl_id"])}
+            for row in index.query(etl_id=etl_id, status=status,
+                                   business_date=business_date)
+        ]
+        if client:
+            items = [item for item in items if item["client"] == client]
         total = len(items)
         pages = max(1, -(-total // page_size))
         start = (page - 1) * page_size
         return {"items": items[start:start + page_size], "total": total,
                 "page": page, "pages": pages}
+
+    @app.get("/api/schedule")
+    def schedule() -> dict[str, Any]:
+        current = today()
+        entries = []
+        for etl_id_, deadline in DEADLINES.items():
+            if current.weekday() not in deadline["weekdays"]:
+                continue
+            entries.append({
+                "etl_id": etl_id_,
+                "client": client_of(etl_id_),
+                "before": deadline["before"],
+                "hint": DEADLINE_HINTS.get(etl_id_),
+                "ran_today": index.ran_today(etl_id_, current.isoformat()),
+            })
+        return {"date": current.isoformat(), "orphaned_runs": orphaned,
+                "deadlines": entries}
 
     @app.get("/api/runs/{run_id}/artifacts.zip")
     def download_all(run_id: str) -> Response:
@@ -305,15 +364,23 @@ def create_app(workspace: Path | None = None, *,
         document = _read_run(run_dir)
         etl = document["etl_id"]
         if action == "notify_dev":
+            payload = {
+                "at": datetime.now(timezone.utc).isoformat(),
+                "run_id": run_id, "etl_id": etl,
+                "error_code": (document.get("error") or {}).get("code"),
+            }
+            delivered = False
+            if notifier is not None:
+                try:
+                    notifier(payload)
+                    delivered = True
+                except OSError as error:
+                    payload["delivery_error"] = str(error)
             log = workspace / "var/notifications.jsonl"
             log.parent.mkdir(parents=True, exist_ok=True)
             with log.open("a", encoding="utf-8") as stream:
-                stream.write(json.dumps({
-                    "at": datetime.now(timezone.utc).isoformat(),
-                    "run_id": run_id, "etl_id": etl,
-                    "error_code": (document.get("error") or {}).get("code"),
-                }) + "\n")
-            return {"ok": True, "action": action}
+                stream.write(json.dumps(payload) + "\n")
+            return {"ok": True, "action": action, "delivered": delivered}
         if action == "free_lock":
             for etl_dir in runs_root.iterdir():
                 for other in etl_dir.iterdir():

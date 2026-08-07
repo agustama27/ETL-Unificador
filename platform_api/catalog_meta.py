@@ -25,6 +25,12 @@ DEADLINE_HINTS = {
     "bancor.base.daily": "Entrega miércoles y viernes antes de 12:30",
 }
 
+# Deadlines estructurados para /api/schedule. weekdays usa la convención de
+# date.weekday(): lunes=0 ... domingo=6.
+DEADLINES = {
+    "bancor.base.daily": {"weekdays": (2, 4), "before": "12:30"},
+}
+
 
 def client_of(etl_id: str) -> str:
     prefix = etl_id.split(".", 1)[0]

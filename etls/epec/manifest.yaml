@@ -1,0 +1,30 @@
+schema_version: 1
+etls:
+  - id: epec.base.daily
+    name: EPEC - Base consolidada (back-base)
+    repository_status: present
+    readiness: ready
+    executable: true
+    project_path: etls/epec/legacy
+    working_dir: etls/epec/legacy
+    entrypoint: etls/epec/job.py
+    command: [python, ../job.py]
+    fixed_arguments: []
+    arguments:
+      base: --input
+    inputs:
+      - {role: base, extensions: [.csv], required: true}
+    outputs:
+      - {role: roman, glob: 'EPEC_ROMAN_*.csv', date_format: YYMMDD}
+      - {role: e1kia, glob: 'EPEC_E1KIA_*.csv', date_format: YYMMDD}
+    allowed_exits: [0]
+    timeout_seconds: 900
+    request_date_format: YYYYMMDD
+    output_date_source: system_date
+    adapter: etl_core.contracts:SubprocessAdapter
+  - id: epec.tipif.retell
+    name: EPEC - Enriquecimiento y tipificaciones Retell.ai (requiere API y credenciales)
+    repository_status: present
+    readiness: blocked
+    executable: false
+    project_path: etls/epec/legacy

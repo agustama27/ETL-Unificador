@@ -1,0 +1,44 @@
+schema_version: 1
+etls:
+  - id: social.argentina.base
+    name: Social Learning - Cartera Argentina
+    repository_status: present
+    readiness: ready
+    executable: true
+    project_path: etls/sociallearning/legacy
+    working_dir: etls/sociallearning/legacy
+    entrypoint: etls/sociallearning/job.py
+    command: [python, ../job.py]
+    fixed_arguments: [--country, argentina]
+    arguments:
+      base: --input
+    inputs:
+      - {role: base, extensions: [.csv], required: true}
+    outputs:
+      - {role: base_filtrada, glob: 'SOCIAL_ARG_CARTERA_*.csv', date_format: YYYYMMDD}
+    allowed_exits: [0]
+    timeout_seconds: 900
+    request_date_format: YYYYMMDD
+    output_date_source: system_date
+    adapter: etl_core.contracts:SubprocessAdapter
+  - id: social.chile.base
+    name: Social Learning - Cartera Chile
+    repository_status: present
+    readiness: ready
+    executable: true
+    project_path: etls/sociallearning/legacy
+    working_dir: etls/sociallearning/legacy
+    entrypoint: etls/sociallearning/job.py
+    command: [python, ../job.py]
+    fixed_arguments: [--country, chile]
+    arguments:
+      base: --input
+    inputs:
+      - {role: base, extensions: [.csv], required: true}
+    outputs:
+      - {role: base_filtrada, glob: 'SOCIAL_CHI_CARTERA_*.csv', date_format: YYYYMMDD}
+    allowed_exits: [0]
+    timeout_seconds: 900
+    request_date_format: YYYYMMDD
+    output_date_source: system_date
+    adapter: etl_core.contracts:SubprocessAdapter

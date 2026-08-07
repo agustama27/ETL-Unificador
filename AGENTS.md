@@ -7,7 +7,7 @@ está en `docs/ADR-001-nucleo-hexagonal.md`.
 
 ## Reglas duras
 
-1. **No modifiques los proyectos legacy** (`SOHO-*`, `soho-*`). Son cajas negras en
+1. **No modifiques los proyectos legacy** (`etls/*/legacy/`). Son cajas negras en
    producción, invocadas por subprocess. La lógica de negocio del cliente vive ahí, no en
    el núcleo.
 2. **No modifiques los tests existentes.** Los 13 tests de `tests/e2e/` son la red de
@@ -18,14 +18,19 @@ está en `docs/ADR-001-nucleo-hexagonal.md`.
 4. **Mínimo blast radius:** ante la duda entre un cambio chico y uno prolijo, hacé el
    chico y anotá el prolijo como pendiente.
 
-## ⚠️ MaVoicePctAdapter es el adapter genérico de facto
+## ⚠️ SubprocessAdapter es compartido por 10 ETLs de 6 clientes
 
-`MaVoicePctAdapter` está mapeado a **nueve ETLs de seis clientes**: `bancor.base`,
-`epec.base`, `fravega.base`, `clarouy.base`, `encuestacx.base`, `social.argentina`,
-`social.chile`, `naranjax.ma.chat.pct` y `naranjax.mt.voice.pct`. Si lo tocás para
-arreglar algo de Naranja X, estás tocando seis clientes. Cualquier cambio ahí exige
-correr los 13 e2e completos. La salida de fondo es la decisión 2 del ADR-001
-(`SubprocessAdapter` con nombre honesto).
+`etl_core.contracts:SubprocessAdapter` está mapeado a las bases de Bancor, EPEC, Frávega,
+Claro UY, Encuesta CX y Social Learning (AR/CL) y a los tres PCT de Naranja X. Si lo tocás
+para arreglar algo de un cliente, estás tocando a los otros cinco. Cualquier cambio ahí
+exige correr los 13 e2e completos (`pytest etls/`).
+
+## Cómo agregar un cliente
+
+Agregá una carpeta bajo `etls/<cliente>/` con `manifest.yaml` (con
+`adapter: modulo:Clase`), el adapter si `SubprocessAdapter` no alcanza, un `job.py` si el
+legacy no tiene CLI usable, `legacy/`, `tests/` y `README.md`. El catálogo la descubre
+solo: **cero archivos del núcleo tocados.**
 
 ## Convenciones de código (docs/ARQUITECTURA.md §8)
 

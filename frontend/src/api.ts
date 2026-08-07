@@ -5,7 +5,7 @@ export interface CatalogEntry {
   id: string; name: string; client: string;
   readiness: "ready" | "candidate" | "blocked";
   executable: boolean; reason: string | null;
-  stateful: boolean; has_no_planes_flag: boolean;
+  stateful: boolean; params: string[];
   inputs: InputSpec[]; outputs: OutputSpec[];
   timeout_seconds: number | null; deadline_hint: string | null;
 }
@@ -39,29 +39,41 @@ const json = async <T>(response: Response): Promise<T> => {
   return response.json() as Promise<T>;
 };
 
-export const fetchCatalog = () => fetch("/api/catalog").then((r) => json<CatalogEntry[]>(r));
-export const fetchRun = (runId: string) => fetch(`/api/runs/${runId}`).then((r) => json<RunDetail>(r));
+// Con ETL_CONSOLE_TOKEN activo en el backend, guardá el token en
+// localStorage("etl_token") para que la consola lo adjunte en cada request.
+const apiFetch = (input: string, init: RequestInit = {}) => {
+  const token = localStorage.getItem("etl_token");
+  const headers: Record<string, string> = {
+    ...((init.headers as Record<string, string>) ?? {}),
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+  };
+  return fetch(input, { ...init, headers });
+};
+
+export const fetchCatalog = () => apiFetch("/api/catalog").then((r) => json<CatalogEntry[]>(r));
+export const fetchRun = (runId: string) => apiFetch(`/api/runs/${runId}`).then((r) => json<RunDetail>(r));
 
 export const fetchHistory = (params: Record<string, string | number>) => {
   const query = new URLSearchParams(
     Object.entries(params).filter(([, v]) => v !== "").map(([k, v]) => [k, String(v)]),
   );
-  return fetch(`/api/runs?${query}`).then((r) => json<HistoryPage>(r));
+  return apiFetch(`/api/runs?${query}`).then((r) => json<HistoryPage>(r));
 };
 
 export const launchRun = (etlId: string, businessDate: string,
-                          files: Record<string, File>, noPlanesToday: boolean) => {
+                          files: Record<string, File>,
+                          params: Record<string, string | boolean> = {}) => {
   const form = new FormData();
   form.append("etl_id", etlId);
   form.append("business_date", businessDate);
-  form.append("no_planes_today", String(noPlanesToday));
+  form.append("params", JSON.stringify(params));
   for (const [role, file] of Object.entries(files)) form.append(role, file);
-  return fetch("/api/runs", { method: "POST", body: form })
+  return apiFetch("/api/runs", { method: "POST", body: form })
     .then((r) => json<{ run_id: string; status: RunStatus }>(r));
 };
 
 export const runAction = (runId: string, action: "free_lock" | "notify_dev") =>
-  fetch(`/api/runs/${runId}/actions/${action}`, { method: "POST" })
+  apiFetch(`/api/runs/${runId}/actions/${action}`, { method: "POST" })
     .then((r) => json<{ ok: boolean }>(r));
 
 export const artifactUrl = (runId: string, role: string) => `/api/runs/${runId}/artifacts/${role}`;

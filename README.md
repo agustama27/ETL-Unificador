@@ -79,21 +79,22 @@ python -m orchestrator.run \
   --etl naranjax.ma.chat.daily \
   --fecha 20260806 \
   --base ./inputs/base_mensual.xlsx \
-  --planes ./inputs/planes.xlsx \
-  --pagos ./inputs/pagos.csv
+  --input planes=./inputs/planes.xlsx \
+  --input pagos=./inputs/pagos.csv
 ```
 
-Cuando el día no tiene archivo de PLANES, se declara explícitamente:
+Cuando el día no tiene archivo de PLANES, se declara explícitamente con un parámetro:
 
 ```bash
 python -m orchestrator.run \
   --etl naranjax.ma.chat.daily \
   --fecha 20260806 \
   --base ./inputs/base_mensual.xlsx \
-  --sin-planes-hoy
+  --param no_planes_today
 ```
 
-Entradas adicionales que no son `base`/`planes`/`pagos` se pasan con `--input ROL=RUTA`:
+Toda entrada adicional a `base` se pasa con `--input ROL=RUTA`, y los flags que el
+manifiesto declara, con `--param NOMBRE[=VALOR]`:
 
 ```bash
 python -m orchestrator.run \
@@ -121,9 +122,38 @@ GET  /api/runs                             Lista corridas, con filtros y paginad
 GET  /api/runs/{run_id}                    Detalle de una corrida
 GET  /api/runs/{run_id}/artifacts.zip      Descarga todos los artefactos + run.json
 GET  /api/runs/{run_id}/artifacts/{rol}    Descarga un artefacto puntual
-POST /api/runs/{run_id}/actions/notify_dev Registra una notificación a desarrollo
+GET  /api/schedule                         Deadlines de hoy + corridas huérfanas recuperadas
+POST /api/runs/{run_id}/actions/notify_dev Notifica a desarrollo (webhook + registro durable)
 POST /api/runs/{run_id}/actions/free_lock  Libera un lock huérfano (rechaza si hay corrida viva)
 ```
+
+### Configuración de la API (variables de entorno)
+
+| Variable | Default | Efecto |
+|---|---|---|
+| `ETL_CONSOLE_TOKEN` | vacío (sin auth) | Si está seteada, todo `/api/*` exige `Authorization: Bearer <token>` o `X-Api-Token`. La consola lo toma de `localStorage("etl_token")`. |
+| `ETL_RETENTION_DAYS` | `30` | Al arrancar borra corridas terminales y uploads más viejos que N días (contienen PII). `0` desactiva. |
+| `ETL_NOTIFY_WEBHOOK` | vacío | URL a la que `notify_dev` postea el JSON de la notificación (Slack/Teams/n8n). Siempre queda registro en `var/notifications.jsonl`. |
+| `ETL_MAX_CONCURRENT_RUNS` | `2` | Tamaño del pool de ejecución (hilos no-daemon: las corridas en curso terminan antes de apagar). |
+
+Al arrancar, la API además marca como `failed`/`orphaned` las corridas que quedaron vivas
+de un proceso anterior, y sirve el listado desde un índice SQLite (`var/index.sqlite`)
+en vez de escanear el filesystem.
+
+### Desde un agente (MCP)
+
+```bash
+pip install -e ".[mcp]"
+```
+
+```json
+{"command": "python", "args": ["-m", "platform_mcp.server"],
+ "env": {"ETL_API_URL": "http://localhost:8000", "ETL_CONSOLE_TOKEN": "..."}}
+```
+
+Herramientas: `list_etls`, `describe_etl`, `run_etl`, `get_run`, `download_artifact`.
+Para que un agente dé de alta un cliente nuevo: copiar `etls/_template/` y seguir
+`docs/GUIA_NUEVO_CLIENTE.md`.
 
 ---
 
@@ -131,16 +161,25 @@ POST /api/runs/{run_id}/actions/free_lock  Libera un lock huérfano (rechaza si 
 
 ```
 etl-suite-agentica/
-├── registry/                 Catálogo declarativo: un YAML por cliente
+├── etl_core/                 Contrato de adapter: Protocol, excepciones, SubprocessAdapter
 ├── orchestrator/             Núcleo: catálogo, servicio, runner, sandbox, estado, CLI
-├── adapters/                 Traducción entre el contrato del núcleo y cada ETL legacy
+├── etls/<cliente>/           Paquete autocontenido por cliente:
+│   ├── manifest.yaml         declaración del catálogo
+│   ├── adapter.py / *.py     adapters del cliente
+│   ├── job.py                CLI puente al legacy (si hace falta)
+│   ├── legacy/               proyecto ETL original, invocado sin modificar
+│   ├── tests/                e2e + unit del cliente
+│   └── README.md             entradas, salidas, deadline, reglas, contacto
 ├── platform_api/             API REST (FastAPI) sobre el orquestador
 ├── frontend/                 Consola web (React + Vite + TypeScript)
-├── tests/                    unit por capa + e2e por ETL
+├── tests/                    unit del núcleo + API + soporte compartido
 ├── openspec/                 Especificaciones y propuestas de cambio
-├── docs/                     Arquitectura, ADRs y guías
-└── SOHO-*/ soho-*/           Proyectos ETL legacy, invocados sin modificar
+└── docs/                     Arquitectura, ADRs y guías
 ```
+
+**Agregar un cliente = agregar una carpeta bajo `etls/`.** El catálogo descubre
+`etls/*/manifest.yaml` y resuelve el adapter por import (`modulo:Clase`); no se toca
+ningún archivo del núcleo.
 
 ### Qué hace cada módulo del núcleo
 
@@ -160,19 +199,20 @@ etl-suite-agentica/
 
 ## Clientes y ETLs disponibles
 
-Cada cliente tiene su archivo en `registry/`. Ejecutá `GET /api/catalog` o abrí el YAML para
-ver el listado vigente, sus entradas requeridas y sus patrones de salida.
+Cada cliente vive en `etls/<cliente>/` con su `manifest.yaml` y su `README.md`. Ejecutá
+`GET /api/catalog` o abrí el manifest para ver el listado vigente, sus entradas requeridas
+y sus patrones de salida.
 
-| Cliente | Registry | Estado general |
+| Cliente | Paquete | Estado general |
 |---|---|---|
-| Naranja X | `registry/naranjax.yaml` | 7 ETLs operativos (MA Chat, MA Voz, MT Voz, PCT) |
-| Bancor | `registry/bancor.yaml` | Base diaria operativa; resultados, carga masiva y cupones pendientes |
-| Petersen | `registry/petersen.yaml` | Gestiones operativo; Retell pendiente |
-| EPEC | `registry/epec.yaml` | Base operativa; tipificaciones Retell pendientes |
-| Frávega | `registry/fravega.yaml` | Base operativa; resultados Retell pendientes |
-| Claro Uruguay | `registry/clarouy.yaml` | Base operativa; encuestas Retell pendientes |
-| Encuesta CX | `registry/encuestacx.yaml` | Base operativa |
-| Social Learning | `registry/sociallearning.yaml` | Argentina y Chile operativos |
+| Naranja X | `etls/naranjax/` | 7 ETLs operativos (MA Chat, MA Voz, MT Voz, PCT) |
+| Bancor | `etls/bancor/` | Base diaria operativa; resultados, carga masiva y cupones pendientes |
+| Petersen | `etls/petersen/` | Gestiones operativo; Retell pendiente |
+| EPEC | `etls/epec/` | Base operativa; tipificaciones Retell pendientes |
+| Frávega | `etls/fravega/` | Base operativa; resultados Retell pendientes |
+| Claro Uruguay | `etls/clarouy/` | Base operativa; encuestas Retell pendientes |
+| Encuesta CX | `etls/encuestacx/` | Base operativa |
+| Social Learning | `etls/sociallearning/` | Argentina y Chile operativos |
 
 Los ETLs con `executable: false` aparecen en el catálogo pero no se pueden disparar. El motivo
 legible está en `platform_api/catalog_meta.py` (`INERT_REASONS`). Casi todos esperan
@@ -267,17 +307,12 @@ Son deudas asumidas, no bugs sorpresa. Están priorizadas en `docs/ADR-001-nucle
 1. **Sólo se acepta la fecha de hoy.** Los adapters y la API rechazan cualquier `business_date`
    distinta de `date.today()`, porque los ETLs legacy estampan la fecha del sistema en los nombres
    de salida. No hay reproceso ni backfill.
-2. **El núcleo depende de un cliente.** `orchestrator/service.py` importa sus excepciones desde
-   `adapters/naranjax/ma_chat.py`.
-3. **`MaVoicePctAdapter` funciona como adapter genérico** para 9 ETLs de 6 clientes. Un cambio
-   pensado para Naranja X PCT impacta a Bancor, EPEC, Frávega, Claro UY, Encuesta CX y Social
-   Learning.
-4. **Agregar un cliente obliga a tocar el núcleo:** `orchestrator/run.py`, `orchestrator/models.py`
-   (`ArtifactRole`) y `platform_api/main.py` (`FILE_ROLES`).
-5. **La API no está endurecida:** sin autenticación, ejecución en hilos daemon sin recuperación
-   ante reinicio, listado de corridas por escaneo completo del filesystem.
-6. **Sin política de retención.** `var/runs/` y `var/uploads/` crecen indefinidamente con archivos
-   que contienen datos personales.
+2. **`SubprocessAdapter` es compartido por 10 ETLs de 6 clientes.** Ya tiene nombre honesto y
+   vive en `etl_core`, pero un cambio ahí sigue exigiendo correr los 13 e2e completos.
+3. **La autenticación es un token único compartido** (`ETL_CONSOLE_TOKEN`), sin usuarios ni
+   roles. Los links de descarga de artefactos no adjuntan el token (usá la API con header).
+4. **El scheduling es informativo:** `/api/schedule` cruza deadlines declarados con las
+   corridas del día, pero nadie dispara ETLs automáticamente todavía.
 
 ---
 

@@ -1,0 +1,30 @@
+schema_version: 1
+etls:
+  - id: clarouy.base.daily
+    name: ClaroUY - Base de encuestas (back-base)
+    repository_status: present
+    readiness: ready
+    executable: true
+    project_path: etls/clarouy/legacy
+    working_dir: etls/clarouy/legacy
+    entrypoint: etls/clarouy/job.py
+    command: [python, ../job.py]
+    fixed_arguments: []
+    arguments:
+      base: --input
+    inputs:
+      - {role: base, extensions: [.csv], required: true}
+    outputs:
+      - {role: base_filtrada, glob: 'base_clarouy_*.csv', date_format: DDMMYYYY}
+      - {role: telefonos, glob: 'telefonos_x_cliente_*.csv', date_format: DDMMYYYY}
+    allowed_exits: [0]
+    timeout_seconds: 900
+    request_date_format: YYYYMMDD
+    output_date_source: system_date
+    adapter: etl_core.contracts:SubprocessAdapter
+  - id: clarouy.encuestas.retell
+    name: ClaroUY - Encuestas desde Retell.ai (requiere API y credenciales)
+    repository_status: present
+    readiness: blocked
+    executable: false
+    project_path: etls/clarouy/legacy

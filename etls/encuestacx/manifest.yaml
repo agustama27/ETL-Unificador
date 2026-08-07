@@ -1,0 +1,23 @@
+schema_version: 1
+etls:
+  - id: encuestacx.base.daily
+    name: Encuesta CX - Base para n8n/Retell
+    repository_status: present
+    readiness: ready
+    executable: true
+    project_path: etls/encuestacx/legacy
+    working_dir: etls/encuestacx/legacy
+    entrypoint: etls/encuestacx/job.py
+    command: [python, ../job.py]
+    fixed_arguments: []
+    arguments:
+      base: --input
+    inputs:
+      - {role: base, extensions: [.xlsx], required: true}
+    outputs:
+      - {role: survey_base, glob: 'base_encuesta.csv'}
+      - {role: survey_base_e164, glob: 'base_encuesta_e164.csv'}
+    allowed_exits: [0]
+    timeout_seconds: 900
+    request_date_format: YYYYMMDD
+    adapter: etl_core.contracts:SubprocessAdapter

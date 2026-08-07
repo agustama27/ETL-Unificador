@@ -100,6 +100,7 @@ Se guardan en `run.json` bajo `error.code` y, si el estado es `blocked`, tambié
 | `state_unchanged` | El estado promovido es idéntico al anterior y el adapter exigía cambio |
 | `promotion_failed` | La promoción falló antes de publicar nada (el estado quedó consistente) |
 | `recovery_evidence_failed` | La promoción quedó a medias y ni siquiera se pudo dejar el marcador de recovery. Caso crítico. |
+| `orphaned` | La corrida quedó viva cuando el servicio se reinició; la API la marca `failed` al arrancar. |
 
 ---
 

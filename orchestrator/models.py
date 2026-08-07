@@ -35,6 +35,11 @@ class StateStatus(StrEnum):
 
 
 class ArtifactRole(StrEnum):
+    """Transitional: output roles are open strings validated by the catalog.
+
+    Kept only so pre-Fase-2 imports keep resolving; do not add members.
+    """
+
     ROMAN = "roman"
     CHAT = "chat"
     E1KIA = "e1kia"
@@ -57,7 +62,7 @@ class InputSpec:
 
 @dataclass(frozen=True)
 class OutputSpec:
-    role: ArtifactRole
+    role: str
     glob: str
     date_format: str | None = None
 
@@ -94,11 +99,10 @@ class ETLDefinition:
 class RunRequest:
     etl_id: str
     business_date: date
-    base: Path
-    planes: Path | None = None
-    pagos: Path | None = None
-    no_planes_today: bool = False
-    extras: Mapping[str, Path] = field(
+    inputs: Mapping[str, Path] = field(
+        default_factory=lambda: MappingProxyType({})
+    )
+    params: Mapping[str, str | bool] = field(
         default_factory=lambda: MappingProxyType({})
     )
     environment: Mapping[str, str] = field(
@@ -106,7 +110,8 @@ class RunRequest:
     )
 
     def __post_init__(self) -> None:
-        object.__setattr__(self, "extras", MappingProxyType(dict(self.extras)))
+        object.__setattr__(self, "inputs", MappingProxyType(dict(self.inputs)))
+        object.__setattr__(self, "params", MappingProxyType(dict(self.params)))
         object.__setattr__(self, "environment", MappingProxyType(dict(self.environment)))
 
 

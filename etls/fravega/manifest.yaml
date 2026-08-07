@@ -1,0 +1,28 @@
+schema_version: 1
+etls:
+  - id: fravega.base.daily
+    name: Fravega - Base de cobranzas (back-base)
+    repository_status: present
+    readiness: ready
+    executable: true
+    project_path: etls/fravega/legacy
+    working_dir: etls/fravega/legacy
+    entrypoint: etls/fravega/job.py
+    command: [python, ../job.py]
+    fixed_arguments: []
+    arguments:
+      base: --input
+    inputs:
+      - {role: base, extensions: [.csv], required: true}
+    outputs:
+      - {role: base_filtrada, glob: 'fravega_base.csv'}
+    allowed_exits: [0]
+    timeout_seconds: 900
+    request_date_format: YYYYMMDD
+    adapter: etl_core.contracts:SubprocessAdapter
+  - id: fravega.resultados.retell
+    name: Fravega - Resultados Retell.ai (requiere API y credenciales)
+    repository_status: present
+    readiness: blocked
+    executable: false
+    project_path: etls/fravega/legacy

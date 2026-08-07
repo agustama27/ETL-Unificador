@@ -1,0 +1,35 @@
+schema_version: 1
+etls:
+  - id: petersen.gestiones.daily
+    name: Petersen - Gestiones AG002 (ROMAN)
+    repository_status: present
+    readiness: ready
+    executable: true
+    project_path: etls/petersen/legacy
+    working_dir: etls/petersen/legacy
+    entrypoint: etls/petersen/job.py
+    command: [python, ../job.py]
+    fixed_arguments: []
+    arguments:
+      base: --input
+      approach: --approach
+      clientes: --clientes
+      excluidos: --excluidos
+    inputs:
+      - {role: base, extensions: [.csv], required: true}
+      - {role: approach, extensions: [.csv], required: false}
+      - {role: clientes, extensions: [.csv], required: false}
+      - {role: excluidos, extensions: [.csv], required: false}
+    outputs:
+      - {role: gestiones, glob: 'Gestiones_Petersen_*.zip', date_format: YYYYMMDD}
+    allowed_exits: [0]
+    timeout_seconds: 900
+    request_date_format: YYYYMMDD
+    output_date_source: system_date
+    adapter: etls.petersen.adapter:PetersenGestionesAdapter
+  - id: petersen.retell
+    name: Petersen - Enriquecimiento Retell.ai (requiere API y credenciales)
+    repository_status: present
+    readiness: blocked
+    executable: false
+    project_path: etls/petersen/legacy

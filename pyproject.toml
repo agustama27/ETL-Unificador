@@ -21,10 +21,16 @@ api = [
     "uvicorn>=0.30,<1.0",
     "python-multipart>=0.0.9,<0.1",
 ]
+mcp = [
+    "mcp>=1.2,<2.0",
+    "httpx>=0.27,<1.0",
+]
 
 [tool.setuptools.packages.find]
-include = ["orchestrator*", "adapters*", "platform_api*"]
+include = ["etl_core*", "orchestrator*", "platform_api*", "platform_mcp*", "etls*"]
+exclude = ["etls._template*", "etls.*.legacy*", "etls.*.tests*", "etls.*.fixtures*"]
 
 [tool.pytest.ini_options]
-testpaths = ["tests"]
+testpaths = ["tests", "etls"]
 pythonpath = ["."]
+norecursedirs = ["*.egg", ".*", "build", "dist", "node_modules", "venv", "legacy"]
