@@ -5,10 +5,10 @@ etls:
     repository_status: present
     readiness: ready
     executable: true
-    project_path: soho-EPEC
-    working_dir: soho-EPEC
-    entrypoint: adapters/epec/base_job.py
-    command: [python, ../adapters/epec/base_job.py]
+    project_path: etls/epec/legacy
+    working_dir: etls/epec/legacy
+    entrypoint: etls/epec/job.py
+    command: [python, ../job.py]
     fixed_arguments: []
     arguments:
       base: --input
@@ -27,4 +27,4 @@ etls:
     repository_status: present
     readiness: blocked
     executable: false
-    project_path: soho-EPEC
+    project_path: etls/epec/legacy

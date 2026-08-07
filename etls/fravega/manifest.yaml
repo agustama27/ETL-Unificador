@@ -5,10 +5,10 @@ etls:
     repository_status: present
     readiness: ready
     executable: true
-    project_path: SOHO-Fravega-Cobranzas-Resultados
-    working_dir: SOHO-Fravega-Cobranzas-Resultados
-    entrypoint: adapters/fravega/base_job.py
-    command: [python, ../adapters/fravega/base_job.py]
+    project_path: etls/fravega/legacy
+    working_dir: etls/fravega/legacy
+    entrypoint: etls/fravega/job.py
+    command: [python, ../job.py]
     fixed_arguments: []
     arguments:
       base: --input
@@ -25,4 +25,4 @@ etls:
     repository_status: present
     readiness: blocked
     executable: false
-    project_path: SOHO-Fravega-Cobranzas-Resultados
+    project_path: etls/fravega/legacy

@@ -5,10 +5,10 @@ etls:
     repository_status: present
     readiness: ready
     executable: true
-    project_path: soho-ClaroUY-ETL
-    working_dir: soho-ClaroUY-ETL
-    entrypoint: adapters/clarouy/base_job.py
-    command: [python, ../adapters/clarouy/base_job.py]
+    project_path: etls/clarouy/legacy
+    working_dir: etls/clarouy/legacy
+    entrypoint: etls/clarouy/job.py
+    command: [python, ../job.py]
     fixed_arguments: []
     arguments:
       base: --input
@@ -27,4 +27,4 @@ etls:
     repository_status: present
     readiness: blocked
     executable: false
-    project_path: soho-ClaroUY-ETL
+    project_path: etls/clarouy/legacy

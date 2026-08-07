@@ -6,8 +6,8 @@ from pathlib import Path
 
 
 WORKSPACE = Path(__file__).resolve().parents[3]
-WRAPPER = WORKSPACE / "adapters/bancor/base_job.py"
-LEGACY = WORKSPACE / "soho-bancor-cobranzas-etl"
+WRAPPER = WORKSPACE / "etls/bancor/job.py"
+LEGACY = WORKSPACE / "etls/bancor/legacy"
 
 
 def _run(input_path: Path, output_dir: Path) -> subprocess.CompletedProcess[str]:

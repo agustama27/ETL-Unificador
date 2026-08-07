@@ -6,8 +6,8 @@ from pathlib import Path
 
 
 WORKSPACE = Path(__file__).resolve().parents[3]
-WRAPPER = WORKSPACE / "adapters/epec/base_job.py"
-LEGACY = WORKSPACE / "soho-EPEC"
+WRAPPER = WORKSPACE / "etls/epec/job.py"
+LEGACY = WORKSPACE / "etls/epec/legacy"
 
 
 def _run(input_path: Path, output_dir: Path) -> subprocess.CompletedProcess[str]:

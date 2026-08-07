@@ -5,10 +5,10 @@ etls:
     repository_status: present
     readiness: ready
     executable: true
-    project_path: soho-encuestaCX
-    working_dir: soho-encuestaCX
-    entrypoint: adapters/encuestacx/base_job.py
-    command: [python, ../adapters/encuestacx/base_job.py]
+    project_path: etls/encuestacx/legacy
+    working_dir: etls/encuestacx/legacy
+    entrypoint: etls/encuestacx/job.py
+    command: [python, ../job.py]
     fixed_arguments: []
     arguments:
       base: --input

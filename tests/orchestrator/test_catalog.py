@@ -233,7 +233,7 @@ def test_repository_registry_directory_exposes_all_client_entries() -> None:
     assert len(tuple(catalog)) == 22
     bancor = catalog["bancor.base.daily"]
     assert (bancor.adapter, bancor.project_path) == (
-        "etl_core.contracts:SubprocessAdapter", Path("soho-bancor-cobranzas-etl"))
+        "etl_core.contracts:SubprocessAdapter", Path("etls/bancor/legacy"))
     assert tuple((o.role, o.date_format) for o in bancor.outputs) == (
         ("base_filtrada", "DDMMYYYY"), ("telefonos", "DDMMYYYY"),
         ("roman", "YYYYMMDD"), ("e1kia", "YYYYMMDD"),
@@ -244,7 +244,7 @@ def test_repository_registry_directory_exposes_all_client_entries() -> None:
                                        "clarouy.encuestas.retell", "petersen.retell"}
     survey = catalog["encuestacx.base.daily"]
     assert (survey.adapter, survey.project_path) == (
-        "etl_core.contracts:SubprocessAdapter", Path("soho-encuestaCX"))
+        "etl_core.contracts:SubprocessAdapter", Path("etls/encuestacx/legacy"))
     assert tuple((o.role, o.glob, o.date_format) for o in survey.outputs) == (
         ("survey_base", "base_encuesta.csv", None),
         ("survey_base_e164", "base_encuesta_e164.csv", None),

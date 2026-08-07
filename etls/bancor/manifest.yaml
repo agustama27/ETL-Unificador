@@ -5,10 +5,10 @@ etls:
     repository_status: present
     readiness: ready
     executable: true
-    project_path: soho-bancor-cobranzas-etl
-    working_dir: soho-bancor-cobranzas-etl
-    entrypoint: adapters/bancor/base_job.py
-    command: [python, ../adapters/bancor/base_job.py]
+    project_path: etls/bancor/legacy
+    working_dir: etls/bancor/legacy
+    entrypoint: etls/bancor/job.py
+    command: [python, ../job.py]
     fixed_arguments: []
     arguments:
       base: --input
@@ -29,16 +29,16 @@ etls:
     repository_status: present
     readiness: blocked
     executable: false
-    project_path: soho-bancor-cobranzas-etl
+    project_path: etls/bancor/legacy
   - id: bancor.carga_masiva
     name: Bancor - Carga masiva CRM (pendiente de diseno)
     repository_status: present
     readiness: candidate
     executable: false
-    project_path: soho-bancor-cobranzas-etl
+    project_path: etls/bancor/legacy
   - id: bancor.cupones
     name: Bancor - Cupones de pago (legacy en desarrollo)
     repository_status: present
     readiness: blocked
     executable: false
-    project_path: soho-bancor-cobranzas-etl
+    project_path: etls/bancor/legacy

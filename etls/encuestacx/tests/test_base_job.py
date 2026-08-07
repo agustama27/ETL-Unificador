@@ -7,8 +7,8 @@ import pytest
 
 
 WORKSPACE = Path(__file__).resolve().parents[3]
-WRAPPER = WORKSPACE / "adapters/encuestacx/base_job.py"
-LEGACY = WORKSPACE / "soho-encuestaCX"
+WRAPPER = WORKSPACE / "etls/encuestacx/job.py"
+LEGACY = WORKSPACE / "etls/encuestacx/legacy"
 
 INPUT_COLUMNS = [
     "Tier", "Cliente", "Gerencia Cliente", "Vertical de negocio", "Nombre",

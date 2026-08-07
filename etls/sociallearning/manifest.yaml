@@ -5,10 +5,10 @@ etls:
     repository_status: present
     readiness: ready
     executable: true
-    project_path: soho-socialLearning
-    working_dir: soho-socialLearning
-    entrypoint: adapters/sociallearning/base_job.py
-    command: [python, ../adapters/sociallearning/base_job.py]
+    project_path: etls/sociallearning/legacy
+    working_dir: etls/sociallearning/legacy
+    entrypoint: etls/sociallearning/job.py
+    command: [python, ../job.py]
     fixed_arguments: [--country, argentina]
     arguments:
       base: --input
@@ -26,10 +26,10 @@ etls:
     repository_status: present
     readiness: ready
     executable: true
-    project_path: soho-socialLearning
-    working_dir: soho-socialLearning
-    entrypoint: adapters/sociallearning/base_job.py
-    command: [python, ../adapters/sociallearning/base_job.py]
+    project_path: etls/sociallearning/legacy
+    working_dir: etls/sociallearning/legacy
+    entrypoint: etls/sociallearning/job.py
+    command: [python, ../job.py]
     fixed_arguments: [--country, chile]
     arguments:
       base: --input
