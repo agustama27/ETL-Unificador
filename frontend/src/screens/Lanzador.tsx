@@ -75,7 +75,8 @@ function Formulario({ entry }: { entry: CatalogEntry }) {
 
   const missing = entry.inputs.filter((spec) => spec.required && !files[spec.role]);
   const launch = useMutation({
-    mutationFn: () => launchRun(entry.id, todayIso(), files, noPlanes),
+    mutationFn: () => launchRun(entry.id, todayIso(), files,
+                                noPlanes ? { no_planes_today: true } : {}),
     onSuccess: (result) => {
       toast("info", `${entry.name}: corrida iniciada.`, result.run_id);
       navigate(`/runs/${result.run_id}`);
@@ -103,7 +104,7 @@ function Formulario({ entry }: { entry: CatalogEntry }) {
                     onClear={() => setFiles(({ [spec.role]: _omit, ...rest }) => rest)}
                     onError={setInlineError} />
         ))}
-        {entry.has_no_planes_flag && (
+        {entry.params.includes("no_planes_today") && (
           <label className="row" style={{ fontSize: 12.5 }}>
             <input type="checkbox" checked={noPlanes} onChange={(e) => setNoPlanes(e.target.checked)} />
             <span>

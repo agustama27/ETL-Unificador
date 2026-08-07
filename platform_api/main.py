@@ -33,8 +33,6 @@ from orchestrator.state_store import StateStore
 from .catalog_meta import DEADLINE_HINTS, INERT_REASONS, client_of
 
 LIVE_STATUSES = {"preparing", "running"}
-FILE_ROLES = ("base", "planes", "pagos", "logcall", "historial",
-              "approach", "clientes", "excluidos")
 
 
 class _ReservedRunStore:
@@ -163,14 +161,16 @@ def create_app(workspace: Path | None = None, *,
                 "executable": item.executable,
                 "reason": INERT_REASONS.get(item.id),
                 "stateful": bool(getattr(adapter, "stateful", False)),
-                "has_no_planes_flag": "no_planes_today" in item.arguments,
+                "params": sorted(set(item.arguments)
+                                 - {spec.role for spec in item.inputs}
+                                 - {"business_date"}),
                 "inputs": [
                     {"role": spec.role, "extensions": list(spec.extensions),
                      "required": spec.required}
                     for spec in item.inputs
                 ],
                 "outputs": [
-                    {"role": spec.role.value, "glob": spec.glob,
+                    {"role": spec.role, "glob": spec.glob,
                      "date_format": spec.date_format}
                     for spec in item.outputs
                 ],
@@ -183,7 +183,7 @@ def create_app(workspace: Path | None = None, *,
     async def post_run(request: Request,
                        etl_id: str = Form(...),
                        business_date: str = Form(...),
-                       no_planes_today: bool = Form(False)) -> dict[str, Any]:
+                       params: str = Form("{}")) -> dict[str, Any]:
         try:
             definition = catalog()[etl_id]
         except Exception as error:
@@ -197,11 +197,20 @@ def create_app(workspace: Path | None = None, *,
         if parsed_date != today():
             raise HTTPException(
                 422, "Solo se acepta la fecha de negocio de hoy")
+        try:
+            parsed_params = json.loads(params)
+        except ValueError as error:
+            raise HTTPException(422, "Parámetros inválidos") from error
+        if not isinstance(parsed_params, dict) or not all(
+            isinstance(name, str) and isinstance(value, (str, bool))
+            for name, value in parsed_params.items()
+        ):
+            raise HTTPException(422, "Parámetros inválidos")
 
         form = await request.form()
         uploads: dict[str, UploadFile] = {
             role: value for role, value in form.items()
-            if role in FILE_ROLES and isinstance(value, UploadFile) and value.filename
+            if isinstance(value, UploadFile) and value.filename
         }
         declared = {spec.role: spec for spec in definition.inputs}
         for role in uploads:
@@ -236,11 +245,7 @@ def create_app(workspace: Path | None = None, *,
         service = build_service(definition, adapter,
                                 _ReservedRunStore(store, reserved), workspace)
         run_request = RunRequest(
-            etl_id, parsed_date, staged["base"],
-            planes=staged.get("planes"), pagos=staged.get("pagos"),
-            no_planes_today=no_planes_today,
-            extras={role: path for role, path in staged.items()
-                    if role not in ("base", "planes", "pagos")},
+            etl_id, parsed_date, inputs=staged, params=parsed_params,
         )
         run_job(lambda: service.execute(run_request))
         return {"run_id": reserved.name, "status": "preparing"}
