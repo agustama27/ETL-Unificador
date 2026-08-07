@@ -2,7 +2,6 @@ import ctypes
 import json
 import os
 import shutil
-from ctypes import wintypes
 from datetime import date
 from pathlib import Path
 from typing import Callable, NamedTuple
@@ -15,6 +14,8 @@ DirectoryApi = tuple[Callable[[Path], int], Callable[[int], None], Callable[[int
 
 
 def _windows_directory_api() -> DirectoryApi:
+    from ctypes import wintypes
+
     kernel = ctypes.WinDLL("kernel32", use_last_error=True)
     create, flush, close = kernel.CreateFileW, kernel.FlushFileBuffers, kernel.CloseHandle
     create.argtypes = [wintypes.LPCWSTR, wintypes.DWORD, wintypes.DWORD,
