@@ -1,8 +1,14 @@
 # ADR-001 — Núcleo hexagonal con adapters descubribles
 
-- **Estado:** propuesto
+- **Estado:** aceptado e implementado (2026-08-07)
 - **Fecha:** 2026-08-06
-- **Ámbito:** `orchestrator/`, `adapters/`, `registry/`, `platform_api/`
+- **Ámbito:** `orchestrator/`, `etl_core/`, `etls/`, `platform_api/`, `platform_mcp/`
+- **Implementación:** las cinco fases del plan están en `main` vía
+  [PR #91](https://github.com/agustama27/ETL-Unificador/pull/91) (Fase 0) y
+  [PR #99](https://github.com/agustama27/ETL-Unificador/pull/99) (Fases 1-5, historia
+  lineal; las PRs por fase #92-#96 documentan la review de cada tramo). Verificación de
+  fidelidad de la Fase 3 en `docs/verificacion-migracion-fase-3.md`. Quedan parciales dos
+  ítems de la Fase 4, anotados en su checklist.
 
 ---
 
@@ -191,25 +197,25 @@ Cinco fases. Cada una es entregable por sí sola y deja el repo funcionando.
 
 Sin esto, ninguna otra fase se puede verificar en serio.
 
-- [ ] Mover `from ctypes import wintypes` dentro de `_windows_directory_api()`
-- [ ] `README.md` raíz, `docs/ARQUITECTURA.md`, este ADR, `docs/GUIA_NUEVO_CLIENTE.md`
-- [ ] `bitbucket-pipelines.yml` que corra `pytest` completo en Linux
-- [ ] Completar `pyproject.toml`: `fastapi`, `uvicorn`, `python-multipart`; renombrar el extra
+- [x] Mover `from ctypes import wintypes` dentro de `_windows_directory_api()`
+- [x] `README.md` raíz, `docs/ARQUITECTURA.md`, este ADR, `docs/GUIA_NUEVO_CLIENTE.md`
+- [x] `bitbucket-pipelines.yml` que corra `pytest` completo en Linux
+- [x] Completar `pyproject.toml`: `fastapi`, `uvicorn`, `python-multipart`; renombrar el extra
       `naranjax` a `etl` porque lo usan todos los clientes
-- [ ] `Dockerfile` + `docker-compose.yml`
-- [ ] `openspec/project.md` y `AGENTS.md` raíz con las convenciones de la sección 8 de ARQUITECTURA
+- [x] `Dockerfile` + `docker-compose.yml`
+- [x] `openspec/project.md` y `AGENTS.md` raíz con las convenciones de la sección 8 de ARQUITECTURA
 
 **Criterio de aceptación:** un dev nuevo clona, corre `docker compose up` y ejecuta los trece e2e
 en verde, en Linux, sin leer nada más que el README.
 
 ### Fase 1 — Enderezar dependencias (~1–2 semanas)
 
-- [ ] Crear `etl_core/contracts.py` con `ETLAdapter`, excepciones y `SubprocessAdapter`
-- [ ] `orchestrator/service.py` importa de `etl_core`, no de `adapters`
-- [ ] Reapuntar los nueve mapeos de `MaVoicePctAdapter` a `SubprocessAdapter`
-- [ ] `PetersenGestionesAdapter` compone `SubprocessAdapter` en vez de `MaChatAdapter`
-- [ ] Registro por descubrimiento; eliminar `_adapters()` y el import cruzado desde `platform_api`
-- [ ] Reexportaciones de compatibilidad en las ubicaciones viejas
+- [x] Crear `etl_core/contracts.py` con `ETLAdapter`, excepciones y `SubprocessAdapter`
+- [x] `orchestrator/service.py` importa de `etl_core`, no de `adapters`
+- [x] Reapuntar los nueve mapeos de `MaVoicePctAdapter` a `SubprocessAdapter`
+- [x] `PetersenGestionesAdapter` compone `SubprocessAdapter` en vez de `MaChatAdapter`
+- [x] Registro por descubrimiento; eliminar `_adapters()` y el import cruzado desde `platform_api`
+- [x] Reexportaciones de compatibilidad en las ubicaciones viejas
 
 **Criterio de aceptación:** ningún módulo de `orchestrator/` importa de `adapters/`. Los trece e2e
 pasan **sin modificarse**. `grep -r "from adapters" orchestrator/` no devuelve nada.
@@ -218,41 +224,41 @@ pasan **sin modificarse**. `grep -r "from adapters" orchestrator/` no devuelve n
 
 Es la fase de mayor riesgo: toca todos los adapters a la vez.
 
-- [ ] `RunRequest` con `inputs` y `params` genéricos
-- [ ] `ArtifactRole` abierto, validado contra el manifiesto
-- [ ] `FILE_ROLES` derivado del catálogo
-- [ ] Mover las rutas `input/diarios/*` del servicio al adapter de Naranja X
-- [ ] Declarar `no_planes_today` y `--chat` como parámetros en el YAML
-- [ ] Actualizar CLI, API y frontend
+- [x] `RunRequest` con `inputs` y `params` genéricos
+- [x] `ArtifactRole` abierto, validado contra el manifiesto
+- [x] `FILE_ROLES` derivado del catálogo
+- [x] Mover las rutas `input/diarios/*` del servicio al adapter de Naranja X
+- [x] Declarar `no_planes_today` y `--chat` como parámetros en el YAML
+- [x] Actualizar CLI, API y frontend
 
 **Criterio de aceptación:** `grep -ri "planes\|pagos" orchestrator/ platform_api/` no devuelve nada.
 Los trece e2e pasan con ajustes de setup únicamente.
 
 ### Fase 3 — Reagrupar por cliente (~2–3 semanas)
 
-- [ ] Crear `etls/` y migrar **un cliente por PR**, empezando por Petersen (el más chico y sin estado)
-- [ ] Cada carpeta con su `README.md`: entradas, salidas, deadline, reglas de negocio, contacto
-- [ ] Orden sugerido: Petersen → Encuesta CX → Frávega → Claro UY → EPEC → Social Learning → Bancor → Naranja X
+- [x] Crear `etls/` y migrar **un cliente por PR**, empezando por Petersen (el más chico y sin estado)
+- [x] Cada carpeta con su `README.md`: entradas, salidas, deadline, reglas de negocio, contacto
+- [x] Orden sugerido: Petersen → Encuesta CX → Frávega → Claro UY → EPEC → Social Learning → Bancor → Naranja X
 
 **Criterio de aceptación:** `registry/` y `adapters/` quedan vacíos. Agregar un cliente = agregar
 una carpeta bajo `etls/`.
 
 ### Fase 4 — Endurecer para producción
 
-- [ ] Índice de corridas en SQLite; `list_runs` deja de escanear el filesystem
-- [ ] Cola con worker persistente; recuperación de corridas huérfanas al arrancar
-- [ ] Autenticación en la API
-- [ ] Política de retención para `var/runs/` y `var/uploads/` (contienen datos personales)
-- [ ] Scheduling con los deadlines reales (hoy `DEADLINE_HINTS` es texto decorativo)
-- [ ] Alertas efectivas: `notify_dev` escribe en un `.jsonl` que nadie lee
-- [ ] Extender el `Redactor` o documentar explícitamente que no cubre PII
+- [x] Índice de corridas en SQLite; `list_runs` deja de escanear el filesystem
+- [x] *(parcial)* Pool no-daemon + recuperación de huérfanas al arrancar; la cola persistente con reintentos sigue pendiente
+- [x] Autenticación en la API
+- [x] Política de retención para `var/runs/` y `var/uploads/` (contienen datos personales)
+- [x] *(parcial)* `GET /api/schedule` cruza deadlines estructurados con las corridas del día; el disparo automático sigue pendiente
+- [x] Alertas efectivas: `notify_dev` escribe en un `.jsonl` que nadie lee
+- [x] Extender el `Redactor` o documentar explícitamente que no cubre PII
 
 ### Fase 5 — Superficie agéntica
 
-- [ ] Servidor MCP sobre la misma API: `list_etls`, `describe_etl`, `run_etl`, `get_run`,
+- [x] Servidor MCP sobre la misma API: `list_etls`, `describe_etl`, `run_etl`, `get_run`,
       `download_artifact`
-- [ ] Plantilla `etls/_template/` que un agente pueda copiar para crear un cliente nuevo
-- [ ] Skill o guía de agente que codifique el flujo de la Fase 3
+- [x] Plantilla `etls/_template/` que un agente pueda copiar para crear un cliente nuevo
+- [x] Skill o guía de agente que codifique el flujo de la Fase 3
 
 > La Fase 5 depende de la 3, no al revés. El MCP es la parte fácil; lo que realmente habilita que
 > un agente cree ETLs nuevos es que cada cliente sea una carpeta autocontenida con un patrón
