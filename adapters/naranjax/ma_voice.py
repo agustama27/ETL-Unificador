@@ -17,16 +17,21 @@ class MaVoiceAdapter:
     def validate(self, request: RunRequest) -> None:
         self._shared.validate(request)
 
+    def input_destination(self, role: str, source: Path) -> Path:
+        return self._shared.input_destination(role, source)
+
     def command(
         self, definition: ETLDefinition, request: RunRequest, run: Path
     ) -> tuple[str, ...]:
         self.validate(request)
         daily = run / "input/diarios"
+        planes = request.inputs.get("planes")
+        pagos = request.inputs.get("pagos")
         expected = {
             daily / name
             for supplied, name in (
-                (request.planes, "planes.xlsx"),
-                (request.pagos, "pagos.csv"),
+                (planes, "planes.xlsx"),
+                (pagos, "pagos.csv"),
             )
             if supplied is not None
         }
@@ -46,9 +51,9 @@ class MaVoiceAdapter:
             "--logs_dir", str(run / "logs"),
             "--procesados_dir", str(run / "processed"),
         ]
-        if request.planes is not None:
+        if planes is not None:
             command.extend(("--planes", str(daily / "planes.xlsx")))
-        if request.pagos is not None:
+        if pagos is not None:
             command.extend(("--pagos", str(daily / "pagos.csv")))
         return tuple(command)
 

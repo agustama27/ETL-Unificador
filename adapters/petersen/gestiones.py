@@ -21,9 +21,9 @@ class PetersenGestionesAdapter:
     def validate(self, request: RunRequest) -> None:
         if request.business_date != self._today():
             raise ValidationError("business date must equal host-local today")
-        if request.planes is not None or request.pagos is not None or request.no_planes_today:
-            raise ValidationError("gestiones accepts no PLANES, PAGOS, or no-PLANES intent")
-        unknown = set(request.extras) - set(self.OPTIONAL_EXTRAS)
+        if request.params:
+            raise ValidationError("gestiones accepts no parameters")
+        unknown = set(request.inputs) - {"base"} - set(self.OPTIONAL_EXTRAS)
         if unknown:
             raise ValidationError(f"unknown gestiones extras: {sorted(unknown)}")
 
@@ -37,7 +37,7 @@ class PetersenGestionesAdapter:
             "--input", str(run / "input/base.csv"),
             "--output_dir", str(run / "output"),
         ]
-        for role in sorted(request.extras):
+        for role in sorted(set(request.inputs) - {"base"}):
             command.extend((self.OPTIONAL_EXTRAS[role], str(run / f"input/{role}.csv")))
         return tuple(command)
 

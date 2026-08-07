@@ -32,8 +32,8 @@ def _request(tmp_path: Path, **changes: object) -> RunRequest:
     values = {
         "etl_id": "naranjax.ma.chat.daily",
         "business_date": TODAY,
-        "base": tmp_path / "base.xlsx",
-        "no_planes_today": True,
+        "inputs": {"base": tmp_path / "base.xlsx"},
+        "params": {"no_planes_today": True},
     }
     values.update(changes)
     return RunRequest(**values)  # type: ignore[arg-type]
@@ -49,9 +49,10 @@ def test_builds_exact_daily_command_with_optional_inputs(tmp_path: Path) -> None
     run = _sandbox(tmp_path)
     request = _request(
         tmp_path,
-        planes=tmp_path / "host-planes.xlsx",
-        pagos=tmp_path / "host-pagos.csv",
-        no_planes_today=False,
+        inputs={"base": tmp_path / "base.xlsx",
+                "planes": tmp_path / "host-planes.xlsx",
+                "pagos": tmp_path / "host-pagos.csv"},
+        params={},
     )
 
     command = MaChatAdapter(today=lambda: TODAY).command(_definition(), request, run)
@@ -103,7 +104,7 @@ def test_omitted_planes_rejects_nonempty_isolated_directory(tmp_path: Path) -> N
     "changes, message",
     [
         ({"business_date": date(2026, 7, 20)}, "host-local today"),
-        ({"no_planes_today": False}, "requires no_planes_today"),
+        ({"params": {}}, "requires no_planes_today"),
     ],
 )
 def test_rejects_date_or_implicit_planes_omission(
@@ -162,5 +163,6 @@ def test_rejects_each_invalid_output_classification(
 def test_rejects_extra_inputs(tmp_path: Path) -> None:
     with pytest.raises(ValidationError, match="extra"):
         MaChatAdapter(today=lambda: TODAY).validate(
-            _request(tmp_path, extras={"logcall": tmp_path / "x.csv"})
+            _request(tmp_path, inputs={"base": tmp_path / "base.xlsx",
+                                       "logcall": tmp_path / "x.csv"})
         )

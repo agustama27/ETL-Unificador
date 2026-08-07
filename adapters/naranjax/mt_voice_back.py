@@ -18,10 +18,10 @@ class MtVoiceBackAdapter:
     def validate(self, request: RunRequest) -> None:
         if request.business_date != self._today():
             raise ValidationError("business date must equal host-local today")
-        if request.planes is not None or request.pagos is not None or request.no_planes_today:
-            raise ValidationError("back accepts no PLANES, PAGOS, or no-PLANES intent")
-        if set(request.extras) != {"logcall", "historial"}:
+        if set(request.inputs) != {"base", "logcall", "historial"}:
             raise ValidationError("back requires exactly logcall and historial extras")
+        if request.params:
+            raise ValidationError("back accepts no parameters")
 
     def command(
         self, definition: ETLDefinition, request: RunRequest, run: Path

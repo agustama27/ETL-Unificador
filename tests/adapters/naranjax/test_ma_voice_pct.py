@@ -34,7 +34,7 @@ def _request(tmp_path: Path, **changes: object) -> RunRequest:
     values = {
         "etl_id": "naranjax.ma.voice.pct",
         "business_date": TODAY,
-        "base": tmp_path / "historial.csv",
+        "inputs": {"base": tmp_path / "historial.csv"},
     }
     values.update(changes)
     return RunRequest(**values)  # type: ignore[arg-type]
@@ -69,9 +69,11 @@ def test_builds_exact_pct_command(tmp_path: Path) -> None:
     "changes, message",
     [
         ({"business_date": date(2026, 7, 20)}, "host-local today"),
-        ({"planes": Path("planes.xlsx")}, "no PLANES"),
-        ({"pagos": Path("pagos.csv")}, "no PLANES"),
-        ({"no_planes_today": True}, "no PLANES"),
+        ({"inputs": {"base": Path("b.csv"), "planes": Path("planes.xlsx")}},
+         "only the base input"),
+        ({"inputs": {"base": Path("b.csv"), "pagos": Path("pagos.csv")}},
+         "only the base input"),
+        ({"params": {"no_planes_today": True}}, "no parameters"),
     ],
 )
 def test_rejects_non_today_or_daily_intents(
@@ -121,5 +123,6 @@ def test_rejects_each_invalid_pct_output(tmp_path: Path, classification: str) ->
 
 
 def test_rejects_extra_inputs(tmp_path: Path) -> None:
-    with pytest.raises(ValidationError, match="extra"):
-        _adapter().validate(_request(tmp_path, extras={"logcall": tmp_path / "x.csv"}))
+    with pytest.raises(ValidationError, match="base input"):
+        _adapter().validate(_request(tmp_path, inputs={
+            "base": tmp_path / "historial.csv", "logcall": tmp_path / "x.csv"}))

@@ -37,7 +37,7 @@ def _request(tmp_path: Path, **changes: object) -> RunRequest:
     values = {
         "etl_id": "naranjax.mt.voice.daily",
         "business_date": TODAY,
-        "base": tmp_path / "base.txt",
+        "inputs": {"base": tmp_path / "base.txt"},
     }
     values.update(changes)
     return RunRequest(**values)  # type: ignore[arg-type]
@@ -72,9 +72,11 @@ def test_builds_exact_mt_command(tmp_path: Path) -> None:
     "changes, message",
     [
         ({"business_date": date(2026, 7, 20)}, "host-local today"),
-        ({"planes": Path("planes.xlsx")}, "no PLANES"),
-        ({"pagos": Path("pagos.csv")}, "no PLANES"),
-        ({"no_planes_today": True}, "no PLANES"),
+        ({"inputs": {"base": Path("b.txt"), "planes": Path("planes.xlsx")}},
+         "no extra inputs"),
+        ({"inputs": {"base": Path("b.txt"), "pagos": Path("pagos.csv")}},
+         "no extra inputs"),
+        ({"params": {"no_planes_today": True}}, "no parameters"),
     ],
 )
 def test_rejects_non_today_or_daily_intents(
@@ -127,4 +129,5 @@ def test_rejects_each_invalid_mt_output(
 
 def test_rejects_extra_inputs(tmp_path: Path) -> None:
     with pytest.raises(ValidationError, match="extra"):
-        _adapter().validate(_request(tmp_path, extras={"logcall": tmp_path / "x.csv"}))
+        _adapter().validate(_request(tmp_path, inputs={
+            "base": tmp_path / "base.txt", "logcall": tmp_path / "x.csv"}))

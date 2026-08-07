@@ -37,8 +37,8 @@ def _request(tmp_path: Path, **changes: object) -> RunRequest:
     values = {
         "etl_id": "naranjax.ma.voice.daily",
         "business_date": TODAY,
-        "base": tmp_path / "base.xlsx",
-        "no_planes_today": True,
+        "inputs": {"base": tmp_path / "base.xlsx"},
+        "params": {"no_planes_today": True},
     }
     values.update(changes)
     return RunRequest(**values)  # type: ignore[arg-type]
@@ -56,18 +56,21 @@ def test_builds_exact_voice_command_for_optional_inputs(
 ) -> None:
     run = _sandbox(tmp_path)
     daily = run / "input/diarios"
-    changes: dict[str, object] = {}
+    inputs: dict[str, Path] = {"base": tmp_path / "base.xlsx"}
+    params: dict[str, bool] = {"no_planes_today": True}
     optional: list[str] = []
     if with_planes:
         (daily / "planes.xlsx").write_text("synthetic", encoding="utf-8")
-        changes.update(planes=tmp_path / "host-planes.xlsx", no_planes_today=False)
+        inputs["planes"] = tmp_path / "host-planes.xlsx"
+        params = {}
         optional.extend(("--planes", str(daily / "planes.xlsx")))
     if with_pagos:
         (daily / "pagos.csv").write_text("synthetic", encoding="utf-8")
-        changes["pagos"] = tmp_path / "host-pagos.csv"
+        inputs["pagos"] = tmp_path / "host-pagos.csv"
         optional.extend(("--pagos", str(daily / "pagos.csv")))
 
-    command = _adapter().command(_definition(), _request(tmp_path, **changes), run)
+    command = _adapter().command(
+        _definition(), _request(tmp_path, inputs=inputs, params=params), run)
 
     assert command == (
         sys.executable,
@@ -98,8 +101,9 @@ def test_rejects_daily_directory_different_from_staged_inputs(tmp_path: Path) ->
     "changes, message",
     [
         ({"business_date": date(2026, 7, 20)}, "host-local today"),
-        ({"no_planes_today": False}, "requires no_planes_today"),
-        ({"planes": Path("planes.xlsx")}, "conflicts with no_planes_today"),
+        ({"params": {}}, "requires no_planes_today"),
+        ({"inputs": {"base": Path("base.xlsx"), "planes": Path("planes.xlsx")}},
+         "conflicts with no_planes_today"),
     ],
 )
 def test_rejects_date_or_planes_intent_conflict(
@@ -152,4 +156,5 @@ def test_rejects_each_invalid_voice_output(
 
 def test_rejects_extra_inputs(tmp_path: Path) -> None:
     with pytest.raises(ValidationError, match="extra"):
-        _adapter().validate(_request(tmp_path, extras={"logcall": tmp_path / "x.csv"}))
+        _adapter().validate(_request(tmp_path, inputs={
+            "base": tmp_path / "base.xlsx", "logcall": tmp_path / "x.csv"}))

@@ -133,17 +133,13 @@ class RunService:
             raise RunBlockedError("snapshot_exists", "state snapshot already exists")
 
     def _stage_inputs(self, manager: FileManager, request: RunRequest) -> tuple[FileEvidence, ...]:
-        sources = {**dict(request.extras), "base": request.base,
-                   "planes": request.planes, "pagos": request.pagos}
-        fixed = {"planes": Path("input/diarios/planes.xlsx"),
-                 "pagos": Path("input/diarios/pagos.csv")}
+        staging = getattr(self.adapter, "input_destination", None)
         evidence = []
         for spec in self.definition.inputs:
-            source = sources.get(spec.role)
+            source = request.inputs.get(spec.role)
             if source is not None:
-                destination = fixed.get(
-                    spec.role, Path("input") / f"{spec.role}{source.suffix.casefold()}"
-                )
+                destination = (staging(spec.role, source) if staging is not None
+                               else Path("input") / f"{spec.role}{source.suffix.casefold()}")
                 evidence.append(manager.copy_input(
                     source, destination, spec.role, set(spec.extensions)
                 ))
@@ -163,7 +159,7 @@ class RunService:
                          request: RunRequest) -> None:
         legacy = tuple(path for path in (run / "logs").glob("*.log") if path.name not in {"stdout.log", "stderr.log"})
         secrets = request.environment.values()
-        paths = (run, self.workspace, process.cwd, request.base, request.planes, request.pagos)
+        paths = (run, self.workspace, process.cwd, *request.inputs.values())
         logs = self.log_persister(run / "logs", process.stdout, process.stderr, legacy, secrets, paths)
         for path in legacy:
             path.unlink()
