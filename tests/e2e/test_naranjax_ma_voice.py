@@ -88,7 +88,7 @@ def test_cli_selects_catalog_adapter(tmp_path: Path, etl_id: str, adapter_key: s
         return RecordingService()
 
     assert main(["--etl", etl_id, "--fecha", "20260721", "--base", str(_base(tmp_path)),
-                 "--sin-planes-hoy"], adapters=adapters, service_factory=factory) == 0
+                 "--param", "no_planes_today"], adapters=adapters, service_factory=factory) == 0
     assert selected == [(etl_id, adapters[adapter_key])]
 
 
@@ -135,7 +135,7 @@ def test_synthetic_voice_cli_writes_terminal_evidence_without_unsafe_promotion(
                           now=lambda: "2026-07-21T15:00:00+00:00")
 
     exit_code = main(["--etl", VOICE, "--fecha", day, "--base", str(_base(tmp_path)),
-                      "--sin-planes-hoy"], adapters=_adapters(), service_factory=factory)
+                      "--param", "no_planes_today"], adapters=_adapters(), service_factory=factory)
     evidence = json.loads(next(runs.rglob("run.json")).read_text("utf-8"))
 
     assert exit_code == expected_exit
@@ -171,7 +171,7 @@ def test_voice_rejects_unchanged_staged_state_before_promotion(tmp_path: Path) -
 
     exit_code = main(
         ["--etl", VOICE, "--fecha", "20260721", "--base", str(_base(tmp_path)),
-         "--sin-planes-hoy"], adapters=_adapters(), service_factory=factory,
+         "--param", "no_planes_today"], adapters=_adapters(), service_factory=factory,
     )
     evidence = json.loads(next(runs.rglob("run.json")).read_text("utf-8"))
 

@@ -87,7 +87,7 @@ def test_cli_selects_petersen_adapter_and_forwards_optional_extras(tmp_path: Pat
     assert main(["--etl", PETERSEN, "--fecha", "20260721", "--base", str(_base(tmp_path)),
                  "--input", f"approach={tmp_path / 'approach.csv'}"],
                 adapters=adapters, service_factory=factory) == 0
-    assert dict(service.requests[0].extras) == {"approach": tmp_path / "approach.csv"}
+    assert dict(service.requests[0].inputs)["approach"] == tmp_path / "approach.csv"
 
 
 @pytest.mark.parametrize(

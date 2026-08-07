@@ -90,9 +90,9 @@ def test_cli_selects_back_adapter_and_forwards_extras(tmp_path: Path) -> None:
     assert main(["--etl", BACK, "--fecha", "20260721", *_inputs(tmp_path)],
                 adapters=adapters, service_factory=factory) == 0
     assert selected == [(BACK, adapters[BACK])]
-    assert dict(service.requests[0].extras) == {
-        "logcall": tmp_path / "LOGCALL.csv", "historial": tmp_path / "historial.csv"
-    }
+    staged = dict(service.requests[0].inputs)
+    assert staged["logcall"] == tmp_path / "LOGCALL.csv"
+    assert staged["historial"] == tmp_path / "historial.csv"
 
 
 @pytest.mark.parametrize(

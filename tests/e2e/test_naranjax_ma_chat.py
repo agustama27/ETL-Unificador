@@ -53,7 +53,7 @@ def test_cli_help_and_required_arguments(capsys: pytest.CaptureFixture[str]) -> 
     assert help_exit.value.code == 0
     help_text = capsys.readouterr().out
     assert all(flag in help_text for flag in (
-        "--etl", "--fecha", "--base", "--planes", "--pagos", "--sin-planes-hoy"
+        "--etl", "--fecha", "--base", "--input", "--param"
     ))
 
     with pytest.raises(SystemExit) as required_exit:
@@ -64,9 +64,9 @@ def test_cli_help_and_required_arguments(capsys: pytest.CaptureFixture[str]) -> 
 @pytest.mark.parametrize(
     ("status", "extras", "expected_exit", "no_planes"),
     [
-        (RunStatus.SUCCEEDED, ["--planes", "planes.xlsx", "--pagos", "pagos.csv"], 0, False),
-        (RunStatus.BLOCKED, ["--sin-planes-hoy"], 2, True),
-        (RunStatus.FAILED, ["--sin-planes-hoy"], 1, True),
+        (RunStatus.SUCCEEDED, ["--input", "planes=planes.xlsx", "--input", "pagos=pagos.csv"], 0, False),
+        (RunStatus.BLOCKED, ["--param", "no_planes_today"], 2, True),
+        (RunStatus.FAILED, ["--param", "no_planes_today"], 1, True),
     ],
 )
 def test_cli_maps_arguments_and_terminal_statuses(
@@ -79,9 +79,9 @@ def test_cli_maps_arguments_and_terminal_statuses(
     request = service.request
     assert request is not None
     assert request.business_date == TODAY
-    assert request.no_planes_today is no_planes
-    assert request.planes == (None if no_planes else Path("planes.xlsx"))
-    assert request.pagos == (None if no_planes else Path("pagos.csv"))
+    assert bool(request.params.get("no_planes_today")) is no_planes
+    assert request.inputs.get("planes") == (None if no_planes else Path("planes.xlsx"))
+    assert request.inputs.get("pagos") == (None if no_planes else Path("pagos.csv"))
 
 
 @pytest.mark.parametrize(
@@ -103,7 +103,7 @@ def test_synthetic_cli_run_always_writes_terminal_evidence(
 
     exit_code = main([
         "--etl", ETL, "--fecha", requested_day, "--base", str(_base(tmp_path)),
-        "--sin-planes-hoy",
+        "--param", "no_planes_today",
     ], service_factory=factory)
     evidence = json.loads(next(runs.rglob("run.json")).read_text("utf-8"))
 

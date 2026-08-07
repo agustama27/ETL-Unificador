@@ -79,21 +79,22 @@ python -m orchestrator.run \
   --etl naranjax.ma.chat.daily \
   --fecha 20260806 \
   --base ./inputs/base_mensual.xlsx \
-  --planes ./inputs/planes.xlsx \
-  --pagos ./inputs/pagos.csv
+  --input planes=./inputs/planes.xlsx \
+  --input pagos=./inputs/pagos.csv
 ```
 
-Cuando el día no tiene archivo de PLANES, se declara explícitamente:
+Cuando el día no tiene archivo de PLANES, se declara explícitamente con un parámetro:
 
 ```bash
 python -m orchestrator.run \
   --etl naranjax.ma.chat.daily \
   --fecha 20260806 \
   --base ./inputs/base_mensual.xlsx \
-  --sin-planes-hoy
+  --param no_planes_today
 ```
 
-Entradas adicionales que no son `base`/`planes`/`pagos` se pasan con `--input ROL=RUTA`:
+Toda entrada adicional a `base` se pasa con `--input ROL=RUTA`, y los flags que el
+manifiesto declara, con `--param NOMBRE[=VALOR]`:
 
 ```bash
 python -m orchestrator.run \

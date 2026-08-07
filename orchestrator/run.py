@@ -37,16 +37,24 @@ def _extra_input(value: str) -> tuple[str, Path]:
     return role.strip(), Path(path.strip())
 
 
+def _param(value: str) -> tuple[str, str | bool]:
+    name, separator, raw = value.partition("=")
+    if not name.strip():
+        raise argparse.ArgumentTypeError("must use NAME or NAME=VALUE format")
+    if not separator:
+        return name.strip(), True
+    return name.strip(), raw.strip()
+
+
 def _parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Run a guarded ETL from the unifier catalog.")
     parser.add_argument("--etl", required=True)
     parser.add_argument("--fecha", required=True, type=_business_date, metavar="YYYYMMDD")
     parser.add_argument("--base", required=True, type=Path)
-    parser.add_argument("--planes", type=Path)
-    parser.add_argument("--pagos", type=Path)
-    parser.add_argument("--sin-planes-hoy", action="store_true")
     parser.add_argument("--input", action="append", type=_extra_input, default=[],
-                        metavar="ROLE=PATH", dest="extras")
+                        metavar="ROLE=PATH", dest="inputs")
+    parser.add_argument("--param", action="append", type=_param, default=[],
+                        metavar="NAME[=VALUE]", dest="params")
     return parser
 
 
@@ -71,10 +79,9 @@ def main(argv: Sequence[str] | None = None, *, adapters: Mapping[str, ETLAdapter
     service = (service_factory(definition, adapter) if service_factory
                else _service(definition, workspace, adapter))
     result = service.execute(RunRequest(
-        arguments.etl, arguments.fecha, arguments.base,
-        planes=arguments.planes, pagos=arguments.pagos,
-        no_planes_today=arguments.sin_planes_hoy,
-        extras=dict(arguments.extras),
+        arguments.etl, arguments.fecha,
+        inputs={"base": arguments.base, **dict(arguments.inputs)},
+        params=dict(arguments.params),
     ))
     print(f"run={result.run_id} status={result.status.value}")
     if result.status is RunStatus.SUCCEEDED:
