@@ -249,34 +249,65 @@ def _normalize_sheet_name(value: str) -> str:
     return value.strip().lower().replace("ó", "o")
 
 
+def _missing_required_input_headers(worksheet) -> list[str]:
+    header_row = next(worksheet.iter_rows(min_row=1, max_row=1, values_only=True), ())
+    normalized_headers = {
+        _normalize_column_name(header) for header in header_row if header is not None
+    }
+    normalized_headers.discard("")
+    missing: list[str] = []
+    for canonical in INPUT_COLUMNS:
+        if canonical in INPUT_OPTIONAL_COLUMNS:
+            continue
+        aliases = INPUT_COLUMN_ALIASES.get(canonical, (canonical,))
+        if not any(_normalize_column_name(alias) in normalized_headers for alias in aliases):
+            missing.append(canonical)
+    return missing
+
+
 def _resolve_input_sheet_name(filepath: str) -> str:
     workbook = load_workbook(filename=filepath, read_only=True, data_only=True)
     try:
         available_sheets = workbook.sheetnames
+
+        for alias in INPUT_SHEET_ALIASES:
+            if alias in available_sheets:
+                return alias
+
+        pattern = re.compile(r"^asignacion\s+m90\s+-\s+.+")
+        for sheet_name in available_sheets:
+            normalized = _normalize_sheet_name(sheet_name)
+            if pattern.match(normalized):
+                return sheet_name
+
+        aliases = ", ".join(INPUT_SHEET_ALIASES)
+        if len(available_sheets) == 1:
+            candidate = available_sheets[0]
+            missing = _missing_required_input_headers(workbook[candidate])
+            if not missing:
+                LOGGER.warning(
+                    "Base mensual sheet not found by name; using the workbook's "
+                    "single sheet %r instead of %s",
+                    candidate, aliases,
+                )
+                return candidate
+            raise ValueError(
+                "Input workbook does not contain a valid base mensual sheet. "
+                f"Expected one of: {aliases}, or pattern 'Asignacion M90 - *'. "
+                f"The only sheet {candidate!r} is missing required columns: "
+                f"{', '.join(sorted(missing))}. "
+                "Renombrá la hoja con los datos a 'Asignacion' o revisá el archivo."
+            )
+
+        available = ", ".join(available_sheets) or "(none)"
+        raise ValueError(
+            "Input workbook does not contain a valid base mensual sheet. "
+            f"Expected one of: {aliases}, or pattern 'Asignacion M90 - *'. "
+            f"Available sheets: {available}. "
+            "Renombrá la hoja con los datos a 'Asignacion' antes de procesar."
+        )
     finally:
         workbook.close()
-
-    for alias in INPUT_SHEET_ALIASES:
-        if alias in available_sheets:
-            return alias
-
-    pattern = re.compile(r"^asignacion\s+m90\s+-\s+.+")
-    for sheet_name in available_sheets:
-        normalized = _normalize_sheet_name(sheet_name)
-        if pattern.match(normalized):
-            return sheet_name
-
-    if len(available_sheets) == 1:
-        return available_sheets[0]
-
-    available = ", ".join(available_sheets) or "(none)"
-    aliases = ", ".join(INPUT_SHEET_ALIASES)
-    raise ValueError(
-        "Input workbook does not contain a valid base mensual sheet. "
-        f"Expected one of: {aliases}, or pattern 'Asignacion M90 - *'. "
-        f"Available sheets: {available}. "
-        "Renombrá la hoja con los datos a 'Asignacion' antes de procesar."
-    )
 
 
 def _resolve_planes_column_mapping(headers: list[str], context: str) -> dict[str, int]:
