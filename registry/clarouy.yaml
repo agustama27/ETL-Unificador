@@ -21,7 +21,7 @@ etls:
     timeout_seconds: 900
     request_date_format: YYYYMMDD
     output_date_source: system_date
-    adapter: clarouy.base
+    adapter: etl_core.contracts:SubprocessAdapter
   - id: clarouy.encuestas.retell
     name: ClaroUY - Encuestas desde Retell.ai (requiere API y credenciales)
     repository_status: present

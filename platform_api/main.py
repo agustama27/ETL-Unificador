@@ -23,9 +23,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, Response
 from starlette.datastructures import UploadFile
 
-from orchestrator.catalog import Catalog
+from orchestrator.catalog import Catalog, CatalogError, adapter_for
 from orchestrator.models import ETLDefinition, RunRequest
-from orchestrator.run import _adapters
 from orchestrator.run_store import RunStore
 from orchestrator.runner import Runner
 from orchestrator.service import RunService
@@ -122,7 +121,7 @@ def create_app(workspace: Path | None = None, *,
                executor: Callable[[Callable[[], None]], None] | None = None,
                today: Callable[[], date] = date.today) -> FastAPI:
     workspace = (workspace or Path(__file__).resolve().parents[1]).resolve()
-    registered = adapters if adapters is not None else _adapters()
+    registered = adapters
     build_service = service_factory or _default_service_factory
     run_job = executor or _default_executor
     runs_root = workspace / "var/runs"
@@ -152,7 +151,10 @@ def create_app(workspace: Path | None = None, *,
     def get_catalog() -> list[dict[str, Any]]:
         entries = []
         for item in catalog():
-            adapter = registered.get(item.adapter) if item.adapter else None
+            try:
+                adapter = adapter_for(item, registered) if item.adapter else None
+            except CatalogError:
+                adapter = None
             entries.append({
                 "id": item.id,
                 "name": item.name,
@@ -230,7 +232,7 @@ def create_app(workspace: Path | None = None, *,
 
         store = RunStore(runs_root, state_root)
         reserved = store.create_run(etl_id)
-        adapter = registered[definition.adapter]
+        adapter = adapter_for(definition, registered)
         service = build_service(definition, adapter,
                                 _ReservedRunStore(store, reserved), workspace)
         run_request = RunRequest(

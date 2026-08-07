@@ -8,7 +8,6 @@ from pathlib import Path
 import pytest
 from fastapi.testclient import TestClient
 
-from orchestrator.run import _adapters
 from platform_api.main import create_app
 
 
@@ -64,7 +63,7 @@ class FakeService:
 @pytest.fixture()
 def client(tmp_path: Path) -> TestClient:
     app = create_app(
-        _workspace(tmp_path), adapters=_adapters(),
+        _workspace(tmp_path),
         service_factory=FakeService, executor=lambda job: job(),
         today=lambda: TODAY,
     )

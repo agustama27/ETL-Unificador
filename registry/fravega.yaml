@@ -19,7 +19,7 @@ etls:
     allowed_exits: [0]
     timeout_seconds: 900
     request_date_format: YYYYMMDD
-    adapter: fravega.base
+    adapter: etl_core.contracts:SubprocessAdapter
   - id: fravega.resultados.retell
     name: Fravega - Resultados Retell.ai (requiere API y credenciales)
     repository_status: present

@@ -21,7 +21,7 @@ etls:
     timeout_seconds: 900
     request_date_format: YYYYMMDD
     output_date_source: system_date
-    adapter: epec.base
+    adapter: etl_core.contracts:SubprocessAdapter
   - id: epec.tipif.retell
     name: EPEC - Enriquecimiento y tipificaciones Retell.ai (requiere API y credenciales)
     repository_status: present

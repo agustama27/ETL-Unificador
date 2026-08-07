@@ -26,7 +26,7 @@ etls:
     timeout_seconds: 900
     request_date_format: YYYYMMDD
     output_date_source: system_date
-    adapter: petersen.gestiones
+    adapter: adapters.petersen.gestiones:PetersenGestionesAdapter
   - id: petersen.retell
     name: Petersen - Enriquecimiento Retell.ai (requiere API y credenciales)
     repository_status: present

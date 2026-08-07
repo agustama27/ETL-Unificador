@@ -6,14 +6,9 @@ from datetime import date, datetime, timezone
 from pathlib import Path
 from typing import Protocol
 
-from adapters.naranjax.ma_chat import MaChatAdapter
-from adapters.naranjax.ma_voice import MaVoiceAdapter
-from adapters.naranjax.ma_voice_pct import MaVoicePctAdapter
-from adapters.naranjax.mt_voice import MtVoiceAdapter
-from adapters.naranjax.mt_voice_back import MtVoiceBackAdapter
-from adapters.petersen.gestiones import PetersenGestionesAdapter
+from etl_core.contracts import ETLAdapter
 
-from .catalog import Catalog, CatalogError
+from .catalog import Catalog, CatalogError, adapter_for
 from .models import ETLDefinition, RunRequest, RunResult, RunStatus
 from .run_store import RunStore
 from .runner import Runner
@@ -25,9 +20,7 @@ class Service(Protocol):
     def execute(self, request: RunRequest) -> RunResult: ...
 
 
-Adapter = (MaChatAdapter | MaVoiceAdapter | MaVoicePctAdapter | MtVoiceAdapter
-           | MtVoiceBackAdapter | PetersenGestionesAdapter)
-ServiceFactory = Callable[[ETLDefinition, Adapter], Service]
+ServiceFactory = Callable[[ETLDefinition, ETLAdapter], Service]
 
 
 def _business_date(value: str) -> date:
@@ -57,7 +50,7 @@ def _parser() -> argparse.ArgumentParser:
     return parser
 
 
-def _service(definition: ETLDefinition, workspace: Path, adapter: Adapter) -> RunService:
+def _service(definition: ETLDefinition, workspace: Path, adapter: ETLAdapter) -> RunService:
     state_root = workspace / "var/state"
     return RunService(
         definition, adapter, Runner(), RunStore(workspace / "var/runs", state_root),
@@ -66,36 +59,15 @@ def _service(definition: ETLDefinition, workspace: Path, adapter: Adapter) -> Ru
     )
 
 
-def _adapters() -> dict[str, Adapter]:
-    return {
-        "naranjax.ma.chat": MaChatAdapter(),
-        "naranjax.ma.voice": MaVoiceAdapter(),
-        "naranjax.ma.voice.pct": MaVoicePctAdapter(),
-        "naranjax.mt.voice": MtVoiceAdapter(),
-        "naranjax.ma.chat.pct": MaVoicePctAdapter(),
-        "naranjax.mt.voice.pct": MaVoicePctAdapter(),
-        "naranjax.mt.voice.back": MtVoiceBackAdapter(),
-        "encuestacx.base": MaVoicePctAdapter(),
-        "bancor.base": MaVoicePctAdapter(),
-        "epec.base": MaVoicePctAdapter(),
-        "fravega.base": MaVoicePctAdapter(),
-        "clarouy.base": MaVoicePctAdapter(),
-        "social.argentina": MaVoicePctAdapter(),
-        "social.chile": MaVoicePctAdapter(),
-        "petersen.gestiones": PetersenGestionesAdapter(),
-    }
-
-
-def main(argv: Sequence[str] | None = None, *, adapters: Mapping[str, Adapter] | None = None,
+def main(argv: Sequence[str] | None = None, *, adapters: Mapping[str, ETLAdapter] | None = None,
          service_factory: ServiceFactory | None = None) -> int:
     arguments = _parser().parse_args(argv)
     workspace = Path(__file__).resolve().parents[1]
-    registered = _adapters() if adapters is None else adapters
     definition = Catalog.load_directory(workspace / "registry", workspace,
-                                        adapters=registered)[arguments.etl]
+                                        adapters=adapters)[arguments.etl]
     if not definition.executable or definition.adapter is None:
         raise CatalogError(f"ETL is not executable: {definition.id}")
-    adapter = registered[definition.adapter]
+    adapter = adapter_for(definition, adapters)
     service = (service_factory(definition, adapter) if service_factory
                else _service(definition, workspace, adapter))
     result = service.execute(RunRequest(

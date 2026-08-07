@@ -28,7 +28,7 @@ etls:
     timeout_seconds: 900
     request_date_format: YYYYMMDD
     output_date_source: system_date
-    adapter: naranjax.ma.chat
+    adapter: adapters.naranjax.ma_chat:MaChatAdapter
     environment_allowlist: [NARANJAX_PLANES_MIN_COVERAGE]
   - id: naranjax.ma.voice.daily
     name: Naranja X MA Voice daily
@@ -57,7 +57,7 @@ etls:
     timeout_seconds: 900
     request_date_format: YYYYMMDD
     output_date_source: system_date
-    adapter: naranjax.ma.voice
+    adapter: adapters.naranjax.ma_voice:MaVoiceAdapter
     environment_allowlist: [NARANJAX_PLANES_MIN_COVERAGE]
   - id: naranjax.ma.voice.pct
     name: Naranja X MA Voice PCT
@@ -79,7 +79,7 @@ etls:
     timeout_seconds: 900
     request_date_format: YYYYMMDD
     output_date_source: system_date
-    adapter: naranjax.ma.voice.pct
+    adapter: etl_core.contracts:SubprocessAdapter
   - id: naranjax.ma.chat.pct
     name: Naranja X MA Chat PCT
     repository_status: present
@@ -100,7 +100,7 @@ etls:
     timeout_seconds: 900
     request_date_format: YYYYMMDD
     output_date_source: system_date
-    adapter: naranjax.ma.chat.pct
+    adapter: etl_core.contracts:SubprocessAdapter
   - id: naranjax.mt.voice.pct
     name: Naranja X MT Voice PCT
     repository_status: present
@@ -121,7 +121,7 @@ etls:
     timeout_seconds: 900
     request_date_format: YYYYMMDD
     output_date_source: system_date
-    adapter: naranjax.mt.voice.pct
+    adapter: etl_core.contracts:SubprocessAdapter
   - id: naranjax.mt.voice.back
     name: Naranja X MT Voice back (USUEVOLTIS)
     repository_status: present
@@ -147,7 +147,7 @@ etls:
     timeout_seconds: 900
     request_date_format: YYYYMMDD
     output_date_source: system_date
-    adapter: naranjax.mt.voice.back
+    adapter: adapters.naranjax.mt_voice_back:MtVoiceBackAdapter
   - id: naranjax.mt.voice.daily
     name: Naranja X MT Voice daily
     repository_status: present
@@ -169,4 +169,4 @@ etls:
     timeout_seconds: 900
     request_date_format: YYYYMMDD
     output_date_source: system_date
-    adapter: naranjax.mt.voice
+    adapter: adapters.naranjax.mt_voice:MtVoiceAdapter

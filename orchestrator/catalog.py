@@ -1,3 +1,4 @@
+import importlib
 import re
 from collections.abc import Iterator, Mapping
 from pathlib import Path, PurePosixPath, PureWindowsPath
@@ -5,6 +6,7 @@ from typing import Any, Self
 
 import yaml  # type: ignore[import-untyped]
 
+from etl_core.contracts import ETLAdapter
 from orchestrator.models import (
     ArtifactRole,
     ETLDefinition,
@@ -17,6 +19,55 @@ from orchestrator.models import (
 
 class CatalogError(ValueError):
     """The catalog is malformed or unsafe."""
+
+
+def _resolve_adapter_class(reference: str) -> type | None:
+    """Import the ``module:Class`` adapter reference, or None if unresolvable."""
+    module_name, separator, class_name = reference.partition(":")
+    if not separator or not module_name or not class_name:
+        return None
+    try:
+        module = importlib.import_module(module_name)
+    except ImportError:
+        return None
+    resolved = getattr(module, class_name, None)
+    return resolved if isinstance(resolved, type) else None
+
+
+def _adapter_available(reference: str, adapters: Mapping[str, object]) -> bool:
+    if reference in adapters:
+        return True
+    resolved = _resolve_adapter_class(reference)
+    if resolved is None:
+        return False
+    try:
+        return isinstance(resolved(), ETLAdapter)
+    except TypeError:
+        return False
+
+
+def adapter_for(definition: ETLDefinition,
+                provided: Mapping[str, object] | None = None) -> ETLAdapter:
+    """Adapter instance for a definition.
+
+    A provided mapping is authoritative: instances are looked up by the manifest
+    reference or, transitionally, by the pre-discovery key convention (the ETL id
+    or the id without its variant suffix). A definition absent from the mapping is
+    treated as unregistered. Without a mapping, the ``module:Class`` reference is
+    imported and instantiated with its defaults.
+    """
+    reference = definition.adapter
+    if reference is None:
+        raise CatalogError(f"ETL has no adapter: {definition.id}")
+    if provided is not None:
+        for key in (reference, definition.id, definition.id.rpartition(".")[0]):
+            if key in provided:
+                return provided[key]  # type: ignore[return-value]
+        raise CatalogError(f"adapter is not registered: {reference}")
+    resolved = _resolve_adapter_class(reference)
+    if resolved is None:
+        raise CatalogError(f"cannot resolve adapter reference: {reference}")
+    return resolved()
 
 _FIELDS = {
     "id", "name", "repository_status", "readiness", "executable", "project_path",
@@ -143,7 +194,7 @@ def _definition(raw: object, workspace: Path, adapters: Mapping[str, object]) ->
     if values["executable"] and (
         readiness is not Readiness.READY
         or not values["adapter"]
-        or values["adapter"] not in adapters
+        or not _adapter_available(values["adapter"], adapters)
         or not values.get("entrypoint")
         or not values["command"]
         or not values["inputs"]
