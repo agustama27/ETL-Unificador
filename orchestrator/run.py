@@ -71,8 +71,7 @@ def main(argv: Sequence[str] | None = None, *, adapters: Mapping[str, ETLAdapter
          service_factory: ServiceFactory | None = None) -> int:
     arguments = _parser().parse_args(argv)
     workspace = Path(__file__).resolve().parents[1]
-    definition = Catalog.load_directory(workspace / "registry", workspace,
-                                        adapters=adapters)[arguments.etl]
+    definition = Catalog.load_workspace(workspace, adapters=adapters)[arguments.etl]
     if not definition.executable or definition.adapter is None:
         raise CatalogError(f"ETL is not executable: {definition.id}")
     adapter = adapter_for(definition, adapters)

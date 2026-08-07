@@ -133,8 +133,7 @@ def create_app(workspace: Path | None = None, *,
     )
 
     def catalog() -> Catalog:
-        return Catalog.load_directory(workspace / "registry", workspace,
-                                      adapters=registered)
+        return Catalog.load_workspace(workspace, adapters=registered)
 
     def find_run(run_id: str) -> Path:
         if not runs_root.exists():

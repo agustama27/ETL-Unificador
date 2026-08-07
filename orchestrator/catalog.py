@@ -121,6 +121,21 @@ class Catalog:
         files = sorted(directory.glob("*.yaml"))
         if not files:
             raise CatalogError(f"no catalog files found in: {directory}")
+        return cls._load_files(files, workspace, adapters)
+
+    @classmethod
+    def load_workspace(cls, workspace: Path, *,
+                       adapters: Mapping[str, object] | None = None) -> Self:
+        """Load every manifest: etls/*/manifest.yaml plus transitional registry/*.yaml."""
+        files = sorted(workspace.glob("etls/*/manifest.yaml"))
+        files.extend(sorted((workspace / "registry").glob("*.yaml")))
+        if not files:
+            raise CatalogError(f"no catalog files found in workspace: {workspace}")
+        return cls._load_files(files, workspace, adapters)
+
+    @classmethod
+    def _load_files(cls, files: list[Path], workspace: Path,
+                    adapters: Mapping[str, object] | None) -> Self:
         definitions: list[ETLDefinition] = []
         for file in files:
             definitions.extend(cls.load(file, workspace, adapters=adapters))

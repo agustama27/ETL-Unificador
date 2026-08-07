@@ -23,8 +23,10 @@ api = [
 ]
 
 [tool.setuptools.packages.find]
-include = ["etl_core*", "orchestrator*", "adapters*", "platform_api*"]
+include = ["etl_core*", "orchestrator*", "adapters*", "platform_api*", "etls*"]
+exclude = ["etls.*.legacy*", "etls.*.tests*", "etls.*.fixtures*"]
 
 [tool.pytest.ini_options]
-testpaths = ["tests"]
+testpaths = ["tests", "etls"]
 pythonpath = ["."]
+norecursedirs = ["*.egg", ".*", "build", "dist", "node_modules", "venv", "legacy"]
