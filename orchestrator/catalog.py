@@ -50,18 +50,16 @@ def adapter_for(definition: ETLDefinition,
     """Adapter instance for a definition.
 
     A provided mapping is authoritative: instances are looked up by the manifest
-    reference or, transitionally, by the pre-discovery key convention (the ETL id
-    or the id without its variant suffix). A definition absent from the mapping is
-    treated as unregistered. Without a mapping, the ``module:Class`` reference is
-    imported and instantiated with its defaults.
+    reference and a definition absent from the mapping is treated as
+    unregistered. Without a mapping, the ``module:Class`` reference is imported
+    and instantiated with its defaults.
     """
     reference = definition.adapter
     if reference is None:
         raise CatalogError(f"ETL has no adapter: {definition.id}")
     if provided is not None:
-        for key in (reference, definition.id, definition.id.rpartition(".")[0]):
-            if key in provided:
-                return provided[key]  # type: ignore[return-value]
+        if reference in provided:
+            return provided[reference]  # type: ignore[return-value]
         raise CatalogError(f"adapter is not registered: {reference}")
     resolved = _resolve_adapter_class(reference)
     if resolved is None:

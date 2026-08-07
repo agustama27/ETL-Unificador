@@ -6,7 +6,7 @@ import pytest
 
 from etls.naranjax.ma_chat import MaChatAdapter
 from etls.naranjax.ma_voice import MaVoiceAdapter
-from etls.naranjax.ma_voice_pct import MaVoicePctAdapter
+from etl_core.contracts import SubprocessAdapter
 from etls.naranjax.mt_voice import MtVoiceAdapter
 from etls.naranjax.mt_voice_back import MtVoiceBackAdapter
 from etls.petersen.adapter import PetersenGestionesAdapter
@@ -57,27 +57,19 @@ def _base(tmp_path: Path) -> Path:
 
 def _adapters():
     return {
-        "naranjax.ma.chat": MaChatAdapter(today=lambda: TODAY),
-        "naranjax.ma.voice": MaVoiceAdapter(today=lambda: TODAY),
-        "naranjax.ma.voice.pct": MaVoicePctAdapter(today=lambda: TODAY),
-        "naranjax.mt.voice": MtVoiceAdapter(today=lambda: TODAY),
-        "naranjax.ma.chat.pct": MaVoicePctAdapter(today=lambda: TODAY),
-        "naranjax.mt.voice.pct": MaVoicePctAdapter(today=lambda: TODAY),
-        "naranjax.mt.voice.back": MtVoiceBackAdapter(today=lambda: TODAY),
-        "encuestacx.base": MaVoicePctAdapter(today=lambda: TODAY),
-        "bancor.base": MaVoicePctAdapter(today=lambda: TODAY),
-        "epec.base": MaVoicePctAdapter(today=lambda: TODAY),
-        "fravega.base": MaVoicePctAdapter(today=lambda: TODAY),
-        "clarouy.base": MaVoicePctAdapter(today=lambda: TODAY),
-        "social.argentina": MaVoicePctAdapter(today=lambda: TODAY),
-        "social.chile": MaVoicePctAdapter(today=lambda: TODAY),
-        "petersen.gestiones": PetersenGestionesAdapter(today=lambda: TODAY),
+        "etls.naranjax.ma_chat:MaChatAdapter": MaChatAdapter(today=lambda: TODAY),
+        "etls.naranjax.ma_voice:MaVoiceAdapter": MaVoiceAdapter(today=lambda: TODAY),
+        "etls.naranjax.mt_voice:MtVoiceAdapter": MtVoiceAdapter(today=lambda: TODAY),
+        "etls.naranjax.mt_voice_back:MtVoiceBackAdapter": MtVoiceBackAdapter(today=lambda: TODAY),
+        "etl_core.contracts:SubprocessAdapter": SubprocessAdapter(today=lambda: TODAY),
+        "etls.petersen.adapter:PetersenGestionesAdapter": PetersenGestionesAdapter(today=lambda: TODAY),
     }
 
 
 @pytest.mark.parametrize(
     ("etl_id", "adapter_key"),
-    [("naranjax.ma.chat.daily", "naranjax.ma.chat"), (VOICE, "naranjax.ma.voice")],
+    [("naranjax.ma.chat.daily", "etls.naranjax.ma_chat:MaChatAdapter"),
+     (VOICE, "etls.naranjax.ma_voice:MaVoiceAdapter")],
 )
 def test_cli_selects_catalog_adapter(tmp_path: Path, etl_id: str, adapter_key: str) -> None:
     adapters = _adapters()
@@ -95,7 +87,7 @@ def test_cli_selects_catalog_adapter(tmp_path: Path, etl_id: str, adapter_key: s
 def test_cli_rejects_unregistered_executable_adapter_before_service(tmp_path: Path) -> None:
     called = []
     incomplete = {key: value for key, value in _adapters().items()
-                  if key != "naranjax.mt.voice"}
+                  if key != "etls.naranjax.mt_voice:MtVoiceAdapter"}
     with pytest.raises(CatalogError, match="adapter"):
         main(["--etl", "naranjax.mt.voice.daily", "--fecha", "20260721",
               "--base", str(_base(tmp_path))], adapters=incomplete,

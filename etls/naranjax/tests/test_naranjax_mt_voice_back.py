@@ -6,7 +6,7 @@ import pytest
 
 from etls.naranjax.ma_chat import MaChatAdapter
 from etls.naranjax.ma_voice import MaVoiceAdapter
-from etls.naranjax.ma_voice_pct import MaVoicePctAdapter
+from etl_core.contracts import SubprocessAdapter
 from etls.naranjax.mt_voice import MtVoiceAdapter
 from etls.naranjax.mt_voice_back import MtVoiceBackAdapter
 from etls.petersen.adapter import PetersenGestionesAdapter
@@ -60,21 +60,12 @@ def _inputs(tmp_path: Path) -> list[str]:
 
 def _adapters():
     return {
-        "naranjax.ma.chat": MaChatAdapter(today=lambda: TODAY),
-        "naranjax.ma.voice": MaVoiceAdapter(today=lambda: TODAY),
-        "naranjax.ma.voice.pct": MaVoicePctAdapter(today=lambda: TODAY),
-        "naranjax.mt.voice": MtVoiceAdapter(today=lambda: TODAY),
-        "naranjax.ma.chat.pct": MaVoicePctAdapter(today=lambda: TODAY),
-        "naranjax.mt.voice.pct": MaVoicePctAdapter(today=lambda: TODAY),
-        "naranjax.mt.voice.back": MtVoiceBackAdapter(today=lambda: TODAY),
-        "encuestacx.base": MaVoicePctAdapter(today=lambda: TODAY),
-        "bancor.base": MaVoicePctAdapter(today=lambda: TODAY),
-        "epec.base": MaVoicePctAdapter(today=lambda: TODAY),
-        "fravega.base": MaVoicePctAdapter(today=lambda: TODAY),
-        "clarouy.base": MaVoicePctAdapter(today=lambda: TODAY),
-        "social.argentina": MaVoicePctAdapter(today=lambda: TODAY),
-        "social.chile": MaVoicePctAdapter(today=lambda: TODAY),
-        "petersen.gestiones": PetersenGestionesAdapter(today=lambda: TODAY),
+        "etls.naranjax.ma_chat:MaChatAdapter": MaChatAdapter(today=lambda: TODAY),
+        "etls.naranjax.ma_voice:MaVoiceAdapter": MaVoiceAdapter(today=lambda: TODAY),
+        "etls.naranjax.mt_voice:MtVoiceAdapter": MtVoiceAdapter(today=lambda: TODAY),
+        "etls.naranjax.mt_voice_back:MtVoiceBackAdapter": MtVoiceBackAdapter(today=lambda: TODAY),
+        "etl_core.contracts:SubprocessAdapter": SubprocessAdapter(today=lambda: TODAY),
+        "etls.petersen.adapter:PetersenGestionesAdapter": PetersenGestionesAdapter(today=lambda: TODAY),
     }
 
 
@@ -89,7 +80,7 @@ def test_cli_selects_back_adapter_and_forwards_extras(tmp_path: Path) -> None:
 
     assert main(["--etl", BACK, "--fecha", "20260721", *_inputs(tmp_path)],
                 adapters=adapters, service_factory=factory) == 0
-    assert selected == [(BACK, adapters[BACK])]
+    assert selected == [(BACK, adapters["etls.naranjax.mt_voice_back:MtVoiceBackAdapter"])]
     staged = dict(service.requests[0].inputs)
     assert staged["logcall"] == tmp_path / "LOGCALL.csv"
     assert staged["historial"] == tmp_path / "historial.csv"
