@@ -3,6 +3,11 @@ services:
     build: .
     ports:
       - "8000:8000"
+    environment:
+      # Compose es la vía de desarrollo: sin token la API queda abierta acá.
+      # En cualquier otro despliegue, sin ETL_CONSOLE_TOKEN la API es fail-closed.
+      ETL_CONSOLE_TOKEN: ${ETL_CONSOLE_TOKEN:-}
+      ETL_AUTH_DISABLED: ${ETL_AUTH_DISABLED:-1}
     volumes:
       - ./var:/app/var
 

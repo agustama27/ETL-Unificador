@@ -79,6 +79,27 @@ export const runAction = (runId: string, action: "free_lock" | "notify_dev") =>
 export const artifactUrl = (runId: string, role: string) => `/api/runs/${runId}/artifacts/${role}`;
 export const artifactsZipUrl = (runId: string) => `/api/runs/${runId}/artifacts.zip`;
 
+// Descarga vía fetch (adjunta el token) + blob: los <a href> planos no mandan
+// el header Authorization y fallarían con ETL_CONSOLE_TOKEN activo.
+const downloadFile = async (url: string, filename: string): Promise<void> => {
+  const response = await apiFetch(url);
+  if (!response.ok) {
+    const body = await response.json().catch(() => ({ detail: response.statusText }));
+    throw new Error(typeof body.detail === "string" ? body.detail : response.statusText);
+  }
+  const blob = await response.blob();
+  const link = document.createElement("a");
+  link.href = URL.createObjectURL(blob);
+  link.download = filename;
+  link.click();
+  URL.revokeObjectURL(link.href);
+};
+
+export const downloadArtifactsZip = (runId: string) =>
+  downloadFile(artifactsZipUrl(runId), `${runId}_artefactos.zip`);
+export const downloadArtifact = (runId: string, role: string, filename: string) =>
+  downloadFile(artifactUrl(runId, role), filename);
+
 export const LIVE: RunStatus[] = ["preparing", "running"];
 export const todayIso = () => new Date().toISOString().slice(0, 10);
 

@@ -2,7 +2,7 @@ import { DownloadSimple, FileZip } from "@phosphor-icons/react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { ERROR_COPY, FALLBACK_ERROR, LIVE, artifactUrl, artifactsZipUrl,
+import { ERROR_COPY, FALLBACK_ERROR, LIVE, downloadArtifact, downloadArtifactsZip,
          fetchRun, formatBytes, formatDuration, formatMoment, runAction } from "../api";
 import type { RunDetail } from "../api";
 import { StatusBadge, TimelineIcon, useToast } from "../components/shared";
@@ -190,18 +190,19 @@ export default function DetalleCorrida() {
             </div>
           ) : (
             <div className="stack" style={{ gap: 8 }}>
-              <a className="btn-primary" href={artifactsZipUrl(data.run_id)} download>
+              <button className="btn-primary" onClick={() => downloadArtifactsZip(data.run_id)}>
                 <FileZip size={14} /> Descargar todo (.zip)
-              </a>
+              </button>
               {data.artifacts.map((artifact) => (
                 <div key={artifact.role} className="filerow">
                   <span className="tag accent">{artifact.role}</span>
                   <span className="mono">{artifact.name}</span>
                   <span className="size">{formatBytes(artifact.size)}</span>
-                  <a className="btn-ghost" href={artifactUrl(data.run_id, artifact.role)} download
-                     aria-label={`Descargar ${artifact.role}`}>
+                  <button className="btn-ghost"
+                          onClick={() => downloadArtifact(data.run_id, artifact.role, artifact.name)}
+                          aria-label={`Descargar ${artifact.role}`}>
                     <DownloadSimple size={14} />
-                  </a>
+                  </button>
                 </div>
               ))}
             </div>
