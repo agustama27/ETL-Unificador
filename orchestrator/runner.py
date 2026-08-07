@@ -102,6 +102,10 @@ class Runner:
                 termination = Termination.KILLED
         for thread in threads:
             thread.join()
+        for name in buffers:
+            stream = getattr(process, name, None)
+            if stream is not None:
+                stream.close()
 
         def decode(value: bytearray) -> str:
             text = value.decode("utf-8", errors="replace").replace("\r\n", "\n")
