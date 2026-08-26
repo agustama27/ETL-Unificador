@@ -1,0 +1,87 @@
+columns:
+  id_cuil: "CUIL"
+  customer_name: "NOMBRE APELLIDO"
+  id_documento: "NRO DE DOCUMENTO"
+  id_producto: "NRO DE PRODUCTO"
+  nro_cuota: "NRO DE CUOTA"
+  saldo_exigible: "SALDO EXIGIBLE"
+  dias_mora: "DIAS DE MORA"
+  cuotas_a_vencer: "CANTIDAD DE CUOTAS A VENCER"
+  seguro_descripcion: "SEGURO DESCRIPCION"
+  importe_seguro: "IMPORTE A ABONAR POR SEGURO"
+  tel_cliente: "TELEFONO CLIENTE"
+
+required_mappings:
+  - id_cuil
+  - customer_name
+  - id_documento
+  - id_producto
+  - nro_cuota
+  - saldo_exigible
+  - dias_mora
+  - cuotas_a_vencer
+  - seguro_descripcion
+  - importe_seguro
+  - tel_cliente
+
+output_columns:
+  - id_llamada
+  - id_cuil
+  - id_documento
+  - customer_name
+  - tel_cliente
+  - monto_saldo_exigible_ars
+  - monto_seguro_ars
+  - monto_total_ars
+  - cnt_dias_mora
+  - cnt_cuotas_a_vencer
+  - cnt_productos
+  - txt_seguro_descripcion
+  - txt_productos_detalle
+  - tipo_tramo_mora
+  - fecha_hoy
+  - fecha_limite_sistema
+  - txt_productos
+
+phone:
+  # Optional. Keep empty unless the source file is known to contain local numbers
+  # from one single area. Do not invent area codes for mixed-area bases.
+  default_area_code: ""
+  default_fixed_country_prefix: "54"
+  default_mobile_country_prefix: "549"
+  canonical_mobile_international: true
+  ambiguous_10_digit_policy: "fixed"
+  local_mobile_prefixes: ["15"]
+  preserve_existing_country_prefixes: ["54", "549"]
+  strip_non_digits: true
+  remove_leading_zero: true
+  assume_all_are_mobile: false
+
+date:
+  pre_mora_due_day: 10
+  mora_temprana_days_to_add: 3
+  exclude_weekdays: ["SUNDAY"]
+  # Override aditivo para feriados locales/excepcionales en formato YYYY-MM-DD.
+  # Los feriados nacionales de Argentina se detectan automaticamente con la libreria holidays (pais AR).
+  exclude_holidays: []
+
+tramo:
+  pre_mora_min: 1
+  pre_mora_max: 10
+  mora_temprana_min: 11
+  mora_temprana_max: 30
+  out_of_scope_above: 30
+
+name:
+  dedupe_initial_duplicate_token: true
+  title_case: true
+
+id_llamada:
+  strategy: "CUIL_YYYYMMDD"
+
+assumptions:
+  name_deduplication: "Assumes duplicated initial surname token can be removed when first two words are equal ignoring case."
+  phone_prefix: "Preserves explicit 54/549 prefixes. Domestic numbers with trunk 0 use their provided area. Local numbers without area do not invent a default area unless phone.default_area_code is configured. Ten-digit numbers without 15 are ambiguous and follow phone.ambiguous_10_digit_policy."
+  holidays: "Date math excludes configured weekdays, Argentina national holidays from the holidays library, and any additive ISO dates listed in date.exclude_holidays."
+  mora_above_30: "Customers with cnt_dias_mora greater than 30 are excluded from the call CSV and reported as no-call."
+  insurance: "Insurance amounts are kept separate and are not included in monto_total_ars."

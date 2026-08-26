@@ -10,6 +10,7 @@ CLIENTS = {
     "social": "Social Learning",
     "petersen": "Petersen",
     "alvarez": "Alvarez Maquinarias",
+    "cartasur": "CartaSur",
 }
 
 INERT_REASONS = {

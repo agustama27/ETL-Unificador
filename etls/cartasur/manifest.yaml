@@ -1,0 +1,24 @@
+schema_version: 1
+etls:
+  - id: cartasur.base.daily
+    name: CartaSur - Base de cobranzas diaria (ROMAN + E1KIA)
+    repository_status: present
+    readiness: ready
+    executable: true
+    project_path: etls/cartasur/legacy
+    working_dir: etls/cartasur/legacy
+    entrypoint: etls/cartasur/job.py
+    command: [python, ../job.py]
+    fixed_arguments: []
+    arguments:
+      base: --input
+    inputs:
+      - {role: base, extensions: [.xlsx, .xlsm, .csv], required: true}
+    outputs:
+      - {role: roman, glob: 'CARTA_SUR_ROMAN_*.csv', date_format: YYMMDD}
+      - {role: e1kia, glob: 'CARTA_SUR_E1KIA_*.csv', date_format: YYMMDD}
+    allowed_exits: [0]
+    timeout_seconds: 900
+    request_date_format: YYYYMMDD
+    output_date_source: system_date
+    adapter: etls.cartasur.adapter:CartaSurAdapter

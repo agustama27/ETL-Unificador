@@ -16,6 +16,10 @@ etl = [
     "email-validator>=2.0,<3.0",
 ]
 naranjax = ["etl-unificador[etl]"]
+cartasur = [
+    "etl-unificador[etl]",
+    "holidays>=0.58,<1.0",
+]
 alvarezmaquinarias = [
     "etl-unificador[etl]",
     "xlrd>=2.0,<3.0",

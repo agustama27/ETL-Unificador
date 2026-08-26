@@ -23,6 +23,7 @@ OUTPUTS = {
     "petersen": ("Gestiones_Petersen_20260721.zip",),
     "alvarez": ("ALVAREZ_MAQUINARIAS_ROMAN_260721.csv",
                 "ALVAREZ_MAQUINARIAS_E1KIA_260721.csv"),
+    "cartasur": ("CARTA_SUR_ROMAN_260721.csv", "CARTA_SUR_E1KIA_260721.csv"),
 }
 
 AMBIGUOUS = {
@@ -33,6 +34,7 @@ AMBIGUOUS = {
     "mt_pct": "DEELO_NAR_USUEVOLTIS_copy_20260721.txt",
     "back": "DEELO_NAR_USUEVOLTIS_copy_20260721_15.txt",
     "alvarez": "ALVAREZ_MAQUINARIAS_ROMAN_copy_260721.csv",
+    "cartasur": "CARTA_SUR_ROMAN_copy_260721.csv",
 }
 
 
