@@ -76,7 +76,7 @@ def client(tmp_path: Path) -> TestClient:
 def test_catalog_exposes_all_entries_with_metadata(client: TestClient) -> None:
     entries = client.get("/api/catalog").json()
 
-    assert len(entries) == 22
+    assert len(entries) == 23
     by_id = {entry["id"]: entry for entry in entries}
     chat = by_id["naranjax.ma.chat.daily"]
     assert (chat["client"], chat["executable"], chat["stateful"],
@@ -85,7 +85,7 @@ def test_catalog_exposes_all_entries_with_metadata(client: TestClient) -> None:
     assert retell["executable"] is False
     assert "Retell" in retell["reason"]
     assert by_id["bancor.base.daily"]["deadline_hint"].startswith("Entrega")
-    assert sum(1 for entry in entries if entry["executable"]) == 15
+    assert sum(1 for entry in entries if entry["executable"]) == 16
 
 
 def _launch(client: TestClient, **overrides):

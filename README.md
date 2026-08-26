@@ -215,6 +215,7 @@ y sus patrones de salida.
 | Claro Uruguay | `etls/clarouy/` | Base operativa; encuestas Retell pendientes |
 | Encuesta CX | `etls/encuestacx/` | Base operativa |
 | Social Learning | `etls/sociallearning/` | Argentina y Chile operativos |
+| Alvarez Maquinarias | `etls/alvarezmaquinarias/` | Cobranzas diaria operativa (ROMAN + E1KIA) |
 
 Los ETLs con `executable: false` aparecen en el catálogo pero no se pueden disparar. El motivo
 legible está en `platform_api/catalog_meta.py` (`INERT_REASONS`). Casi todos esperan

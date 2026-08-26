@@ -9,6 +9,7 @@ CLIENTS = {
     "clarouy": "Claro Uruguay",
     "social": "Social Learning",
     "petersen": "Petersen",
+    "alvarez": "Alvarez Maquinarias",
 }
 
 INERT_REASONS = {

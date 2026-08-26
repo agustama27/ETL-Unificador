@@ -1,0 +1,30 @@
+schema_version: 1
+etls:
+  - id: alvarez.cobranzas.daily
+    name: Alvarez Maquinarias - Cobranzas diaria (ROMAN + E1KIA)
+    repository_status: present
+    readiness: ready
+    executable: true
+    project_path: etls/alvarezmaquinarias/legacy
+    working_dir: etls/alvarezmaquinarias/legacy
+    entrypoint: etls/alvarezmaquinarias/job.py
+    command: [python, ../job.py]
+    fixed_arguments: []
+    arguments:
+      base: --input
+      maquinarias: --maquinarias
+      servicios: --servicios
+      repuestos: --repuestos
+    inputs:
+      - {role: base, extensions: [.xls, .csv], required: true}
+      - {role: maquinarias, extensions: [.xlsx], required: true}
+      - {role: servicios, extensions: [.xlsx], required: true}
+      - {role: repuestos, extensions: [.pdf], required: true}
+    outputs:
+      - {role: roman, glob: 'ALVAREZ_MAQUINARIAS_ROMAN_*.csv', date_format: YYMMDD}
+      - {role: e1kia, glob: 'ALVAREZ_MAQUINARIAS_E1KIA_*.csv', date_format: YYMMDD}
+    allowed_exits: [0]
+    timeout_seconds: 900
+    request_date_format: YYYYMMDD
+    output_date_source: system_date
+    adapter: etls.alvarezmaquinarias.adapter:AlvarezMaquinariasAdapter

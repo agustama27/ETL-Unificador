@@ -21,6 +21,8 @@ OUTPUTS = {
     "social_arg": ("SOCIAL_ARG_CARTERA_20260721.csv",),
     "social_chi": ("SOCIAL_CHI_CARTERA_20260721.csv",),
     "petersen": ("Gestiones_Petersen_20260721.zip",),
+    "alvarez": ("ALVAREZ_MAQUINARIAS_ROMAN_260721.csv",
+                "ALVAREZ_MAQUINARIAS_E1KIA_260721.csv"),
 }
 
 AMBIGUOUS = {
@@ -30,6 +32,7 @@ AMBIGUOUS = {
     "mt": "NARANJAX_MT_ROMAN_copy_260721.csv",
     "mt_pct": "DEELO_NAR_USUEVOLTIS_copy_20260721.txt",
     "back": "DEELO_NAR_USUEVOLTIS_copy_20260721_15.txt",
+    "alvarez": "ALVAREZ_MAQUINARIAS_ROMAN_copy_260721.csv",
 }
 
 
