@@ -18,6 +18,7 @@ en el Desktop (CI incluido). No cubren:
   código fuente; la paridad queda garantizada por identidad.
 """
 
+import re
 import subprocess
 import sys
 import zipfile
@@ -29,8 +30,10 @@ import pytest
 pytest.importorskip("pandas")
 
 from etls.bancor.tests.test_bancor_base_job import _write_input as bancor_input
+from etls.cartasur.tests.test_cartasur_job import _write_input as cartasur_input
 from etls.epec.tests.test_epec_base_job import _write_input as epec_input
 from etls.naranjax.tests.test_mt_voice_job import _write_input as mt_input
+from etls.petersen.tests.test_petersen_base_job import _write_inputs as petersen_base_inputs
 from etls.petersen.tests.test_gestiones_job import _write_input as petersen_input
 
 WORKSPACE = Path(__file__).resolve().parents[2]
@@ -44,6 +47,8 @@ UPSTREAM = {
     "petersen": DESKTOP / "soho-petersen-cobranzas-resultados",
     "mt": DESKTOP / "soho-naranjaX-MT-etl",
     "alvarez": DESKTOP / "soho-Alvarez-Maquinarias-ETL",
+    "cartasur": DESKTOP / "Soho-CartaSur",
+    "petersen_base": DESKTOP / "soho-petersen-etl2",
 }
 
 
@@ -61,13 +66,17 @@ def _run_wrapper(wrapper: Path, cwd: Path, arguments: list[str]) -> subprocess.C
     )
 
 
-def _snapshot(output_dir: Path) -> dict[str, bytes]:
+def _snapshot(output_dir: Path, normalize=None) -> dict[str, bytes]:
     """Contenido por ruta relativa; los ZIP se expanden por miembro."""
     result: dict[str, bytes] = {}
     for path in sorted(output_dir.rglob("*")):
         if not path.is_file():
             continue
         relative = path.relative_to(output_dir).as_posix()
+        if normalize is not None:
+            relative = normalize(relative)
+            if relative is None:
+                continue
         if path.suffix.casefold() == ".zip":
             with zipfile.ZipFile(path) as archive:
                 for name in sorted(archive.namelist()):
@@ -78,7 +87,7 @@ def _snapshot(output_dir: Path) -> dict[str, bytes]:
 
 
 def _assert_parity(client: str, wrapper: Path, vendored_cwd: Path, upstream_cwd: Path,
-                   arguments_for: "callable", tmp_path: Path) -> None:
+                   arguments_for: "callable", tmp_path: Path, normalize=None) -> None:
     sides = {}
     for side, cwd in (("unificador", vendored_cwd), ("upstream", upstream_cwd)):
         output_dir = tmp_path / side / "run" / "output"
@@ -86,7 +95,7 @@ def _assert_parity(client: str, wrapper: Path, vendored_cwd: Path, upstream_cwd:
         result = _run_wrapper(wrapper, cwd, arguments_for(output_dir))
         assert result.returncode == 0, (
             f"[{client}/{side}] exit {result.returncode}\n{result.stderr or result.stdout}")
-        sides[side] = _snapshot(output_dir)
+        sides[side] = _snapshot(output_dir, normalize)
 
     unificador, upstream = sides["unificador"], sides["upstream"]
     assert sorted(unificador) == sorted(upstream), (
@@ -169,6 +178,32 @@ def test_naranjax_mt_daily_parity(tmp_path: Path) -> None:
         WORKSPACE / "etls/naranjax/legacy/mt", upstream,
         lambda output: ["--input", str(source), "--output_dir", str(output)],
         tmp_path)
+
+
+def test_cartasur_base_parity(tmp_path: Path) -> None:
+    upstream = _needs("cartasur")
+    pytest.importorskip("holidays")
+    source = cartasur_input(tmp_path)
+    _assert_parity(
+        "cartasur", WORKSPACE / "etls/cartasur/job.py",
+        WORKSPACE / "etls/cartasur/legacy", upstream,
+        lambda output: ["--input", str(source), "--output_dir", str(output)],
+        tmp_path,
+        # Los logs internos (.logs/) llevan timestamps: no son artefactos.
+        normalize=lambda name: None if name.startswith(".logs/") else name)
+
+
+def test_petersen_base_tabla_integradora_parity(tmp_path: Path) -> None:
+    upstream = _needs("petersen_base")
+    incoming = petersen_base_inputs(tmp_path)
+    _assert_parity(
+        "petersen-base", WORKSPACE / "etls/petersen/job_base.py",
+        WORKSPACE / "etls/petersen/legacy_base", upstream,
+        lambda output: ["--input", str(incoming), "--output_dir", str(output)],
+        tmp_path,
+        # Los nombres llevan _HHMMSS del reloj: se normaliza para comparar
+        # contenido; la fecha YYYYMMDD (del input) se preserva.
+        normalize=lambda name: re.sub(r"_\d{6}(?=\.(?:csv|txt)$)", "", name))
 
 
 def test_alvarez_cobranzas_parity(tmp_path: Path) -> None:
