@@ -22,7 +22,7 @@ def client(tmp_path: Path) -> TestClient:
 def test_list_and_describe_expose_catalog_contract(client: TestClient) -> None:
     entries = tools.list_etls(client)
 
-    assert len(entries) == 24
+    assert len(entries) == 25
     assert {"id", "name", "client", "executable", "reason"} == set(entries[0])
 
     detail = tools.describe_etl(client, "naranjax.ma.chat.daily")

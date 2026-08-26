@@ -7,6 +7,7 @@ Paquete autocontenido del cliente Petersen (ADR-001, decisión 5).
 | ID | Estado | Descripción |
 |---|---|---|
 | `petersen.gestiones.daily` | ✅ operativo | Gestiones AG002 desde export ROMAN → ZIP con un CSV por banco |
+| `petersen.base.daily` | ✅ operativo | Tabla integradora de los 4 bancos (upstream de gestiones): INTEGRACION + PRODCLI_DEELO (+MAILCLI) → tabla + 4 listados telefónicos. Legacy en `legacy_base/` (repo `soho-petersen-etl2`); descubre banco y fecha por NOMBRE de archivo, staging con nombres originales vía `input_destination`. Outputs con `_YYYYMMDD_HHMMSS` (fecha del input, hora del reloj) — sin `date_format` a propósito |
 | `petersen.retell` | ⛔ inerte | Enriquecimiento Retell.ai — espera API y credenciales |
 
 ## Entradas

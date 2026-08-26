@@ -209,7 +209,7 @@ y sus patrones de salida.
 |---|---|---|
 | Naranja X | `etls/naranjax/` | 7 ETLs operativos (MA Chat, MA Voz, MT Voz, PCT) |
 | Bancor | `etls/bancor/` | Base diaria operativa; resultados, carga masiva y cupones pendientes |
-| Petersen | `etls/petersen/` | Gestiones operativo; Retell pendiente |
+| Petersen | `etls/petersen/` | Gestiones y tabla integradora operativos; Retell pendiente |
 | EPEC | `etls/epec/` | Base operativa; tipificaciones Retell pendientes |
 | Frávega | `etls/fravega/` | Base operativa; resultados Retell pendientes |
 | Claro Uruguay | `etls/clarouy/` | Base operativa; encuestas Retell pendientes |

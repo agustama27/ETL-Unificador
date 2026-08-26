@@ -27,6 +27,60 @@ etls:
     request_date_format: YYYYMMDD
     output_date_source: system_date
     adapter: etls.petersen.adapter:PetersenGestionesAdapter
+  - id: petersen.base.daily
+    name: Petersen - Tabla integradora 4 bancos (upstream de gestiones)
+    repository_status: present
+    readiness: ready
+    executable: true
+    project_path: etls/petersen/legacy_base
+    working_dir: etls/petersen/legacy_base
+    entrypoint: etls/petersen/job_base.py
+    command: [python, ../job_base.py]
+    fixed_arguments: []
+    arguments:
+      base: --input
+      deelo_1: --deelo_1
+      integracion_2: --integracion_2
+      deelo_2: --deelo_2
+      integracion_3: --integracion_3
+      deelo_3: --deelo_3
+      integracion_4: --integracion_4
+      deelo_4: --deelo_4
+      mailcli_1: --mailcli_1
+      mailcli_2: --mailcli_2
+      mailcli_3: --mailcli_3
+      mailcli_4: --mailcli_4
+    inputs:
+      # 'base' = INTEGRACION del primer banco. El banco lo determina el NOMBRE
+      # del archivo (BER/BSF/BSJ/BSC), no el rol: el set de bancos varia por dia.
+      - {role: base, extensions: [.csv], required: true}
+      - {role: deelo_1, extensions: [.csv], required: true}
+      - {role: integracion_2, extensions: [.csv], required: false}
+      - {role: deelo_2, extensions: [.csv], required: false}
+      - {role: integracion_3, extensions: [.csv], required: false}
+      - {role: deelo_3, extensions: [.csv], required: false}
+      - {role: integracion_4, extensions: [.csv], required: false}
+      - {role: deelo_4, extensions: [.csv], required: false}
+      - {role: mailcli_1, extensions: [.xls, .xlsx], required: false}
+      - {role: mailcli_2, extensions: [.xls, .xlsx], required: false}
+      - {role: mailcli_3, extensions: [.xls, .xlsx], required: false}
+      - {role: mailcli_4, extensions: [.xls, .xlsx], required: false}
+    outputs:
+      # Los nombres llevan _{YYYYMMDD}_{HHMMSS}: el '*' cubre el timestamp y
+      # matchea un solo archivo porque output/ arranca vacio en cada corrida.
+      # 'telefonos_[0-9]*' evita colisionar con telefonos_petersen_por_cliente_*.
+      # date_format omitido a proposito: el YYYYMMDD sale del nombre del INPUT,
+      # no del reloj del sistema.
+      - {role: tabla_integradora, glob: 'tabla_integradora_*.csv'}
+      - {role: telefonos, glob: 'telefonos_[0-9]*.csv'}
+      - {role: telefonos_txt, glob: 'telefonos_petersen_[0-9]*.txt'}
+      - {role: telefonos_tel1, glob: 'telefonos_tel1_*.txt'}
+      - {role: telefonos_cliente, glob: 'telefonos_petersen_por_cliente_*.csv'}
+    allowed_exits: [0]
+    timeout_seconds: 3600
+    request_date_format: YYYYMMDD
+    output_date_source: system_date
+    adapter: etls.petersen.adapter_base:PetersenBaseAdapter
   - id: petersen.retell
     name: Petersen - Enriquecimiento Retell.ai (requiere API y credenciales)
     repository_status: present

@@ -1,0 +1,22 @@
+bank: petersen
+input_folder: inputs/petersen/incoming
+key: IdHost
+
+logging:
+  level: BASIC  # BASIC, DEBUG, WARNING, ERROR
+
+merge_csv:
+  cols_a: [IdHost, Nombre, Documento]
+  cols_b: [IdHost, DeudaVencidaPesificada]
+  cols_c: [IdHost, UsoDireccionPersona, CodArea, NroTelefonoRestante, NumeroCompleto]
+link_products:
+  base_debt_col: DeudaVencidaPesificada
+  products:
+    - file: productos/prestamos.xlsx
+      label: Prestamo
+      amount_col: MontoVencido
+      id_cols: [NumeroProductoPrest]
+phone_rules:
+  prefijo_local: "+54"
+  prefijo_nacional: "+549"
+  uso_col: UsoDireccionPersona

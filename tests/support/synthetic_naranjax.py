@@ -24,6 +24,11 @@ OUTPUTS = {
     "alvarez": ("ALVAREZ_MAQUINARIAS_ROMAN_260721.csv",
                 "ALVAREZ_MAQUINARIAS_E1KIA_260721.csv"),
     "cartasur": ("CARTA_SUR_ROMAN_260721.csv", "CARTA_SUR_E1KIA_260721.csv"),
+    "petersen_base": ("tabla_integradora_20260721_150000.csv",
+                      "telefonos_20260721_150000.csv",
+                      "telefonos_petersen_20260721_150000.txt",
+                      "telefonos_tel1_20260721_150000.txt",
+                      "telefonos_petersen_por_cliente_20260721_150000.csv"),
 }
 
 AMBIGUOUS = {
@@ -35,6 +40,7 @@ AMBIGUOUS = {
     "back": "DEELO_NAR_USUEVOLTIS_copy_20260721_15.txt",
     "alvarez": "ALVAREZ_MAQUINARIAS_ROMAN_copy_260721.csv",
     "cartasur": "CARTA_SUR_ROMAN_copy_260721.csv",
+    "petersen_base": "tabla_integradora_copy_20260721_150000.csv",
 }
 
 

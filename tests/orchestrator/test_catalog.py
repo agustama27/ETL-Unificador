@@ -230,7 +230,7 @@ def test_repository_registry_directory_exposes_all_client_entries() -> None:
 
     catalog = Catalog.load_workspace(Path.cwd(), adapters=adapters)
 
-    assert len(tuple(catalog)) == 24
+    assert len(tuple(catalog)) == 25
     bancor = catalog["bancor.base.daily"]
     assert (bancor.adapter, bancor.project_path) == (
         "etl_core.contracts:SubprocessAdapter", Path("etls/bancor/legacy"))
