@@ -326,6 +326,7 @@ Son deudas asumidas, no bugs sorpresa. Están priorizadas en `docs/ADR-001-nucle
 ## Documentación adicional
 
 - `docs/ARQUITECTURA.md` — capas, flujo de una corrida y contrato de adapter
+- `docs/DESPLIEGUE-CLOUD.md` — dossier para líder técnico y arquitectura: restricciones de despliegue, opciones de nube y bloqueantes
 - `docs/ADR-001-nucleo-hexagonal.md` — decisión de arquitectura y plan de migración
 - `docs/GUIA_NUEVO_CLIENTE.md` — cómo agregar un cliente paso a paso
 - `01_objetivo_proyecto_etl_unificador.md` — objetivo original del proyecto (histórico)
