@@ -1,0 +1,40 @@
+{{/*
+Volumen de estado. Es obligatorio, no opcional.
+
+`var/` guarda cuatro cosas que no se pueden perder entre reinicios del pod:
+`index.sqlite`, la evidencia forense de cada corrida (`runs/`), el estado promovido
+por periodo (`state/`, con sus lock files) y los archivos que sube operaciones
+(`uploads/`).
+
+El modo es ReadWriteOnce a proposito: el locking de estado usa lock files de
+filesystem, que no coordinan nada entre replicas. La replica unica no es una
+limitacion del volumen, es una consecuencia del modelo de locking
+(ADR-002, decision 5).
+*/}}
+{{- range $svcName, $svc := .Values.services }}
+{{- if $svc.persistence }}
+{{- if $svc.persistence.enabled }}
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ printf "%s-var-%s" $svcName $.Release.Name | trunc 63 }}
+  namespace: {{ $.Release.Namespace }}
+  labels:
+    {{- include "app.labels" $ | nindent 4 }}
+    app/service: "{{ $svcName }}"
+  annotations:
+    # El PVC sobrevive a un `helm uninstall`: adentro hay evidencia de corridas.
+    helm.sh/resource-policy: keep
+spec:
+  accessModes:
+    - {{ $svc.persistence.accessMode | default "ReadWriteOnce" }}
+  {{- if $svc.persistence.storageClass }}
+  storageClassName: {{ $svc.persistence.storageClass }}
+  {{- end }}
+  resources:
+    requests:
+      storage: {{ required "persistence.size es obligatorio" $svc.persistence.size }}
+{{- end }}
+{{- end }}
+{{- end }}

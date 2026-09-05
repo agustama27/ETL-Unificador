@@ -1,0 +1,123 @@
+{{- $global := . }}
+{{- range $svcName, $svc := $global.Values.services }}
+{{- range $nodeName, $node := $svc.nodes }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ printf "%s-%s-%s-%d" $svcName $nodeName $global.Release.Name $global.Release.Revision | trunc 63 }}
+  namespace: {{ $global.Release.Namespace }}
+  labels:
+    {{- include "app.labels" $global | nindent 4 }}
+    app/service: "{{ $svcName }}"
+    app/node: "{{ $nodeName }}"
+spec:
+  replicas: {{ $node.replicas | default 1 }}
+  strategy:
+    # Recreate y no RollingUpdate: el volumen es ReadWriteOnce y dos pods no
+    # pueden montarlo a la vez. Ademas evita que dos replicas compitan por los
+    # lock files de estado (ADR-002, decision 5).
+    type: Recreate
+  selector:
+    matchLabels:
+      app/service: "{{ $svcName }}"
+      app/node: "{{ $nodeName }}"
+  template:
+    metadata:
+      labels:
+        {{- include "app.labels" $global | nindent 8 }}
+        app/service: "{{ $svcName }}"
+        app/node: "{{ $nodeName }}"
+      annotations:
+        # Un cambio de config reinicia el pod: si no, el ConfigMap cambia y el
+        # proceso sigue con la configuracion vieja hasta el proximo deploy.
+        checksum/config: {{ include "app.config" $global | sha256sum }}
+    spec:
+      {{- if $node.selector }}
+      nodeSelector: {{ toYaml $node.selector | nindent 8 }}
+      {{- end }}
+      # Un ETL puede tardar hasta una hora (petersen.base.daily declara
+      # timeout_seconds: 3600). Sin esta ventana, cualquier despliegue mata una
+      # corrida a la mitad y deja artefactos parciales.
+      terminationGracePeriodSeconds: {{ $svc.terminationGracePeriodSeconds | default 3900 }}
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        fsGroup: 1000
+      volumes:
+        - name: configmap-{{ $global.Release.Name }}
+          configMap:
+            name: configmap-{{ $global.Release.Name }}
+        - name: var
+        {{- if and $svc.persistence $svc.persistence.enabled }}
+          persistentVolumeClaim:
+            claimName: {{ printf "%s-var-%s" $svcName $global.Release.Name | trunc 63 }}
+        {{- else }}
+          # Sin volumen la evidencia de corridas se pierde en cada reinicio.
+          # Solo aceptable para un entorno de prueba descartable.
+          emptyDir: {}
+        {{- end }}
+      containers:
+        - name: {{ printf "%s-container" $svcName }}
+          image: {{ $svc.image.repository }}:{{ $svc.image.tag }}
+          imagePullPolicy: {{ $svc.image.pullPolicy | default "IfNotPresent" }}
+          command: ["python", "apps/etl-platform-api/main.py",
+                    "--config=/etc/app/config/config.json",
+                    "--host=0.0.0.0", "--port={{ $svc.containerPort | default 8000 }}"]
+          volumeMounts:
+            - mountPath: /etc/app/config/config.json
+              subPath: config.json
+              name: configmap-{{ $global.Release.Name }}
+            - mountPath: /app/var
+              name: var
+          env:
+            # La zona horaria es funcional: los wrappers de etls/ nombran su
+            # salida con la fecha local y los manifiestos la buscan por glob.
+            # Un pod en UTC a las 21:00 de Argentina escribe la fecha de manana.
+            - name: TZ
+              value: {{ $svc.timezone | default "America/Argentina/Buenos_Aires" | quote }}
+            - name: HOST_IP
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.hostIP
+          {{- if $svc.tokenSecret }}
+            # La API es fail-closed: sin este valor responde 503 a todo /api.
+            - name: ETL_CONSOLE_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $svc.tokenSecret.name }}
+                  key: {{ $svc.tokenSecret.key | default "token" }}
+          {{- end }}
+          {{- range $key, $val := $svc.env }}
+            - name: {{ $key }}
+              value: "{{ $val }}"
+          {{- end }}
+          ports:
+          {{- range $p := $svc.service.ports }}
+            - name: {{ $p.name }}
+              containerPort: {{ $p.targetPort | default $p.port }}
+          {{- end }}
+          # /health y /ready viven fuera del prefijo /api, que es el unico que
+          # cubre el middleware de token: las sondas no necesitan credencial.
+          startupProbe:
+            httpGet: {path: /health, port: {{ $svc.containerPort | default 8000 }}}
+            # El arranque reconstruye el indice y recupera corridas huerfanas.
+            failureThreshold: 30
+            periodSeconds: 5
+          livenessProbe:
+            httpGet: {path: /health, port: {{ $svc.containerPort | default 8000 }}}
+            periodSeconds: 20
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            # /ready falla si el catalogo no carga o var/ no es escribible, que
+            # es exactamente el sintoma de un volumen mal montado.
+            httpGet: {path: /ready, port: {{ $svc.containerPort | default 8000 }}}
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          {{- if $svc.resources }}
+          resources: {{ toYaml $svc.resources | nindent 12 }}
+          {{- end }}
+{{- end }}
+{{- end }}

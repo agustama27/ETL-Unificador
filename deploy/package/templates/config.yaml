@@ -1,0 +1,28 @@
+{{- $root := . -}}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: configmap-{{.Release.Name}}
+  namespace: {{.Release.Namespace}}
+  labels:
+    {{- include "app.labels" $root | nindent 4 }}
+data:
+  config.json: |-
+    {{ include "app.config" $root | fromYaml | toJson }}
+---
+{{- range $file, $content := $root.Values.configFiles }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ $root.Release.Name }}-{{ $file }}
+  namespace: {{ $root.Release.Namespace }}
+  labels:
+    {{- include "app.labels" $root | nindent 4 }}
+data:
+  {{ base $content.output_file }}: |{{ if typeIs "string" $content.content }}
+    {{- $content.content | nindent 4 }}
+    {{- else }}
+    {{- $content.content | toYaml | nindent 4 }}
+    {{- end }}
+---
+{{- end }}

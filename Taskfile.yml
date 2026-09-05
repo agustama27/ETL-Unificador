@@ -5,9 +5,14 @@ vars:
   # produccion (AGENTS.md, regla dura 1) y su diff contra el upstream debe quedar limpio.
   FUENTES: apps/commons apps/etl-platform-api tools/etl-platform-mcp etls
   COVERAGE_INCLUDE: apps/commons/*/*.py,apps/etl-platform-api/*/*.py,tools/etl-platform-mcp/*/*.py
-  SERVICE: etl-unificador
+  SERVICE: etl-platform-api
+  CHART: etl-unificador
   VERSION: '{{default "local" .VERSION}}'
   ENV: '{{default "dev" .ENV}}'
+  ECR_BASE: '{{trimSuffix "/" (default "localhost" .AWS_ECR_REGISTRY)}}'
+  ECR_ENV: '{{if eq .ENV "prod"}}prod{{else}}dev{{end}}'
+  IMAGE_URI: '{{.ECR_BASE}}/{{.ECR_ENV}}/automation/{{.SERVICE}}:{{.VERSION}}'
+  HELM_REGISTRY: 'oci://{{trimSuffix "/" .ECR_BASE}}/{{.ECR_ENV}}/automation/charts'
 
 tasks:
   sync:
@@ -58,9 +63,76 @@ tasks:
     cmds:
       - uv run uvicorn platform_api.main:create_app --factory --host 0.0.0.0 --port 8000
 
+  helm:lint:
+    desc: Valida la sintaxis del chart.
+    cmds:
+      - helm lint deploy/package
+
+  helm:template:
+    desc: Renderiza el chart con los values por defecto.
+    cmds:
+      - helm template {{.CHART}} deploy/package
+
+  helm:package:
+    desc: Empaqueta el chart estampando repositorio y tag de la imagen en values.yaml.
+    cmds:
+      - mkdir -p dist/package
+      - cp -r deploy/package/* dist/package/
+      - >-
+        yq -i '
+          .services["{{.SERVICE}}"].image.repository = "{{.ECR_BASE}}/{{.ECR_ENV}}/automation/{{.SERVICE}}" |
+          .services["{{.SERVICE}}"].image.tag = "{{.VERSION}}"
+        ' dist/package/values.yaml
+      - helm package dist/package --version {{.VERSION}} --app-version {{.VERSION}} -d dist/
+      - rm -rf dist/package
+
+  docker:build:
+    desc: Construye la imagen. El contexto es la raiz, no la carpeta del servicio.
+    cmds:
+      - docker build -f apps/etl-platform-api/Dockerfile -t "{{.IMAGE_URI}}" .
+
+  docker:push:
+    desc: Publica la imagen en el registro.
+    cmds:
+      - docker push "{{.IMAGE_URI}}"
+
+  aws:login:
+    desc: Login en ECR.
+    cmds:
+      - aws ecr get-login-password --region {{default "us-east-1" .AWS_REGION}} | docker login --username AWS --password-stdin {{.ECR_BASE}}
+
+  aws:ensure-repo:
+    desc: Crea el repositorio de ECR si no existe.
+    vars:
+      REPO_NAME: "{{.ECR_ENV}}/automation/{{.SERVICE}}"
+      REGION: '{{default "us-east-1" .AWS_REGION}}'
+    cmds:
+      - |
+        aws ecr describe-repositories --repository-names "{{.REPO_NAME}}" --region "{{.REGION}}" > /dev/null 2>&1         || aws ecr create-repository --repository-name "{{.REPO_NAME}}" --region "{{.REGION}}"
+
+  helm:push:
+    desc: Empaqueta y publica el chart en el registro OCI de ECR.
+    vars:
+      REPO: '{{.ECR_ENV}}/automation/charts/{{.CHART}}'
+      REGION: '{{default "us-east-1" .AWS_REGION}}'
+    cmds:
+      - task: helm:package
+      - aws ecr create-repository --repository-name "{{.REPO}}" --region "{{.REGION}}" || true
+      - helm push dist/{{.CHART}}-{{.VERSION}}.tgz {{.HELM_REGISTRY}}
+
+  publish:
+    desc: Login en ECR, build y push de la imagen y del chart.
+    cmds:
+      - task: aws:login
+      - task: aws:ensure-repo
+      - task: docker:build
+      - task: docker:push
+      - task: helm:push
+
   check:
     desc: Todo lo que tiene que estar verde antes de abrir un PR.
     cmds:
       - task: validate
       - task: lint
       - task: test
+      - task: helm:lint

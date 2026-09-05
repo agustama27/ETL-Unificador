@@ -1,0 +1,21 @@
+{{ .Chart.Name }} {{ .Chart.Version }} desplegado en {{ .Release.Namespace }}.
+
+{{- range $svcName, $svc := .Values.services }}
+
+Servicio {{ $svcName }}
+  imagen     {{ $svc.image.repository }}:{{ $svc.image.tag }}
+  replicas   {{ (index $svc.nodes "main").replicas | default 1 }}
+  volumen    {{ if and $svc.persistence $svc.persistence.enabled }}{{ $svc.persistence.size }} ({{ $svc.persistence.accessMode }}){{ else }}NINGUNO — la evidencia de corridas se pierde en cada reinicio{{ end }}
+  zona       {{ $svc.timezone | default "America/Argentina/Buenos_Aires" }}
+
+Verificar:
+  kubectl -n {{ $.Release.Namespace }} rollout status deploy -l app/service={{ $svcName }}
+  kubectl -n {{ $.Release.Namespace }} port-forward svc/{{ $svcName }}-svc-{{ $.Release.Name }} 8000:8000
+  curl localhost:8000/ready    # 200 con el conteo de ETLs, o 503 con el motivo
+
+{{- if not $svc.tokenSecret }}
+
+  ATENCION: no hay tokenSecret configurado. La API es fail-closed y va a
+  responder 503 en todo /api hasta que exista ETL_CONSOLE_TOKEN.
+{{- end }}
+{{- end }}

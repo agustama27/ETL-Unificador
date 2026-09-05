@@ -8,6 +8,8 @@ ocupa** — el alcance, no un resumen. Estructura según
 
 - [how-to/GUIA_NUEVO_CLIENTE.md](how-to/GUIA_NUEVO_CLIENTE.md) — alta de un cliente nuevo:
   qué carpeta crear bajo `etls/`, qué campos lleva el manifiesto y cómo verificar el alta
+- [how-to/desplegar-en-kubernetes.md](how-to/desplegar-en-kubernetes.md) — publicar imagen y
+  chart, hacer el rollout y verificarlo; qué hacer si `/ready` devuelve 503
 
 ## Reference
 

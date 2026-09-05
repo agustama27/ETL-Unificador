@@ -1,0 +1,7 @@
+apiVersion: v2
+name: etl-unificador
+description: Capa de ejecucion controlada sobre los ETLs de cobranza de los clientes
+
+type: application
+version: 0.1.0
+appVersion: "0.1.0"

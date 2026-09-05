@@ -1,0 +1,40 @@
+{{- $global := . }}
+{{- range $svcName, $svc := $global.Values.services }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ printf "%s-svc-%s" $svcName $global.Release.Name | trunc 63 }}
+  namespace: {{ $global.Release.Namespace }}
+  labels:
+    {{- include "app.labels" $global | nindent 4 }}
+    app/service: "{{ $svcName }}"
+spec:
+  type: {{ $svc.service.type | default "ClusterIP" }}
+  selector:
+    app/service: "{{ $svcName }}"
+  ports:
+  {{- if $svc.service.ports }}
+  {{- range $p := $svc.service.ports }}
+    - name: {{ $p.name | default (printf "%s-port-%d" $svcName $p.port) | trunc 63 }}
+      protocol: {{ $p.protocol | default "TCP" }}
+      port: {{ $p.port }}
+      targetPort: {{ $p.targetPort | default $p.port }}
+      {{- if $p.nodePort }}
+      nodePort: {{ $p.nodePort }}
+      {{- end }}
+  {{- end }}
+  {{- else if $svc.ports }}
+  {{- range $idx, $cport := $svc.ports }}
+    - name: {{ printf "%s-port-%d" $svcName $cport | trunc 63 }}
+      protocol: TCP
+      port: {{ $cport }}
+      targetPort: {{ $cport }}
+  {{- end }}
+  {{- else }}
+    - name: default
+      protocol: TCP
+      port: 80
+      targetPort: 80
+  {{- end }}
+{{- end }}

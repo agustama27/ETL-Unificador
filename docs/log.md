@@ -53,3 +53,17 @@ Formato: `## [YYYY-MM-DD] <op> | <tema>`. Grepeable con `grep '^## \[' docs/log.
 - El `Dockerfile` pasa a `apps/etl-platform-api/` y fija `TZ=America/Argentina/Buenos_Aires`.
   No es cosmético: los wrappers nombran su salida con la fecha local →
   [decisions/ADR-002-alineacion-evoltis.md](decisions/ADR-002-alineacion-evoltis.md)
+
+## [2026-09-05] update | chart de Helm y despliegue
+
+- Entra `deploy/package/` con el chart: ConfigMap, Deployment, Service y PVC. Los helpers,
+  el ConfigMap y el Service se toman del chart de referencia de Evoltis sin cambios →
+  [how-to/desplegar-en-kubernetes.md](how-to/desplegar-en-kubernetes.md)
+- El volumen de `var/` es `ReadWriteOnce` con `resource-policy: keep`, y la estrategia es
+  `Recreate`: consecuencia del locking por lock files, no una preferencia →
+  [decisions/ADR-002-alineacion-evoltis.md](decisions/ADR-002-alineacion-evoltis.md)
+- `terminationGracePeriodSeconds: 3900` cubre el ETL más largo del catálogo (3600 s de
+  `petersen.base.daily`). Hay un test que lo verifica contra el catálogo real, para que no
+  se separen → [how-to/desplegar-en-kubernetes.md](how-to/desplegar-en-kubernetes.md)
+- El Taskfile gana las tareas de docker, helm y ECR, y `task check` ahora incluye
+  `helm:lint` → [reference/comandos.md](reference/comandos.md)

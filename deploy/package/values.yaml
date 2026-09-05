@@ -1,0 +1,67 @@
+nameOverride:
+fullnameOverride:
+
+# Se proyecta como ConfigMap y se monta en /etc/app/config/config.json.
+# El entrypoint lo lee y siembra `env` como DEFAULTS: lo que ya venga del entorno
+# del pod gana. Por eso ETL_CONSOLE_TOKEN no esta aca — llega por Secret y debe
+# pisar cualquier valor de archivo.
+app:
+  config:
+    service: etl-platform-api
+    env:
+      ETL_MAX_CONCURRENT_RUNS: "2"
+      ETL_RETENTION_DAYS: "30"
+      TZ: America/Argentina/Buenos_Aires
+
+services:
+  etl-platform-api:
+    image:
+      # El pipeline estampa repository y tag en el package (task helm:package).
+      repository: etl-platform-api
+      tag: 0.1.0
+      pullPolicy: IfNotPresent
+
+    containerPort: 8000
+
+    service:
+      type: ClusterIP
+      ports:
+        - name: http
+          port: 8000
+          targetPort: 8000
+
+    nodes:
+      main:
+        # Replica unica: el locking de estado usa lock files de filesystem, que
+        # no coordinan entre pods. Subir esto NO da alta disponibilidad, da
+        # corrupcion de estado (ADR-002, decision 5).
+        replicas: 1
+        selector:
+          automation/role: worker-node
+
+    persistence:
+      enabled: true
+      # ReadWriteOnce es consecuencia del modelo de locking, no una preferencia.
+      accessMode: ReadWriteOnce
+      size: 20Gi
+      storageClass:
+
+    # Sin este Secret la API responde 503 a todo /api: es fail-closed a proposito.
+    # El Secret se crea fuera del chart, en el repositorio de infraestructura.
+    tokenSecret:
+      name: etl-unificador-token
+      key: token
+
+    # Un ETL puede correr hasta 3600s (petersen.base.daily). La ventana le da
+    # margen para terminar antes de que el pod se caiga.
+    terminationGracePeriodSeconds: 3900
+
+    resources:
+      requests:
+        cpu: 500m
+        # pandas carga bases enteras en memoria: los DEELO de Petersen rondan
+        # los 80 MB por archivo y el engine de python los expande varias veces.
+        memory: 2Gi
+      limits:
+        cpu: "2"
+        memory: 4Gi

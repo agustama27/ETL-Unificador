@@ -10,6 +10,8 @@ se cambia acá, no en el `README.md` ni en el `AGENTS.md`.
 | [uv](https://docs.astral.sh/uv/) | dependencias, entorno y ejecución (ADR-ARC-003) | sí |
 | [Task](https://taskfile.dev) | runner de las tareas de abajo | sí |
 | `sonar-scanner` | análisis local de SonarQube | no |
+| `helm` | validar y empaquetar el chart | sí para desplegar |
+| `docker`, `aws`, `yq` | construir y publicar en ECR | sí para desplegar |
 
 Sin Task, cada tarea se puede correr a mano con el `uv run ...` equivalente que figura en
 `Taskfile.yml`.
@@ -26,11 +28,14 @@ Sin Task, cada tarea se puede correr a mano con el `uv run ...` equivalente que 
 | `task coverage` | Suite con cobertura y `coverage.xml` para SonarQube. |
 | `task sonar` | Análisis de SonarQube local. Requiere `sonar-scanner` en el PATH. |
 | `task run` | Levanta la API en `0.0.0.0:8000`. |
-| `task check` | `validate` + `lint` + `test`. Lo que tiene que estar verde antes de abrir un PR. |
+| `task check` | `validate` + `lint` + `test` + `helm:lint`. Lo que tiene que estar verde antes de abrir un PR. |
+| `task helm:lint` / `helm:template` | Valida y renderiza el chart de `deploy/package`. |
+| `task docker:build` / `docker:push` | Imagen del servicio. El contexto de build es la raíz. |
+| `task publish` | Login en ECR + build + push de imagen y chart. Toma `VERSION` y `ENV`. |
 
 ## Estado esperado de la suite
 
-`401 passed, 1 xfailed`. **Cero skips.**
+`412 passed, 1 xfailed`. **Cero skips.**
 
 Un skip no es un pase. Los dos lugares donde un skip es fácil de confundir con verde:
 
