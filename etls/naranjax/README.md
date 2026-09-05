@@ -24,7 +24,7 @@ El cliente más grande: siete ETLs sobre tres proyectos legacy.
 - **Nombre de hoja de la base mensual**: los archivos de operaciones llegan con la hoja
   `Hoja1`; el legacy usa la hoja `Asignacion` si existe y, si no, tolera la **hoja única**
   del libro validando los encabezados obligatorios (queda constancia en el log). Detalle y
-  UAT en `docs/tolerancia-hoja-asignacion.md`.
+  UAT en `docs/decisions/tolerancia-hoja-asignacion.md`.
 
 ## Estructura
 

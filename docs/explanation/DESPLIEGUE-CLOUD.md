@@ -484,9 +484,9 @@ Las que necesito responder para cerrar el diseño. Van en orden de impacto:
 | Documento | Qué responde |
 |---|---|
 | `README.md` | Cómo levantar, cómo ejecutar un ETL, conceptos del dominio |
-| `docs/ARQUITECTURA.md` | Capas, flujo de una corrida, contrato de adapter, convenciones de código |
-| `docs/ADR-001-nucleo-hexagonal.md` | Decisiones de arquitectura, incluida la decisión 7 (`business_date == hoy`) |
-| `docs/GUIA_NUEVO_CLIENTE.md` | Alta de un cliente nuevo paso a paso |
+| `docs/reference/ARQUITECTURA.md` | Capas, flujo de una corrida, contrato de adapter, convenciones de código |
+| `docs/decisions/ADR-001-nucleo-hexagonal.md` | Decisiones de arquitectura, incluida la decisión 7 (`business_date == hoy`) |
+| `docs/how-to/GUIA_NUEVO_CLIENTE.md` | Alta de un cliente nuevo paso a paso |
 | `AGENTS.md` | Reglas duras del repo: qué no tocar y por qué |
 | `openspec/` | Propuestas de cambio y especificaciones por capability |
 | `etls/<cliente>/README.md` | Entradas, salidas, deadline, reglas y contacto de cada cliente |

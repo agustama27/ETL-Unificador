@@ -4,7 +4,7 @@
 cp -r etls/_template etls/<cliente>
 ```
 
-Flujo completo: `docs/GUIA_NUEVO_CLIENTE.md`. Resumen:
+Flujo completo: `docs/how-to/GUIA_NUEVO_CLIENTE.md`. Resumen:
 
 1. Respondé el relevamiento del Paso 0 de la guía y volcalo en este README.
 2. Colocá el proyecto legacy en `legacy/` — **sin modificarlo**.

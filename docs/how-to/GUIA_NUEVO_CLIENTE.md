@@ -4,7 +4,7 @@ Procedimiento para integrar un ETL de un cliente nuevo. Con la Fase 3 del ADR-00
 completa, **agregar un cliente = agregar una carpeta bajo `etls/`**: el catálogo la
 descubre solo y no se toca ningún archivo del núcleo.
 
-Lo primero: leé `docs/ARQUITECTURA.md`, en particular las secciones 5 (contrato de
+Lo primero: leé `docs/reference/ARQUITECTURA.md`, en particular las secciones 5 (contrato de
 adapter) y 6 (puente con el legacy). Después copiá `etls/_template/` como punto de
 partida.
 
@@ -81,7 +81,7 @@ etls/<cliente>/
 El campo `adapter` del manifiesto es una ruta de importación `modulo:Clase`
 (`etls.<cliente>.adapter:MiAdapter` o `etl_core.contracts:SubprocessAdapter`). El catálogo
 la importa, valida que satisfaga el Protocol `ETLAdapter` y recién ahí acepta el ETL como
-ejecutable. Los campos y sus reglas de validación están en `docs/ARQUITECTURA.md` §4.
+ejecutable. Los campos y sus reglas de validación están en `docs/reference/ARQUITECTURA.md` §4.
 
 ### Convenciones del manifiesto
 

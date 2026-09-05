@@ -154,7 +154,7 @@ pip install -e ".[mcp]"
 
 Herramientas: `list_etls`, `describe_etl`, `run_etl`, `get_run`, `download_artifact`.
 Para que un agente dé de alta un cliente nuevo: copiar `etls/_template/` y seguir
-`docs/GUIA_NUEVO_CLIENTE.md`.
+`docs/how-to/GUIA_NUEVO_CLIENTE.md`.
 
 ---
 
@@ -314,7 +314,7 @@ cambiaste comportamiento observable, no sólo estructura.
 
 ## Limitaciones conocidas
 
-Son deudas asumidas, no bugs sorpresa. Están priorizadas en `docs/ADR-001-nucleo-hexagonal.md`.
+Son deudas asumidas, no bugs sorpresa. Están priorizadas en `docs/decisions/ADR-001-nucleo-hexagonal.md`.
 
 1. **`SubprocessAdapter` es compartido por 10 ETLs de 6 clientes.** Ya tiene nombre honesto y
    vive en `etl_core`, pero un cambio ahí sigue exigiendo correr los 13 e2e completos.
@@ -327,9 +327,9 @@ Son deudas asumidas, no bugs sorpresa. Están priorizadas en `docs/ADR-001-nucle
 
 ## Documentación adicional
 
-- `docs/ARQUITECTURA.md` — capas, flujo de una corrida y contrato de adapter
-- `docs/DESPLIEGUE-CLOUD.md` — dossier para líder técnico y arquitectura: restricciones de despliegue, opciones de nube y bloqueantes
-- `docs/ADR-001-nucleo-hexagonal.md` — decisión de arquitectura y plan de migración
-- `docs/GUIA_NUEVO_CLIENTE.md` — cómo agregar un cliente paso a paso
-- `01_objetivo_proyecto_etl_unificador.md` — objetivo original del proyecto (histórico)
+- `docs/reference/ARQUITECTURA.md` — capas, flujo de una corrida y contrato de adapter
+- `docs/explanation/DESPLIEGUE-CLOUD.md` — dossier para líder técnico y arquitectura: restricciones de despliegue, opciones de nube y bloqueantes
+- `docs/decisions/ADR-001-nucleo-hexagonal.md` — decisión de arquitectura y plan de migración
+- `docs/how-to/GUIA_NUEVO_CLIENTE.md` — cómo agregar un cliente paso a paso
+- `docs/reports/01-objetivo-proyecto.md` — objetivo original del proyecto (histórico)
 - `openspec/` — propuestas de cambio y especificaciones por capability

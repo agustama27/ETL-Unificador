@@ -2,7 +2,7 @@
 
 Documento de referencia para quien va a modificar el sistema. Describe **el estado actual**,
 no el objetivo. La arquitectura objetivo y su justificación están en
-`docs/ADR-001-nucleo-hexagonal.md`.
+`docs/decisions/ADR-001-nucleo-hexagonal.md`.
 
 ---
 

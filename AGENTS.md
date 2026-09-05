@@ -2,15 +2,35 @@
 
 Este repositorio es una **capa de ejecución controlada** sobre ETLs legacy de cobranza:
 sandbox por corrida, evidencia forense, locking por período y promoción durable de estado.
-Antes de tocar código leé `README.md` y `docs/ARQUITECTURA.md`; la arquitectura objetivo
-está en `docs/ADR-001-nucleo-hexagonal.md`.
+Antes de tocar código leé `README.md` y `docs/reference/ARQUITECTURA.md`; la arquitectura objetivo
+está en `docs/decisions/ADR-001-nucleo-hexagonal.md`.
+
+## Mapa de documentación
+
+- Índice: `docs/index.md` — catálogo con una línea por página y los huecos declarados.
+- Bitácora: `docs/log.md` — append-only. Lo que pasó va acá, no dentro de un how-to.
+- Estructura: cuadrantes Diátaxis según ADR-ARC-022 (`decisions/`, `reference/`, `how-to/`,
+  `explanation/`, `reports/`). No hay `tutorial/`: el hueco está declarado en el índice.
+
+Desvíos respecto del layout canónico, y por qué:
+
+| Desvío | Motivo |
+|---|---|
+| `openspec/` fuera del catálogo | Almacén de artefactos SDD y archivo histórico. ARC-022 excluye datos de proceso. Sus referencias a rutas previas al reordenamiento quedan sin actualizar: reescribir un registro lo invalida. |
+| `etls/<cliente>/README.md` fuera del catálogo | Documentación por unidad desplegable, análoga a `apps/<servicio>/docs/` de ARC-002 §docs. Un cliente no aparece en el índice de otro. |
+| `explanation/DESPLIEGUE-CLOUD.md` mezcla cuadrantes | Tiene criterio (explanation) y procedimiento (how-to). Partirlo exige decidir qué procedimiento rige; ARC-022 §8 lo clasifica como "se propone, no se reescribe en silencio". |
+
+Ruteo de contenido nuevo: un flag, default o contrato vigente va a `reference/`; el motivo de
+algo o una trampa descubierta, a `explanation/`; una decisión con alternativa descartada, a
+`decisions/`; qué pasó y cuándo, a `log.md`. **Preferí editar al dueño antes que crear un
+archivo nuevo.**
 
 ## Reglas duras
 
 1. **No modifiques los proyectos legacy** (`etls/*/legacy/`). Son cajas negras en
    producción, invocadas por subprocess. La lógica de negocio del cliente vive ahí, no en
    el núcleo. La única excepción hasta hoy (tolerancia del nombre de hoja en Naranja X MA,
-   `docs/tolerancia-hoja-asignacion.md`) requirió OK explícito de operaciones y UAT byte a
+   `docs/decisions/tolerancia-hoja-asignacion.md`) requirió OK explícito de operaciones y UAT byte a
    byte antes/después: ese es el estándar para cualquier otra.
 2. **No modifiques los tests existentes.** Los 13 tests de `tests/e2e/` son la red de
    seguridad: si un refactor obliga a tocar uno, cambiaste comportamiento observable, no
@@ -37,7 +57,7 @@ Agregá una carpeta bajo `etls/<cliente>/` con `manifest.yaml` (con
 legacy no tiene CLI usable, `legacy/`, `tests/` y `README.md`. El catálogo la descubre
 solo: **cero archivos del núcleo tocados.**
 
-## Convenciones de código (docs/ARQUITECTURA.md §8)
+## Convenciones de código (docs/reference/ARQUITECTURA.md §8)
 
 - **Python 3.12+.** Se usan `StrEnum`, `Self`, `X | None`, `is_relative_to`.
 - **Inmutabilidad.** Modelos `@dataclass(frozen=True)`; los mapas se envuelven en
@@ -47,7 +67,7 @@ solo: **cero archivos del núcleo tocados.**
   disco. Mantenelo.
 - **Excepciones con atributo `code`.** `RunBlockedError` y `StatePromotionError` llevan un
   `code` que termina en `run.json`. Los códigos nuevos se documentan en la sección 3 de
-  `docs/ARQUITECTURA.md`.
+  `docs/reference/ARQUITECTURA.md`.
 - **Errores acotados.** Nada de `except Exception` genérico en el núcleo; se capturan
   tipos concretos. Única excepción documentada: la frontera fail-fast de los `*_job.py`.
 - **Sin comentarios decorativos.** Docstring de una línea cuando el nombre no alcanza.

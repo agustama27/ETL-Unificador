@@ -394,7 +394,7 @@ y recuperación de lock?, ¿900 s y grace period?, ¿fallos bloquean sólo PCT/M
 ## Evidencia y trazabilidad
 | Afirmación | Evidencia |
 |---|---|
-| Objetivo, piloto, entregable y restricciones | `01_objetivo_proyecto_etl_unificador.md`; `02_primer_paso_planificacion_agente_codigo.md` |
+| Objetivo, piloto, entregable y restricciones | `docs/reports/01-objetivo-proyecto.md`; `docs/reports/02-primer-paso-planificacion.md` |
 | CLI Chat, flags, paths, exits y orden | `SOHO-Chat-NX_MA-ETL/{back-base/ejecutar_dia.py,core/procesar_dia.py}` |
 | Outputs, fecha, estado y reglas CHAT | `SOHO-Chat-NX_MA-ETL/back-base/back_base_etl/{constants,io,estado_persistente,transformers,update_estado}.py` |
 | Voice/PCT | `soho-naranjaX-MA-etl/{back-base/ejecutar_dia.py,back-resultados/}`; pytest relevado `1 failed, 26 passed` |

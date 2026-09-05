@@ -1,4 +1,4 @@
-# Manifiesto de catálogo — reglas de validación en docs/ARQUITECTURA.md §4.
+# Manifiesto de catálogo — reglas de validación en docs/reference/ARQUITECTURA.md §4.
 # Esta carpeta empieza con "_" así que el catálogo la ignora: al copiarla con el
 # nombre real del cliente, el ETL aparece solo.
 schema_version: 1

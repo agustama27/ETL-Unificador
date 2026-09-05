@@ -7,7 +7,7 @@
   [PR #91](https://github.com/agustama27/ETL-Unificador/pull/91) (Fase 0) y
   [PR #99](https://github.com/agustama27/ETL-Unificador/pull/99) (Fases 1-5, historia
   lineal; las PRs por fase #92-#96 documentan la review de cada tramo). Verificación de
-  fidelidad de la Fase 3 en `docs/verificacion-migracion-fase-3.md`. Quedan parciales dos
+  fidelidad de la Fase 3 en `docs/reports/verificacion-migracion-fase-3.md`. Quedan parciales dos
   ítems de la Fase 4, anotados en su checklist.
 
 ---
@@ -21,7 +21,7 @@ discute en este ADR.
 
 Lo que sí se discute es **dónde están las fronteras**. El crecimiento fue por adición sin revisar
 la forma, y el resultado es que el núcleo quedó acoplado al primer cliente. El objetivo declarado
-en `01_objetivo_proyecto_etl_unificador.md` era explícito:
+en `docs/reports/01-objetivo-proyecto.md` era explícito:
 
 > *Debe ser fácil agregar nuevos ETLs sin modificar el core.*
 
@@ -210,7 +210,7 @@ Cinco fases. Cada una es entregable por sí sola y deja el repo funcionando.
 Sin esto, ninguna otra fase se puede verificar en serio.
 
 - [x] Mover `from ctypes import wintypes` dentro de `_windows_directory_api()`
-- [x] `README.md` raíz, `docs/ARQUITECTURA.md`, este ADR, `docs/GUIA_NUEVO_CLIENTE.md`
+- [x] `README.md` raíz, `docs/reference/ARQUITECTURA.md`, este ADR, `docs/how-to/GUIA_NUEVO_CLIENTE.md`
 - [x] `bitbucket-pipelines.yml` que corra `pytest` completo en Linux
 - [x] Completar `pyproject.toml`: `fastapi`, `uvicorn`, `python-multipart`; renombrar el extra
       `naranjax` a `etl` porque lo usan todos los clientes

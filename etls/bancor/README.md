@@ -18,7 +18,7 @@
 ## ⚠️ Punto frágil conocido
 
 `job.py` reasigna el `__file__` de `procesos.base_generator` para anclar el `base_dir`
-del legacy al sandbox (ver `docs/ARQUITECTURA.md` §6). Depende del `cwd` y de que el
+del legacy al sandbox (ver `docs/reference/ARQUITECTURA.md` §6). Depende del `cwd` y de que el
 legacy siga derivando rutas de `__file__`. **No copiar este patrón en jobs nuevos.**
 
 ## Deadline y contacto

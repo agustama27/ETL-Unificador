@@ -3,7 +3,7 @@
 Cubre las dos copias de ``back_base_etl`` (chat y ma) con el mismo contrato:
 alias primero, fallback a hoja única con encabezados validados, fallo claro
 en el resto. Único cambio a código legacy de la migración — ver
-``docs/tolerancia-hoja-asignacion.md``.
+``docs/decisions/tolerancia-hoja-asignacion.md``.
 """
 
 import importlib
