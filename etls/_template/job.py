@@ -15,7 +15,7 @@ def main() -> int:
     parser = argparse.ArgumentParser(description="Cliente proceso (unified)")
     parser.add_argument("--input", required=True)
     parser.add_argument("--output_dir", required=True)
-    arguments = parser.parse_args()
+    arguments = parser.parse_args()  # noqa: F841 - andamiaje: usar arguments.input/.output_dir
 
     sys.path.insert(0, str(Path.cwd()))
     # from procesos.mi_modulo import procesar   # importa el legacy acá

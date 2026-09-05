@@ -14,11 +14,15 @@ ocupa** — el alcance, no un resumen. Estructura según
 - [reference/ARQUITECTURA.md](reference/ARQUITECTURA.md) — estado actual del sistema: capas,
   flujo de una corrida, contrato de adapter, reglas de validación del manifiesto y
   convenciones de código
+- [reference/comandos.md](reference/comandos.md) — tareas del `Taskfile`, requisitos, estado
+  esperado de la suite y las dependencias pineadas a versión exacta
 
 ## Explanation
 
 - [explanation/DESPLIEGUE-CLOUD.md](explanation/DESPLIEGUE-CLOUD.md) — restricciones de
   despliegue, opciones de nube evaluadas y bloqueantes, para decidir dónde y cómo desplegar
+- [explanation/paridad-upstream.md](explanation/paridad-upstream.md) — qué cubre la paridad
+  byte a byte, por qué no cubre el drift de dependencias, y qué red lo cubre en su lugar
 
 ## Decisions
 

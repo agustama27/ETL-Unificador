@@ -1,0 +1,66 @@
+version: "3"
+
+vars:
+  # Los legacy vendorizados quedan fuera de lint y cobertura: son cajas negras en
+  # produccion (AGENTS.md, regla dura 1) y su diff contra el upstream debe quedar limpio.
+  FUENTES: etl_core orchestrator platform_api platform_mcp etls
+  COVERAGE_INCLUDE: etl_core/*.py,orchestrator/*.py,platform_api/*.py,platform_mcp/*.py
+  SERVICE: etl-unificador
+  VERSION: '{{default "local" .VERSION}}'
+  ENV: '{{default "dev" .ENV}}'
+
+tasks:
+  sync:
+    desc: Sincroniza las dependencias Python con uv.
+    cmds:
+      - uv sync --all-extras --group dev
+
+  validate:
+    desc: Compila las fuentes para detectar errores de sintaxis o import.
+    deps: [sync]
+    cmds:
+      - uv run python -m compileall -q etl_core orchestrator platform_api platform_mcp
+
+  lint:
+    desc: Corre ruff sobre las fuentes propias.
+    deps: [sync]
+    cmds:
+      - uv run ruff check {{.FUENTES}}
+
+  test:
+    desc: Corre la suite completa.
+    deps: [sync]
+    cmds:
+      - uv run python -m pytest -q
+
+  test:parity:
+    desc: Paridad byte a byte contra los repos upstream del Desktop. Un skip NO es un pase.
+    deps: [sync]
+    cmds:
+      - uv run python -m pytest tests/uat_upstream -v -rs
+
+  coverage:
+    desc: Suite con reporte de cobertura y XML para SonarQube.
+    deps: [sync]
+    cmds:
+      - uv run coverage run -m pytest -q
+      - uv run coverage report --include='{{.COVERAGE_INCLUDE}}' -m
+      - uv run coverage xml --include='{{.COVERAGE_INCLUDE}}' -o coverage.xml
+
+  sonar:
+    desc: Analisis de SonarQube local.
+    cmds:
+      - sonar-scanner -Dproject.settings=sonar-project.properties
+
+  run:
+    desc: Levanta la API localmente con config/local.json.
+    deps: [sync]
+    cmds:
+      - uv run uvicorn platform_api.main:create_app --factory --host 0.0.0.0 --port 8000
+
+  check:
+    desc: Todo lo que tiene que estar verde antes de abrir un PR.
+    cmds:
+      - task: validate
+      - task: lint
+      - task: test

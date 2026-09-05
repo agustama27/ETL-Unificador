@@ -38,7 +38,7 @@ python -m venv .venv
 # Linux / macOS
 source .venv/bin/activate
 
-pip install -e ".[test,etl,api]"
+uv sync --all-extras --group dev
 ```
 
 > El extra `etl` instala `pandas` y `openpyxl`, que usan los ETLs de todos los clientes.
@@ -144,7 +144,7 @@ en vez de escanear el filesystem.
 ### Desde un agente (MCP)
 
 ```bash
-pip install -e ".[mcp]"
+uv sync --extra mcp
 ```
 
 ```json

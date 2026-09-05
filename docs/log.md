@@ -18,3 +18,19 @@ Formato: `## [YYYY-MM-DD] <op> | <tema>`. Grepeable con `grep '^## \[' docs/log.
   entrantes externos que preservar → [index.md](index.md)
 - `openspec/` queda deliberadamente sin tocar y sin catalogar: sus referencias a las rutas
   viejas son parte de un registro histórico → [index.md](index.md)
+
+## [2026-09-05] update | adopción de uv (ADR-ARC-003)
+
+- Las dependencias pasan a `uv` con `uv.lock` versionado como fuente de verdad. El entorno
+  pip queda reemplazado → [reference/comandos.md](reference/comandos.md)
+- Las dependencias del camino de datos pasan de rango a versión exacta. Motivo: la paridad
+  byte a byte no cubre el drift de dependencias, porque corre los dos lados con el mismo
+  intérprete → [explanation/paridad-upstream.md](explanation/paridad-upstream.md)
+- `numpy` sube de 2.4.0 a 2.4.6: la 2.4.0 que estaba instalada está *yanked* en PyPI por un
+  bug de compatibilidad hacia atrás. Verificado con sha256 de los 9 artefactos de Bancor y
+  CartaSur: idénticos → [explanation/paridad-upstream.md](explanation/paridad-upstream.md)
+- `xlwt` y `reportlab` estaban instalados pero sin declarar: los tests de Alvarez, incluida
+  su paridad, se salteaban en un entorno limpio. Ahora están en el extra `test` →
+  [explanation/paridad-upstream.md](explanation/paridad-upstream.md)
+- Entran `Taskfile.yml`, `ruff`, `.coveragerc` y `sonar-project.properties`. El ruleset de
+  ruff es el default; `DTZ` queda afuera a propósito → [reference/comandos.md](reference/comandos.md)

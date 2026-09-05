@@ -5,25 +5,41 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "etl-unificador"
 version = "0.1.0"
-requires-python = ">=3.12"
+requires-python = ">=3.12,<3.14"
 dependencies = ["PyYAML>=6.0,<7.0"]
 
+# Las dependencias del CAMINO DE DATOS van pineadas a version exacta, no a rango.
+# Determinan la salida que recibe el cliente, y `test_upstream_parity` NO las cubre:
+# corre los dos lados con el mismo `sys.executable`, asi que un cambio de version
+# mueve unificador y upstream a la vez y el test sigue verde mientras la salida real
+# cambia. Subirlas es un cambio deliberado, con UAT contra los repos upstream.
+# Baseline verificado: 2026-09-05, 379 tests verdes y paridad 10/10.
 [project.optional-dependencies]
-test = ["pytest>=8.4,<9.0", "httpx>=0.27,<1.0", "httpx2>=2.9,<3.0"]
+# xlwt (escribe los .xls) y reportlab (escribe los .pdf) construyen los fixtures de
+# Alvarez. Estaban instalados en el entorno pip pero sin declarar: bajo uv,
+# test_alvarez_job y test_alvarez_parity se salteaban en silencio.
+test = [
+    "pytest>=8.4,<9.0",
+    "httpx>=0.27,<1.0",
+    "httpx2>=2.9,<3.0",
+    "xlwt==1.3.0",
+    "reportlab==4.4.10",
+]
 etl = [
-    "pandas>=2.2,<3.0",
-    "openpyxl>=3.1,<4.0",
+    "pandas==2.3.3",
+    "numpy==2.4.6",  # 2.4.0 esta yanked en PyPI (bug de compatibilidad hacia atras)
+    "openpyxl==3.1.5",
     "email-validator>=2.0,<3.0",
 ]
 naranjax = ["etl-unificador[etl]"]
 cartasur = [
     "etl-unificador[etl]",
-    "holidays>=0.58,<1.0",
+    "holidays==0.99",
 ]
 alvarezmaquinarias = [
     "etl-unificador[etl]",
-    "xlrd>=2.0,<3.0",
-    "pypdf>=4.0,<7.0",
+    "xlrd==2.0.2",
+    "pypdf==6.9.2",
 ]
 api = [
     "fastapi>=0.115,<1.0",
@@ -34,6 +50,27 @@ mcp = [
     "mcp>=1.2,<2.0",
     "httpx>=0.27,<1.0",
 ]
+
+[dependency-groups]
+dev = [
+    "coverage>=7.10,<8.0",
+    "ruff>=0.9.0",
+]
+
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+# Los legacy vendorizados son cajas negras en produccion (AGENTS.md, regla dura 1):
+# no se lintean ni se formatean, para que el diff contra el upstream quede limpio.
+extend-exclude = ["**/legacy/**", "**/legacy_base/**", "var", "frontend"]
+
+[tool.ruff.lint]
+# Ruleset por defecto de ruff, igual que los repos de referencia de Evoltis.
+# DTZ queda deliberadamente afuera: marca los `date.today()` de los wrappers de
+# etls/, que NO se pueden cambiar sin romper la paridad byte a byte contra los
+# upstream (los nombres de archivo de salida llevan esa fecha). El desfasaje de
+# huso se resuelve fijando TZ en el contenedor, no reescribiendo los wrappers.
+select = ["E4", "E7", "E9", "F"]
 
 [tool.setuptools.packages.find]
 include = ["etl_core*", "orchestrator*", "platform_api*", "platform_mcp*", "etls*"]

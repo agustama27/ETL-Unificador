@@ -9,6 +9,7 @@ está en `docs/decisions/ADR-001-nucleo-hexagonal.md`.
 
 - Índice: `docs/index.md` — catálogo con una línea por página y los huecos declarados.
 - Bitácora: `docs/log.md` — append-only. Lo que pasó va acá, no dentro de un how-to.
+- Comandos y estado esperado de la suite: `docs/reference/comandos.md`.
 - Estructura: cuadrantes Diátaxis según ADR-ARC-022 (`decisions/`, `reference/`, `how-to/`,
   `explanation/`, `reports/`). No hay `tutorial/`: el hueco está declarado en el índice.
 
@@ -77,6 +78,9 @@ solo: **cero archivos del núcleo tocados.**
 ## Cómo verificar
 
 ```bash
-pip install -e ".[test,etl,api]"
-pytest            # 284 tests; testpaths apunta a tests/, no toca los legacy
+task check        # validate + lint + test
 ```
+
+Las tareas, los requisitos y el estado esperado de la suite están en
+`docs/reference/comandos.md`. **Un skip no es un pase**: el motivo, en
+`docs/explanation/paridad-upstream.md`.

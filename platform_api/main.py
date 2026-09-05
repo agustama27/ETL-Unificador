@@ -12,7 +12,6 @@ import io
 import json
 import os
 import shutil
-import threading
 import zipfile
 from concurrent.futures import ThreadPoolExecutor
 from datetime import date, datetime, timezone

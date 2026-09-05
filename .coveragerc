@@ -1,0 +1,17 @@
+[run]
+branch = True
+relative_files = True
+omit =
+    */tests/*
+    */legacy/*
+    */legacy_base/*
+    */__pycache__/*
+    */.venv/*
+
+[report]
+show_missing = True
+skip_covered = False
+precision = 1
+
+[html]
+directory = coverage_html
