@@ -80,3 +80,15 @@ Formato: `## [YYYY-MM-DD] <op> | <tema>`. Grepeable con `grep '^## \[' docs/log.
 - Entra `task ci:verify`, que falla ante cualquier skip inesperado. La paridad se saltea en
   CI por diseño —los repos upstream no están en el runner— y ese skip legítimo volvía
   invisibles a los demás → [reference/comandos.md](reference/comandos.md)
+
+## [2026-09-05] update | stack de Docker Compose para la VM STAGE
+
+- Entran `compose.yaml`, el `Dockerfile` del frontend con nginx y `.env.example`. Son los
+  prerrequisitos que pide la guía de deploy de SRV-APP-STAGE, que despliega con Compose y
+  no con Kubernetes: el chart de `deploy/package/` no aplica a ese destino →
+  [how-to/desplegar-en-vm-stage.md](how-to/desplegar-en-vm-stage.md)
+- Solo el frontend publica puerto; el backend queda en la red interna y nginx le proxea
+  `/api` con timeouts de 3900 s, porque una corrida puede tardar una hora →
+  [how-to/desplegar-en-vm-stage.md](how-to/desplegar-en-vm-stage.md)
+- `.gitignore` tenía `.env.*`, que también excluía `.env.example`. Se agregó la negación:
+  la plantilla lleva nombres de variables, nunca valores → [index.md](index.md)
