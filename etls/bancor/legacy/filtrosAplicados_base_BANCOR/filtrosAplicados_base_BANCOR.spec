@@ -5,7 +5,7 @@ a = Analysis(
     ['main.py'],
     pathex=['.'],
     binaries=[],
-    datas=[],
+    datas=[('..\\back-base\\procesos\\config_quita.py', '.'), ('..\\back-base\\procesos\\config_preventa.py', '.')],
     hiddenimports=['ui.app', 'ui.phone_compare_tab', 'procesos.pipeline_wfm', 'procesos.phone_compare_service'],
     hookspath=[],
     hooksconfig={},

@@ -15,7 +15,13 @@ if str(_PROCESOS) not in sys.path:
     sys.path.insert(0, str(_PROCESOS))
 
 import base_generator  # noqa: E402
+import config_quita  # noqa: E402
 from base_generator import calcular_quita  # noqa: E402
+
+
+def test_calcular_quita_es_la_misma_funcion_en_ambos_modulos():
+    """La formula vive en config_quita (bundleable); base_generator la reexporta."""
+    assert base_generator.calcular_quita is config_quita.calcular_quita
 
 
 # ── 1. Porcentajes por rango ────────────────────────────────────────────────────
@@ -94,7 +100,9 @@ def test_con_oferta_excluye_por_default():
 
 
 def test_flag_excluir_oferta_desactivado(monkeypatch):
-    monkeypatch.setattr(base_generator, "EXCLUIR_SI_TIENE_OFERTA", False)
+    # El flag se parchea en config_quita, que es donde vive la formula. Parchear
+    # el nombre reexportado por base_generator ya no tiene efecto.
+    monkeypatch.setattr(config_quita, "EXCLUIR_SI_TIENE_OFERTA", False)
     aplica, _ = calcular_quita("MA", 150, comp_total=100, punit_total=200,
                                monto_adeudado=1000, tiene_oferta=True)
     assert aplica == "si"

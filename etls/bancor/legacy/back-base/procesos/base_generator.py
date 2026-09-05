@@ -19,6 +19,24 @@ from config_quita import (
     QUITA_INCLUYE_IVA,
     FECHA_LIMITE_QUITA,
     RANGOS_QUITA,
+    # La formula vive en config_quita porque es el unico modulo que se bundlea con
+    # el exe. Se reexporta aca por compatibilidad con los importadores existentes.
+    calcular_quita,
+    _rango_quita_para_mora,
+)
+
+# Oferta de Cancelacion Anticipada (OFERTA_PREVENTA). Se importa el modulo entero
+# para que el pipeline de la UI pueda leer las constantes via getattr sobre este
+# modulo y ambas salidas ROMAN compartan la misma definicion de campania.
+import config_preventa
+from config_preventa import (
+    FECHA_LIMITE_PREVENTA,
+    MEDIO_PAGO_PREVENTA,
+    COLUMNAS_SALIDA_PREVENTA,
+    COLUMNAS_DERIVADAS_PREVENTA,
+    COL_PREVENTA,
+    COL_OFERTA_PREVENTA,
+    COL_BANCON_USR,
 )
 
 
@@ -124,6 +142,10 @@ def normalizar_encabezados_nuevas_columnas(df):
         'tipo_mercado': COL_TIPO_MERCADO,
     }
 
+    # Oferta de Cancelacion Anticipada: el nombre real en la base es
+    # OFERTA_PREVENTA en MAYUSCULAS, no OFERTA_Preventa como dice el requerimiento.
+    variantes_exactas.update(config_preventa.ALIAS_ENCABEZADOS_PREVENTA)
+
     firmas_canonicas = {
         'tipoasignacion': COL_TIPO_ASIGNACION,
         'gestiondescripcion': COL_GESTION_DESCRIPCION,
@@ -131,6 +153,7 @@ def normalizar_encabezados_nuevas_columnas(df):
         'campanaref': COL_CAMPANA_REF,
         'tipomercado': COL_TIPO_MERCADO,
     }
+    firmas_canonicas.update(config_preventa.FIRMAS_ENCABEZADOS_PREVENTA)
 
     def firma_columna(nombre_columna):
         nombre = corregir_codificacion_texto(str(nombre_columna)).strip().lower()
@@ -235,6 +258,13 @@ def _nombre_columna_semantico(base_snake: str) -> str:
         'estado_cuenta': 'tipo_estado_cuenta',
         'tasa_40': 'tipo_tasa_40',
         'fecha_gestion': 'fecha_gestion',
+        'oferta_preventa': 'oferta_preventa',
+        'monto_total_preventa': 'monto_total_preventa',
+        'alcance_preventa': 'alcance_preventa',
+        'tipo_tna_refi_preventa': 'tipo_tna_refi_preventa',
+        'medio_pago_preventa': 'medio_pago_preventa',
+        'fecha_limite_preventa': 'fecha_limite_preventa',
+        'tipo_bancon_usr': 'tipo_bancon_usr',
     }
 
     if base_snake in mapeo_explicito:
@@ -329,93 +359,154 @@ def _parsear_decimal(valor):
         return None
 
 
-def _rango_quita_para_mora(dias_mora_max):
-    """Devuelve el dict de RANGOS_QUITA que aplica para los dias de mora, o None."""
+def _fila_preventa_elegible(fila):
+    """RF-1: PreVenta == APLICA OFERTA y OFERTA_PREVENTA informado y > 0."""
+    preventa = str(fila.get(COL_PREVENTA, '')).strip().upper()
+    if preventa != config_preventa.VALOR_PREVENTA_ELEGIBLE:
+        return False
+    importe = _parsear_decimal(fila.get(COL_OFERTA_PREVENTA))
+    return importe is not None and importe > 0
+
+
+def calcular_agregados_preventa(grupo):
+    """Suma de OFERTA_PREVENTA positivos del CUIL y cobertura de los productos retenidos.
+
+    Espeja el criterio de `_calcular_agregados_oferta()` del pipeline: 'total' si
+    TODOS los productos del grupo son elegibles, 'parcial' si solo algunos.
+    """
+    if COL_OFERTA_PREVENTA not in grupo.columns:
+        return '', ''
+
+    importes = []
+    for _, fila in grupo.iterrows():
+        if _fila_preventa_elegible(fila):
+            importes.append(_parsear_decimal(fila.get(COL_OFERTA_PREVENTA)))
+
+    if not importes:
+        return '', ''
+
+    total = round(sum(importes), 2)
+    alcance = 'total' if len(importes) == len(grupo) else 'parcial'
+    return f"{total:.2f}", alcance
+
+
+def campania_preventa_vigente(fecha_corrida=None):
+    """RF-5: vigencia contra la fecha de corrida, hasta FECHA_LIMITE_PREVENTA inclusive.
+
+    La baja del 01/10/2026 es automatica: no requiere tocar el flow de Retell (ADR-001).
+    """
+    limite_txt = str(FECHA_LIMITE_PREVENTA or '').strip()
+    if not limite_txt:
+        return False
     try:
-        dias = int(float(dias_mora_max))
-    except (TypeError, ValueError):
-        return None
-    for rango in RANGOS_QUITA:
-        if rango['mora_min'] <= dias <= rango['mora_max']:
-            return rango
-    return None
+        limite = datetime.strptime(limite_txt, '%Y-%m-%d').date()
+    except ValueError:
+        return False
+    fecha = fecha_corrida if fecha_corrida is not None else datetime.now().date()
+    return fecha <= limite
 
 
-def calcular_quita(
-    tipo_mercado,
-    dias_mora_max,
-    comp_total,
-    punit_total,
-    monto_adeudado,
-    tiene_oferta,
-    iva_totales: dict | None = None,
-) -> tuple[str, float | None]:
+def tna_refi_preventa_por_campana_ref(campana_ref):
+    """BLQ-1: la TNA la manda Campana_REF, no el tramo de Dias_Mora.
+
+    ATENCION - `tipo_tna_refi_preventa` es una COLUMNA DERIVADA de `tipo_campana_ref`,
+    NO un dato independiente. Para cambiar la TNA de un cliente se cambia `Campaña_REF`
+    EN ORIGEN; nunca se edita esta columna ni se la alimenta desde otra fuente.
+
+    El dominio queda ABIERTO a proposito: CAMPANA45% y CAMPANA35% siguen vigentes en el
+    flow aunque no aparezcan en la cohorte preventa de esta base. Cerrarlo a 30/20 seria
+    un bug con fecha de vencimiento.
     """
-    Calcula si un cliente es elegible para la quita de intereses y el monto final.
+    coincidencia = re.search(r'(\d+)', str(campana_ref or ''))
+    return coincidencia.group(1) if coincidencia else ''
 
-    Implementa la spec funcional 3.1/3.2: aplica 'si' solo si TODAS se cumplen:
-      (a) Tipo_Mercado == TIPO_MERCADO_ELEGIBLE
-      (b) dias_mora_max cae en algun rango de RANGOS_QUITA (61..365)
-      (c) la quita calculada es > 0 (descuento real)
-      (d) 0 < monto_quita_ars < monto_adeudado (sanity)
-      (e) si EXCLUIR_SI_TIENE_OFERTA, el cliente no tiene oferta pre-calculada
 
-    Args:
-        tipo_mercado: valor crudo de Tipo_Mercado del cliente.
-        dias_mora_max: maximo de Dias_Mora del cliente.
-        comp_total: suma de Compensatorio del cliente.
-        punit_total: suma de Punitorios del cliente.
-        monto_adeudado: MontoAdeudado consolidado del cliente.
-        tiene_oferta: True si el cliente tiene oferta pre-calculada (oferta_importe == 'si').
-        iva_totales: dict opcional {'comp': ..., 'punit': ...} con IVA + percepciones,
-            usado solo si QUITA_INCLUYE_IVA es True.
+def tna_refi_preventa_por_dias_mora(dias_mora_max):
+    """RF-2: clasifica el maximo de Dias_Mora del grupo en los tramos de TNA."""
+    numero = _parsear_decimal(dias_mora_max)
+    if numero is None:
+        return ''
+    dias = int(numero)
+    for tramo in config_preventa.TRAMOS_TNA_REFI_PREVENTA:
+        if tramo['mora_min'] <= dias <= tramo['mora_max']:
+            return str(tramo['tna'])
+    return ''
 
-    Returns:
-        Tupla (aplica_quita, monto_quita_ars):
-          - ('si', float redondeado a 2 decimales) si es elegible.
-          - ('no', None) en caso contrario.
+
+def anticipo_preventa_incoherente(anticipo_raw, monto_total_preventa):
+    """BLQ-2: True si el anticipo no es numerico o no mejora la cancelacion de contado."""
+    if not config_preventa.SUPRIMIR_REFI_SI_ANTICIPO_INCOHERENTE:
+        return False
+
+    anticipo = _parsear_decimal(anticipo_raw)
+    if anticipo is None:
+        # Incluye el literal "CANCELAR": no hay plan de refi, solo cancelacion.
+        return True
+
+    oferta = _parsear_decimal(monto_total_preventa)
+    if oferta is None:
+        return False
+    return anticipo >= oferta
+
+
+def normalizar_bancon_usr(valor):
+    """RF-4: BanconUsr se emite sin transformar; el vacio queda vacio (BLQ-3)."""
+    if pd.isna(valor):
+        texto = ''
+    else:
+        texto = str(valor).strip()
+        if texto.lower() in {'', 'nan', 'none', 'nat'}:
+            texto = ''
+
+    if texto == '':
+        return str(config_preventa.VALOR_BANCON_USR_VACIO or '')
+
+    for canonico in config_preventa.VALORES_BANCON_USR:
+        if texto.lower() == canonico.lower():
+            return canonico
+    return texto
+
+
+def resolver_preventa(grupo, resultado, fecha_corrida=None):
+    """Deriva las 7 columnas de preventa para un grupo consolidado por CUIL.
+
+    Escribe sobre `resultado` (la fila consolidada) y lo devuelve. Toda la
+    elegibilidad, la TNA y la vigencia se resuelven aca: el agente las recibe ya
+    calculadas y nunca evalua calendario ni compara dias de mora (ADR-001).
     """
-    no_aplica = ('no', None)
+    monto_total, alcance = calcular_agregados_preventa(grupo)
+    resultado['tipo_bancon_usr'] = normalizar_bancon_usr(resultado.get(COL_BANCON_USR, ''))
 
-    # (a) Tipo de mercado elegible
-    tipo = str(tipo_mercado).strip().upper() if tipo_mercado is not None else ''
-    if tipo != str(TIPO_MERCADO_ELEGIBLE).strip().upper():
-        return no_aplica
+    elegible = campania_preventa_vigente(fecha_corrida) and monto_total != '' and alcance != ''
+    if not elegible:
+        resultado['oferta_preventa'] = 'no'
+        for columna in COLUMNAS_DERIVADAS_PREVENTA:
+            resultado[columna] = ''
+        return resultado
 
-    # (b) rango de mora a nivel cliente
-    rango = _rango_quita_para_mora(dias_mora_max)
-    if rango is None:
-        return no_aplica
+    if config_preventa.FUENTE_TNA_REFI_PREVENTA == 'campana_ref':
+        tna = tna_refi_preventa_por_campana_ref(resultado.get(COL_CAMPANA_REF, ''))
+    else:
+        tna = tna_refi_preventa_por_dias_mora(resultado.get('Dias_Mora'))
 
-    # (e) exclusividad con oferta pre-calculada
-    if EXCLUIR_SI_TIENE_OFERTA and tiene_oferta:
-        return no_aplica
+    if anticipo_preventa_incoherente(resultado.get('AnticipoMinimo', ''), monto_total):
+        # BLQ-2: sin refi, y sin anticipo, para que el agente ofrezca solo cancelacion.
+        tna = ''
+        resultado['AnticipoMinimo'] = ''
 
-    monto = _parsear_decimal(monto_adeudado)
-    if monto is None:
-        return no_aplica
+    resultado['oferta_preventa'] = 'si'
+    resultado['monto_total_preventa'] = monto_total
+    resultado['alcance_preventa'] = alcance
+    resultado['tipo_tna_refi_preventa'] = tna
+    resultado['medio_pago_preventa'] = MEDIO_PAGO_PREVENTA
+    resultado['fecha_limite_preventa'] = str(FECHA_LIMITE_PREVENTA or '')
 
-    comp = _parsear_decimal(comp_total) or 0.0
-    punit = _parsear_decimal(punit_total) or 0.0
+    # BLQ-4: la preventa tiene precedencia sobre la oferta vigente. Mismo criterio
+    # que EXCLUIR_SI_TIENE_OFERTA: un solo beneficio por cliente.
+    if config_preventa.PRECEDENCIA_SOBRE_OFERTA_VIGENTE:
+        resultado['oferta_importe'] = 'no'
 
-    quita = rango['pct_comp'] * comp + rango['pct_punit'] * punit
-
-    if QUITA_INCLUYE_IVA and iva_totales:
-        iva_comp = _parsear_decimal(iva_totales.get('comp')) or 0.0
-        iva_punit = _parsear_decimal(iva_totales.get('punit')) or 0.0
-        quita += rango['pct_comp'] * iva_comp + rango['pct_punit'] * iva_punit
-
-    # (c) descuento real
-    if quita <= 0:
-        return no_aplica
-
-    monto_quita = round(monto - quita, 2)
-
-    # (d) sanity: 0 < monto_quita < monto_adeudado
-    if monto_quita <= 0 or monto_quita >= round(monto, 2):
-        return no_aplica
-
-    return ('si', monto_quita)
+    return resultado
 
 
 def _normalizar_booleano_texto(valor):
@@ -685,6 +776,61 @@ def validar_contrato_roman(df_salida, df_origen):
                 errores.append(f"aplica_quita='no' con fecha_limite_quita no vacio en {fecha_no_vacio} filas")
 
         print(f"\n[VALIDACION ROMAN] Quita: {elegibles}/{total_clientes} clientes elegibles (aplica_quita='si')")
+
+    if {'monto_vencido_ars', 'monto_adeudado_ars'}.issubset(df_salida.columns):
+        vencido_num = pd.to_numeric(df_salida['monto_vencido_ars'], errors='coerce')
+        adeudado_num = pd.to_numeric(df_salida['monto_adeudado_ars'], errors='coerce')
+        excedidos = int((vencido_num > adeudado_num).sum())
+        if excedidos > 0:
+            errores.append(f"monto_vencido_ars mayor a monto_adeudado_ars en {excedidos} filas")
+
+    if 'oferta_preventa' in df_salida.columns:
+        preventa = df_salida['oferta_preventa'].astype(str).str.strip().str.lower()
+        invalidos = set(preventa.dropna().unique().tolist()) - {'si', 'no'}
+        if invalidos:
+            errores.append(f"oferta_preventa contiene valores invalidos: {sorted(invalidos)}")
+
+        mask_si = preventa == 'si'
+        mask_no = preventa == 'no'
+        elegibles_preventa = int(mask_si.sum())
+
+        # oferta_preventa='si' => monto, alcance y fecha limite informados.
+        for columna in ('monto_total_preventa', 'alcance_preventa', 'fecha_limite_preventa'):
+            if columna not in df_salida.columns:
+                continue
+            vacios = int((df_salida.loc[mask_si, columna].astype(str).str.strip() == '').sum())
+            if vacios > 0:
+                errores.append(f"oferta_preventa='si' con {columna} vacio en {vacios} filas")
+
+        if 'medio_pago_preventa' in df_salida.columns:
+            medio = df_salida.loc[mask_si, 'medio_pago_preventa'].astype(str).str.strip()
+            distinto = int((medio != MEDIO_PAGO_PREVENTA).sum())
+            if distinto > 0:
+                errores.append(
+                    f"oferta_preventa='si' con medio_pago_preventa distinto de '{MEDIO_PAGO_PREVENTA}' en {distinto} filas"
+                )
+
+        # oferta_preventa='no' => las cinco columnas derivadas vacias.
+        for columna in COLUMNAS_DERIVADAS_PREVENTA:
+            if columna not in df_salida.columns:
+                continue
+            no_vacios = int((df_salida.loc[mask_no, columna].astype(str).str.strip() != '').sum())
+            if no_vacios > 0:
+                errores.append(f"oferta_preventa='no' con {columna} no vacio en {no_vacios} filas")
+
+        if 'alcance_preventa' in df_salida.columns:
+            alcances = set(df_salida['alcance_preventa'].astype(str).str.strip().str.lower().unique()) - {'', 'total', 'parcial'}
+            if alcances:
+                errores.append(f"alcance_preventa contiene valores invalidos: {sorted(alcances)}")
+
+        if {'monto_total_preventa', 'monto_adeudado_ars'}.issubset(df_salida.columns):
+            total_num = pd.to_numeric(df_salida.loc[mask_si, 'monto_total_preventa'], errors='coerce')
+            adeudado_num = pd.to_numeric(df_salida.loc[mask_si, 'monto_adeudado_ars'], errors='coerce')
+            excedidos = int((total_num > adeudado_num).sum())
+            if excedidos > 0:
+                errores.append(f"monto_total_preventa mayor a monto_adeudado_ars en {excedidos} filas")
+
+        print(f"[VALIDACION ROMAN] Preventa: {elegibles_preventa}/{len(df_salida)} clientes elegibles (oferta_preventa='si')")
 
     if errores:
         print("\n[VALIDACION ROMAN] Se detectaron inconsistencias:")
@@ -1565,6 +1711,12 @@ def procesar_base_completa():
                     total_monto_vencido = grupo[COL_MONTO_VENCIDO].sum(min_count=1)
                     resultado['MontoAdeudado'] = total_monto_vencido if pd.notna(total_monto_vencido) else 0
 
+                # MontoVencido es a nivel PRODUCTO: se suma. Lo consume la regla de
+                # PRESENTACION_MORA_TARDIA comparandolo contra monto_adeudado_ars.
+                if COL_MONTO_VENCIDO in grupo.columns:
+                    total_vencido = grupo[COL_MONTO_VENCIDO].sum(min_count=1)
+                    resultado[COL_MONTO_VENCIDO] = total_vencido if pd.notna(total_vencido) else 0
+
                 # Anticipo minimo es a nivel cliente, no se suma
                 if 'AnticipoMinimo' in grupo.columns:
                     anticipo = grupo['AnticipoMinimo'].dropna()
@@ -1615,6 +1767,10 @@ def procesar_base_completa():
                 resultado['monto_quita_ars'] = _formatear_decimal_fijo_2(monto_quita) if monto_quita is not None else ''
                 resultado['fecha_limite_quita'] = (FECHA_LIMITE_QUITA or '') if aplica == 'si' else ''
 
+                # Oferta de Cancelacion Anticipada: mismo criterio que la salida con
+                # filtros. Debe ir DESPUES de la quita porque puede pisar oferta_importe.
+                resultado = resolver_preventa(grupo, resultado)
+
                 return resultado
 
             # Agrupar por Cliente_BT y consolidar preservando orden de aparición
@@ -1652,7 +1808,6 @@ def procesar_base_completa():
                 'AgrupadorProducto',
                 'NumeroOperacion',
                 'ModuloCodigo',
-                'MontoVencido',
                 'SaldoCapital',
                 'InteresAdeudado',
                 'IVAInteresAdeudado',
@@ -1693,6 +1848,12 @@ def procesar_base_completa():
                 'aplica_quita',
                 'monto_quita_ars',
                 'fecha_limite_quita',
+                # Oferta de Cancelacion Anticipada (OFERTA_PREVENTA). Se agregan al
+                # final para no mover ninguna columna existente del contrato.
+                *COLUMNAS_SALIDA_PREVENTA,
+                # Regla de decision de PRESENTACION_MORA_TARDIA: si coincide con
+                # monto_adeudado_ars no hubo pago desde la ultima gestion.
+                'monto_vencido_ars',
             ]
 
             renombres_post = {
@@ -1719,14 +1880,15 @@ def procesar_base_completa():
             )
 
             # T2: aplica_quita vuelve a si/no tras la deteccion booleana del normalizador
-            if 'aplica_quita' in df_consolidado.columns:
-                df_consolidado['aplica_quita'] = (
-                    df_consolidado['aplica_quita']
-                    .astype(str)
-                    .str.strip()
-                    .str.lower()
-                    .replace({'true': 'si', 'false': 'no', '1': 'si', '0': 'no', '': 'no'})
-                )
+            for _col_flag in ('aplica_quita', 'oferta_preventa'):
+                if _col_flag in df_consolidado.columns:
+                    df_consolidado[_col_flag] = (
+                        df_consolidado[_col_flag]
+                        .astype(str)
+                        .str.strip()
+                        .str.lower()
+                        .replace({'true': 'si', 'false': 'no', '1': 'si', '0': 'no', '': 'no'})
+                    )
 
             if 'monto_entrega_ars' in df_consolidado.columns:
                 df_consolidado['monto_entrega_ars'] = df_consolidado['monto_entrega_ars'].apply(
