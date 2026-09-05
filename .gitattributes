@@ -1,0 +1,28 @@
+# Finales de linea.
+#
+# El repositorio se desarrolla en Windows y se despliega en Linux. Sin esto,
+# `git archive` exporta con CRLF y el deploy se rompe de formas poco obvias: un
+# `\` de continuacion de linea del Dockerfile seguido de CR deja el CR dentro del
+# argumento, y el build falla con un error que no menciona los fines de linea.
+
+# Todo lo que ejecuta o interpreta Linux va con LF, sin importar como se edite.
+*.sh            text eol=lf
+Dockerfile      text eol=lf
+*.Dockerfile    text eol=lf
+.dockerignore   text eol=lf
+*.conf          text eol=lf
+*.yaml          text eol=lf
+*.yml           text eol=lf
+*.toml          text eol=lf
+*.json          text eol=lf
+*.py            text eol=lf
+*.tpl           text eol=lf
+*.properties    text eol=lf
+Taskfile.yml    text eol=lf
+.env.example    text eol=lf
+
+# Los legacy vendorizados NO se normalizan. Son copias byte a byte de los
+# repositorios de los clientes y su diff contra el upstream tiene que quedar
+# limpio; ademas se comparan con `diff` durante cada sincronizacion.
+etls/*/legacy/**      -text
+etls/*/legacy_base/** -text
