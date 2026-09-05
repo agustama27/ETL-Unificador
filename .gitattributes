@@ -20,6 +20,10 @@ Dockerfile      text eol=lf
 *.properties    text eol=lf
 Taskfile.yml    text eol=lf
 .env.example    text eol=lf
+.gitignore      text eol=lf
+.gitattributes  text eol=lf
+*.md            text eol=lf
+NOTES.txt       text eol=lf
 
 # Los legacy vendorizados NO se normalizan. Son copias byte a byte de los
 # repositorios de los clientes y su diff contra el upstream tiene que quedar

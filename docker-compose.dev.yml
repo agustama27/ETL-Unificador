@@ -1,3 +1,6 @@
+# Desarrollo local: monta el codigo y levanta vite con hot reload.
+# El stack de despliegue es compose.yaml.
+#   docker compose -f docker-compose.dev.yml --profile dev up
 services:
   api:
     build:

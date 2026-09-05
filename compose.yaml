@@ -4,7 +4,7 @@
 # nginx le proxea /api. El puerto del host se define en .env (ETL_HOST_PORT), y se
 # elige tras inspeccionar la VM — nunca a ojo, porque la VM es compartida.
 #
-# Para desarrollo local usar docker-compose.yml, que monta el codigo y levanta vite.
+# Para desarrollo local usar docker-compose.dev.yml, que monta el codigo y levanta vite.
 
 name: etl-unificador
 
