@@ -1,11 +1,212 @@
-image: python:3.12
+image: atlassian/default-image:5
+
+options:
+  docker: true
+  size: 2x
+
+clone:
+  depth: full
+
+definitions:
+  caches:
+    pip: ~/.cache/pip
+    uv: ~/.cache/uv
+    sonar: ~/.sonar/cache
+
+  services:
+    docker:
+      memory: 4096
+
+  steps:
+    - step: &set_env
+        name: Set Env
+        clone:
+          enabled: false
+        script:
+          - |
+            if [ -z "$FULL_VERSION" ]; then
+              export BASE_VER="${APP_VERSION:-0.0.0-dev}"
+              if [[ "$BITBUCKET_BRANCH" == "develop" ]]; then
+                export FULL_VERSION="${BASE_VER}-dev.${BITBUCKET_BUILD_NUMBER}"
+              elif [[ "$BITBUCKET_BRANCH" == release/* ]]; then
+                export FULL_VERSION="${BASE_VER}-rc.${BITBUCKET_BUILD_NUMBER}"
+              elif [[ "$BITBUCKET_BRANCH" == "main" ]]; then
+                export FULL_VERSION="${BASE_VER}"
+              elif [ -n "$BITBUCKET_TAG" ]; then
+                export FULL_VERSION="${BITBUCKET_TAG#v}"
+              else
+                SAFE_BRANCH=$(echo "${BITBUCKET_BRANCH:-local}" | sed -e 's/[^a-zA-Z0-9]/-/g' -e 's/^-//' -e 's/-$//' | cut -c1-30)
+                export FULL_VERSION="${BASE_VER}-${SAFE_BRANCH}.${BITBUCKET_BUILD_NUMBER}"
+              fi
+            fi
+
+            DEPLOY_ENV_NAME=$(echo "${BITBUCKET_DEPLOYMENT_ENVIRONMENT:-}" | tr '[:upper:]' '[:lower:]')
+            case "$DEPLOY_ENV_NAME" in
+              production|prod) export DEPLOY_ENV="prod" ;;
+              testing|test)    export DEPLOY_ENV="testing" ;;
+              develop|development|dev) export DEPLOY_ENV="develop" ;;
+              *)
+                if [[ "${BITBUCKET_BRANCH:-}" == "develop" ]]; then
+                  export DEPLOY_ENV="develop"
+                elif [[ "${BITBUCKET_BRANCH:-}" == release/* ]]; then
+                  export DEPLOY_ENV="staging"
+                elif [[ "${BITBUCKET_BRANCH:-}" == "main" || -n "${BITBUCKET_TAG:-}" ]]; then
+                  export DEPLOY_ENV="prod"
+                else
+                  export DEPLOY_ENV="dev"
+                fi
+                ;;
+            esac
+
+            echo "set_env: BITBUCKET_BRANCH='${BITBUCKET_BRANCH:-}' -> FULL_VERSION='${FULL_VERSION}' DEPLOY_ENV='${DEPLOY_ENV}'"
+
+            export DOCKER_BUILDKIT=0
+
+            echo "export APP_VERSION=${APP_VERSION:-0.0.0-dev}" >> .env
+            echo "export FULL_VERSION=${FULL_VERSION}" >> .env
+            echo "export DEPLOY_ENV=${DEPLOY_ENV}" >> .env
+            echo "export AWS_REGION=${AWS_REGION}" >> .env
+            echo "export AWS_ROLE_ARN=${AWS_ROLE_ARN}" >> .env
+            echo "export AWS_ECR_REGISTRY=${AWS_ECR_REGISTRY}" >> .env
+            echo "export AUTO_DEPLOY=${AUTO_DEPLOY}" >> .env
+        artifacts:
+          - .env
+
+    # Python 3.12 y no 3.13: el uv.lock esta resuelto para 3.12 y las dependencias
+    # del camino de datos van pineadas a version exacta. Cambiar de minor sin
+    # revalidar la salida de los ETLs es exactamente lo que el pin evita.
+    - step: &validate_python
+        name: Validate Python
+        image: python:3.12
+        caches: [pip, uv]
+        script:
+          - source .env
+          - python -V
+          - pip install --upgrade pip && pip install uv==0.11.10
+          - curl -sSL "https://github.com/go-task/task/releases/download/v3.39.2/task_linux_amd64.tar.gz" -o task.tar.gz
+          - tar -xzf task.tar.gz -C /usr/local/bin task && chmod +x /usr/local/bin/task
+          - curl -sSL "https://get.helm.sh/helm-v3.16.4-linux-amd64.tar.gz" | tar xz -C /tmp
+          - mv /tmp/linux-amd64/helm /usr/local/bin/helm && chmod +x /usr/local/bin/helm
+          - task validate
+          - task lint
+          - task ci:verify
+
+    - step: &analyze_python
+        name: "Analyze Python (SonarQube)"
+        image: python:3.12
+        max-time: 20
+        caches: [pip, uv, sonar]
+        script:
+          - source .env
+          - pip install --upgrade pip && pip install uv==0.11.10
+          - curl -sSL "https://github.com/go-task/task/releases/download/v3.39.2/task_linux_amd64.tar.gz" -o task.tar.gz
+          - tar -xzf task.tar.gz -C /usr/local/bin task && chmod +x /usr/local/bin/task
+          - task coverage
+          # TODO(sonarqube): habilitar cuando el equipo provisione el proyecto
+          # - pipe: sonarsource/sonarqube-scan:4.0.0
+          #   variables:
+          #     SONAR_HOST_URL: ${SONAR_HOST_URL}
+          #     SONAR_TOKEN: ${SONAR_TOKEN}
+          #     EXTRA_ARGS: >-
+          #       -Dproject.settings=sonar-project.properties
+
+    - step: &helm_lint
+        name: Helm Lint
+        image: alpine/helm:3.16.2
+        script:
+          - apk add --no-cache curl tar
+          - curl -sSL "https://github.com/go-task/task/releases/download/v3.39.2/task_linux_amd64.tar.gz" -o task.tar.gz
+          - tar -xzf task.tar.gz -C /usr/local/bin task && chmod +x /usr/local/bin/task
+          - task helm:lint
+          - task helm:template
+
+    - step: &publish
+        name: "Publish Artifacts (ECR & Helm)"
+        oidc: true
+        services: [docker]
+        script:
+          - source .env
+          - docker buildx use default || true
+          - apt-get update && apt-get install -y unzip curl wget
+          - curl -sSL "https://github.com/go-task/task/releases/download/v3.39.2/task_linux_amd64.tar.gz" -o task.tar.gz
+          - tar -xzf task.tar.gz -C /usr/local/bin task && chmod +x /usr/local/bin/task
+          - curl -sSL "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o awscliv2.zip
+          - unzip -q awscliv2.zip && ./aws/install
+          - curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
+          - wget https://github.com/mikefarah/yq/releases/download/v4.40.5/yq_linux_amd64.tar.gz -O - | tar xz && mv yq_linux_amd64 /usr/local/bin/yq
+          - export AWS_WEB_IDENTITY_TOKEN_FILE=$(pwd)/web-identity-token
+          - echo $BITBUCKET_STEP_OIDC_TOKEN > $AWS_WEB_IDENTITY_TOKEN_FILE
+          - task publish
+              VERSION="${FULL_VERSION}"
+              AWS_ECR_REGISTRY="${AWS_ECR_REGISTRY}"
+              ENV="${DEPLOY_ENV}"
+
+    - step: &deploy
+        name: "Deploy (Update Ops Repo)"
+        script:
+          - source .env
+          - |
+            if [ "${AUTO_DEPLOY:-false}" != "true" ] && [ "${DEPLOY_ENV}" != "prod" ]; then
+              echo "AUTO_DEPLOY=false para este ambiente. Se omite deploy."
+              exit 0
+            fi
+          - curl -sSL "https://github.com/go-task/task/releases/download/v3.39.2/task_linux_amd64.tar.gz" -o task.tar.gz
+          - tar -xzf task.tar.gz -C /usr/local/bin task && chmod +x /usr/local/bin/task
+          - curl -sSL "https://github.com/mikefarah/yq/releases/download/v4.40.5/yq_linux_amd64" -o /usr/local/bin/yq
+          - chmod +x /usr/local/bin/yq
+          - task cd:update-ops VERSION="${FULL_VERSION}" ENV="${DEPLOY_ENV}"
 
 pipelines:
   default:
-    - step:
-        name: Tests (Linux, Python 3.12)
-        caches:
-          - pip
-        script:
-          - pip install -e ".[test,etl,api]"
-          - pytest
+    - step: *set_env
+    - parallel:
+        - step: *validate_python
+        - step: *helm_lint
+
+  branches:
+    "feature/*":
+      - step: *set_env
+      - parallel:
+          - step: *validate_python
+          - step: *helm_lint
+
+    "feat/*":
+      - step: *set_env
+      - parallel:
+          - step: *validate_python
+          - step: *helm_lint
+
+    develop:
+      - step: *set_env
+      - parallel:
+          - step: *validate_python
+          - step: *helm_lint
+      - stage:
+          name: Deploy To Develop
+          deployment: develop
+          steps:
+            - step: *set_env
+            - step: *publish
+            - step: *deploy
+
+    "release/*":
+      - step: *set_env
+      - parallel:
+          - step: *validate_python
+          - step: *helm_lint
+      - stage:
+          name: Prepare Release
+          deployment: production
+          trigger: manual
+          steps:
+            - step: *set_env
+            - step: *publish
+
+    main:
+      - step:
+          name: "Auto-tag Release"
+          script:
+            - git fetch origin --tags
+            - export RELEASE_TAG="v${APP_VERSION}"
+            - git tag -a "${RELEASE_TAG}" -m "Release ${APP_VERSION}"
+            - git push origin "${RELEASE_TAG}"

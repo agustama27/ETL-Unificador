@@ -67,3 +67,16 @@ Formato: `## [YYYY-MM-DD] <op> | <tema>`. Grepeable con `grep '^## \[' docs/log.
   se separen → [how-to/desplegar-en-kubernetes.md](how-to/desplegar-en-kubernetes.md)
 - El Taskfile gana las tareas de docker, helm y ECR, y `task check` ahora incluye
   `helm:lint` → [reference/comandos.md](reference/comandos.md)
+
+## [2026-09-05] update | pipeline de CI/CD (ADR-DEV-001)
+
+- `bitbucket-pipelines.yml` pasa de 11 líneas a la estructura corporativa: versionado por
+  rama (`develop` → `-dev.N`, `release/*` → `-rc.N`, `main` → base), publicación a ECR con
+  OIDC, push del chart al registro OCI y actualización del repo de ops por GitOps →
+  [reference/comandos.md](reference/comandos.md)
+- CI corre en Python 3.12 y no 3.13: el `uv.lock` está resuelto para 3.12 y las
+  dependencias del camino de datos van pineadas →
+  [explanation/paridad-upstream.md](explanation/paridad-upstream.md)
+- Entra `task ci:verify`, que falla ante cualquier skip inesperado. La paridad se saltea en
+  CI por diseño —los repos upstream no están en el runner— y ese skip legítimo volvía
+  invisibles a los demás → [reference/comandos.md](reference/comandos.md)

@@ -29,22 +29,32 @@ Sin Task, cada tarea se puede correr a mano con el `uv run ...` equivalente que 
 | `task sonar` | Análisis de SonarQube local. Requiere `sonar-scanner` en el PATH. |
 | `task run` | Levanta la API en `0.0.0.0:8000`. |
 | `task check` | `validate` + `lint` + `test` + `helm:lint`. Lo que tiene que estar verde antes de abrir un PR. |
+| `task ci:verify` | La suite como la corre CI: falla ante cualquier skip que no sea el esperado. |
+| `task cd:update-ops` | Estampa la versión del HelmRelease en el repo de ops (GitOps por Flux). |
 | `task helm:lint` / `helm:template` | Valida y renderiza el chart de `deploy/package`. |
 | `task docker:build` / `docker:push` | Imagen del servicio. El contexto de build es la raíz. |
 | `task publish` | Login en ECR + build + push de imagen y chart. Toma `VERSION` y `ENV`. |
 
 ## Estado esperado de la suite
 
-`412 passed, 1 xfailed`. **Cero skips.**
+`418 passed, 1 xfailed`. **Cero skips.**
 
 Un skip no es un pase. Los dos lugares donde un skip es fácil de confundir con verde:
 
 - `test/integration/uat_upstream/` se saltea entero si los repos upstream no están en el Escritorio.
-  Ver [../explanation/paridad-upstream.md](../explanation/paridad-upstream.md) para qué cubre
-  y qué no.
+  **En CI siempre se saltea**: los repositorios de los clientes viven en máquinas de
+  desarrollo, no en el runner. Por eso la paridad es una compuerta *local, previa al merge*,
+  no una de CI. Ver [../explanation/paridad-upstream.md](../explanation/paridad-upstream.md).
+- `test/integration/test_helm_chart.py` se saltea si no hay `helm` en el PATH. En CI lo hay:
+  el step `Validate Python` lo instala.
 - Los tests que usan `pytest.importorskip` se saltean si falta una dependencia opcional.
   Todas están declaradas en `pyproject.toml`; si alguna se saltea, el entorno está
   desincronizado del lock: corré `task sync`.
+
+`task ci:verify` convierte esa disciplina en una compuerta: corre la suite y **falla si
+aparece cualquier skip cuyo motivo no esté en su lista de esperados**. Los dos únicos
+aceptados son el repo upstream ausente y helm fuera del PATH, y ambos están escritos con su
+motivo en `scripts/ci_verify.py`.
 
 El `xfailed` es `test_la_salida_sin_filtros_activa_la_campania_preventa`, que documenta un
 hueco del upstream de Bancor. Es `strict`: si pasa a XPASS, el upstream lo arregló y hay que

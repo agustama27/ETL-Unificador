@@ -63,6 +63,51 @@ tasks:
     cmds:
       - uv run uvicorn platform_api.main:create_app --factory --host 0.0.0.0 --port 8000
 
+  ci:verify:
+    desc: La suite en CI, fallando ante cualquier skip que no sea el esperado.
+    deps: [sync]
+    cmds:
+      - uv run python scripts/ci_verify.py
+
+  cd:update-ops:
+    desc: Actualiza la version del HelmRelease en el repo de ops (GitOps via Flux).
+    vars:
+      OPS_REPO_NAME: '{{.OPS_REPO_NAME | default "automation-ops"}}'
+      OPS_ENV: '{{if eq .ENV "prod"}}prod{{else}}dev{{end}}'
+      TARGET_FILE: 'environments/{{.OPS_ENV}}/{{.CHART}}.yaml'
+    cmds:
+      - |
+        echo "Actualizando {{.OPS_REPO_NAME}} para el ambiente {{.OPS_ENV}}"
+
+        if [ -n "${GIT_OPS_TOKEN:-}" ]; then
+          REPO_URL="https://x-token-auth:${GIT_OPS_TOKEN}@bitbucket.org/evoltis/{{.OPS_REPO_NAME}}.git"
+        else
+          echo "AVISO: GIT_OPS_TOKEN vacio. Se usa SSH."
+          REPO_URL="git@bitbucket.org:evoltis/{{.OPS_REPO_NAME}}.git"
+        fi
+
+        rm -rf /tmp/{{.OPS_REPO_NAME}}
+        git clone --depth 1 "$REPO_URL" /tmp/{{.OPS_REPO_NAME}}
+        cd /tmp/{{.OPS_REPO_NAME}}
+
+        if [ ! -f "{{.TARGET_FILE}}" ]; then
+          echo "ERROR: no existe {{.TARGET_FILE}} en el repo de ops."
+          exit 1
+        fi
+
+        yq -i '.spec.chart.spec.version = "{{.VERSION}}"' {{.TARGET_FILE}}
+
+        if git diff --exit-code {{.TARGET_FILE}} > /dev/null; then
+          echo "Sin cambios de version ({{.VERSION}}). No se pushea."
+          exit 0
+        fi
+
+        git config user.name "Bitbucket Pipeline"
+        git config user.email "pipeline@evoltis.com"
+        git add {{.TARGET_FILE}}
+        git commit -m "deploy({{.OPS_ENV}}): actualizar {{.CHART}} a {{.VERSION}} [skip ci]"
+        git push "$REPO_URL" main
+
   helm:lint:
     desc: Valida la sintaxis del chart.
     cmds:
