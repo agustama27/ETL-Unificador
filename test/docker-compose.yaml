@@ -1,0 +1,25 @@
+# Entorno de pruebas de integracion (ADR-ARC-002 §test).
+# Levanta el servicio como se despliega, no como se desarrolla: con la imagen real,
+# fail-closed por token y la zona horaria de Argentina, que es la que determina los
+# nombres de archivo de salida de los ETLs.
+services:
+  api:
+    build:
+      context: ..
+      dockerfile: apps/etl-platform-api/Dockerfile
+    environment:
+      ETL_CONSOLE_TOKEN: ${ETL_CONSOLE_TOKEN:?definir un token: la API es fail-closed}
+      TZ: America/Argentina/Buenos_Aires
+    ports:
+      - "8000:8000"
+    volumes:
+      - api-var:/app/var
+    healthcheck:
+      test: ["CMD", "python", "-c",
+             "import urllib.request;urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+
+volumes:
+  api-var:

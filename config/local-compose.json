@@ -1,0 +1,10 @@
+{
+  "_comment": "Configuracion para docker compose. El frontend de desarrollo proxea a http://api:8000.",
+  "service": "etl-platform-api",
+  "env": {
+    "ETL_AUTH_DISABLED": "1",
+    "ETL_MAX_CONCURRENT_RUNS": "2",
+    "ETL_RETENTION_DAYS": "30",
+    "TZ": "America/Argentina/Buenos_Aires"
+  }
+}

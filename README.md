@@ -162,8 +162,8 @@ Para que un agente dé de alta un cliente nuevo: copiar `etls/_template/` y segu
 
 ```
 etl-suite-agentica/
-├── etl_core/                 Contrato de adapter: Protocol, excepciones, SubprocessAdapter
-├── orchestrator/             Núcleo: catálogo, servicio, runner, sandbox, estado, CLI
+├── apps/commons/etl_core/                 Contrato de adapter: Protocol, excepciones, SubprocessAdapter
+├── apps/commons/orchestrator/             Núcleo: catálogo, servicio, runner, sandbox, estado, CLI
 ├── etls/<cliente>/           Paquete autocontenido por cliente:
 │   ├── manifest.yaml         declaración del catálogo
 │   ├── adapter.py / *.py     adapters del cliente
@@ -171,8 +171,8 @@ etl-suite-agentica/
 │   ├── legacy/               proyecto ETL original, invocado sin modificar
 │   ├── tests/                e2e + unit del cliente
 │   └── README.md             entradas, salidas, deadline, reglas, contacto
-├── platform_api/             API REST (FastAPI) sobre el orquestador
-├── frontend/                 Consola web (React + Vite + TypeScript)
+├── apps/etl-platform-api/platform_api/             API REST (FastAPI) sobre el orquestador
+├── apps/etl-console/                 Consola web (React + Vite + TypeScript)
 ├── tests/                    unit del núcleo + API + soporte compartido
 ├── openspec/                 Especificaciones y propuestas de cambio
 └── docs/                     Arquitectura, ADRs y guías
@@ -186,16 +186,16 @@ ningún archivo del núcleo.
 
 | Archivo | Responsabilidad |
 |---|---|
-| `etl_core/contracts.py` | Único punto de acoplamiento núcleo ↔ clientes: Protocol `ETLAdapter`, excepciones con `code` y el `SubprocessAdapter` genérico que comparten 10 ETLs. |
-| `orchestrator/catalog.py` | Descubre y valida los manifiestos (`etls/*/manifest.yaml`); resuelve el adapter por import dinámico (`modulo:Clase`) y exige que satisfaga el Protocol. Rechaza rutas fuera del workspace, roles duplicados, formatos de fecha desconocidos y ETLs marcados ejecutables sin metadata completa. |
-| `orchestrator/models.py` | Contratos de datos: `ETLDefinition`, `RunRequest`, `RunResult`, `FileEvidence`, y los enums de estado. Todo inmutable (`frozen=True`). |
-| `orchestrator/service.py` | Orquesta la corrida completa y escribe `run.json` en cada transición. Es la máquina de estados. |
-| `orchestrator/runner.py` | Ejecuta el subprocess con `cwd` controlado, timeout, drenado de stdout/stderr en hilos y escalada terminate → kill. |
-| `orchestrator/run_store.py` | Crea el sandbox, escribe metadata de forma durable (tmp + `os.replace` + fsync) y gestiona el lock por `etl_id/YYYYMM`. |
-| `orchestrator/state_store.py` | Promoción durable del estado persistente: snapshot del día + estado corriente del mes, con marcador de recovery si la promoción queda a medias. |
-| `orchestrator/file_manager.py` | Copia inputs al sandbox validando extensión, e inventaría el directorio de salida antes y después. |
-| `orchestrator/logging_utils.py` | Persiste logs y aplica el `Redactor` sobre secretos y rutas absolutas. |
-| `orchestrator/run.py` | CLI genérica: `--etl`, `--fecha`, `--base`, `--input ROL=RUTA`, `--param NOMBRE[=VALOR]`. |
+| `apps/commons/etl_core/contracts.py` | Único punto de acoplamiento núcleo ↔ clientes: Protocol `ETLAdapter`, excepciones con `code` y el `SubprocessAdapter` genérico que comparten 10 ETLs. |
+| `apps/commons/orchestrator/catalog.py` | Descubre y valida los manifiestos (`etls/*/manifest.yaml`); resuelve el adapter por import dinámico (`modulo:Clase`) y exige que satisfaga el Protocol. Rechaza rutas fuera del workspace, roles duplicados, formatos de fecha desconocidos y ETLs marcados ejecutables sin metadata completa. |
+| `apps/commons/orchestrator/models.py` | Contratos de datos: `ETLDefinition`, `RunRequest`, `RunResult`, `FileEvidence`, y los enums de estado. Todo inmutable (`frozen=True`). |
+| `apps/commons/orchestrator/service.py` | Orquesta la corrida completa y escribe `run.json` en cada transición. Es la máquina de estados. |
+| `apps/commons/orchestrator/runner.py` | Ejecuta el subprocess con `cwd` controlado, timeout, drenado de stdout/stderr en hilos y escalada terminate → kill. |
+| `apps/commons/orchestrator/run_store.py` | Crea el sandbox, escribe metadata de forma durable (tmp + `os.replace` + fsync) y gestiona el lock por `etl_id/YYYYMM`. |
+| `apps/commons/orchestrator/state_store.py` | Promoción durable del estado persistente: snapshot del día + estado corriente del mes, con marcador de recovery si la promoción queda a medias. |
+| `apps/commons/orchestrator/file_manager.py` | Copia inputs al sandbox validando extensión, e inventaría el directorio de salida antes y después. |
+| `apps/commons/orchestrator/logging_utils.py` | Persiste logs y aplica el `Redactor` sobre secretos y rutas absolutas. |
+| `apps/commons/orchestrator/run.py` | CLI genérica: `--etl`, `--fecha`, `--base`, `--input ROL=RUTA`, `--param NOMBRE[=VALOR]`. |
 
 ---
 
@@ -219,7 +219,7 @@ y sus patrones de salida.
 | CartaSur | `etls/cartasur/` | Base diaria operativa (ROMAN + E1KIA) |
 
 Los ETLs con `executable: false` aparecen en el catálogo pero no se pueden disparar. El motivo
-legible está en `platform_api/catalog_meta.py` (`INERT_REASONS`). Casi todos esperan
+legible está en `apps/etl-platform-api/platform_api/catalog_meta.py` (`INERT_REASONS`). Casi todos esperan
 credenciales de la API de Retell.ai.
 
 ---

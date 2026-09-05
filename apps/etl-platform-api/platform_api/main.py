@@ -24,6 +24,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, Response
 from starlette.datastructures import UploadFile
 
+from orchestrator.workspace import workspace_root
 from orchestrator.catalog import Catalog, CatalogError, adapter_for
 from orchestrator.models import ETLDefinition, RunRequest
 from orchestrator.run_store import RunStore
@@ -129,7 +130,7 @@ def create_app(workspace: Path | None = None, *,
                token: str | None = None,
                notifier: Callable[[dict[str, Any]], None] | None = None,
                retention_days: int | None = None) -> FastAPI:
-    workspace = (workspace or Path(__file__).resolve().parents[1]).resolve()
+    workspace = (workspace or workspace_root()).resolve()
     registered = adapters
     build_service = service_factory or _default_service_factory
     run_job = executor or _default_executor
@@ -195,6 +196,37 @@ def create_app(workspace: Path | None = None, *,
             if (candidate / "run.json").exists():
                 return candidate
         raise HTTPException(404, "corrida no encontrada")
+
+    # Sondas de Kubernetes. Van fuera de /api a proposito: el middleware de
+    # autenticacion solo cubre ese prefijo, y un probe con token seria un secreto
+    # mas para rotar en el chart a cambio de nada.
+    @app.get("/health")
+    def health() -> dict[str, str]:
+        """Liveness: el proceso responde. Sin I/O — si falla, hay que reiniciar."""
+        return {"status": "ok"}
+
+    @app.get("/ready")
+    def ready() -> Response:
+        """Readiness: el servicio puede atender.
+
+        Verifica lo que lo vuelve inutil si falta: que el catalogo cargue —o sea
+        que `etls/` este montado y sus 25 manifiestos parseen— y que `var/` sea
+        escribible, porque ahi van la evidencia de corridas y el estado promovido.
+        Un pod sin el volumen montado arranca igual y recien falla en la primera
+        corrida; esto lo saca de rotacion antes.
+        """
+        try:
+            total = sum(1 for _ in catalog())
+            probe = runs_root.parent / ".ready"
+            probe.parent.mkdir(parents=True, exist_ok=True)
+            probe.write_text("", encoding="utf-8")
+            probe.unlink()
+        except (CatalogError, OSError) as error:
+            return Response(
+                json.dumps({"status": "unready", "detail": f"{type(error).__name__}: {error}"}),
+                status_code=503, media_type="application/json")
+        return Response(json.dumps({"status": "ready", "etls": total}),
+                        media_type="application/json")
 
     @app.get("/api/catalog")
     def get_catalog() -> list[dict[str, Any]]:

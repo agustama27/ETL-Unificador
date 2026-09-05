@@ -36,7 +36,10 @@ from etls.naranjax.tests.test_mt_voice_job import _write_input as mt_input
 from etls.petersen.tests.test_petersen_base_job import _write_inputs as petersen_base_inputs
 from etls.petersen.tests.test_gestiones_job import _write_input as petersen_input
 
-WORKSPACE = Path(__file__).resolve().parents[2]
+# Por marcador, no por conteo de niveles: este archivo ya se movio una vez.
+from orchestrator.workspace import workspace_root  # noqa: E402
+
+WORKSPACE = workspace_root()
 DESKTOP = Path.home() / "Desktop"
 
 UPSTREAM = {

@@ -28,6 +28,9 @@ ocupa** — el alcance, no un resumen. Estructura según
 
 - [decisions/ADR-001-nucleo-hexagonal.md](decisions/ADR-001-nucleo-hexagonal.md) — núcleo
   hexagonal con adapters descubribles, y las siete decisiones que lo acompañan
+- [decisions/ADR-002-alineacion-evoltis.md](decisions/ADR-002-alineacion-evoltis.md) —
+  adopción del scaffolding de Evoltis, dónde va cada cosa y por qué los ETLs siguen
+  corriendo como subprocesos dentro del pod
 - [decisions/tolerancia-hoja-asignacion.md](decisions/tolerancia-hoja-asignacion.md) — por qué
   se aceptó el único cambio a código legacy de toda la migración, y bajo qué autorización
 

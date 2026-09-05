@@ -1,6 +1,8 @@
 services:
   api:
-    build: .
+    build:
+      context: .
+      dockerfile: apps/etl-platform-api/Dockerfile
     ports:
       - "8000:8000"
     environment:
@@ -19,7 +21,7 @@ services:
     environment:
       VITE_API_PROXY_TARGET: http://api:8000
     volumes:
-      - ./frontend:/app
+      - ./apps/etl-console:/app
     command: sh -c "npm install && npm run dev -- --host 0.0.0.0"
     ports:
       - "5173:5173"

@@ -3,8 +3,8 @@ version: "3"
 vars:
   # Los legacy vendorizados quedan fuera de lint y cobertura: son cajas negras en
   # produccion (AGENTS.md, regla dura 1) y su diff contra el upstream debe quedar limpio.
-  FUENTES: etl_core orchestrator platform_api platform_mcp etls
-  COVERAGE_INCLUDE: etl_core/*.py,orchestrator/*.py,platform_api/*.py,platform_mcp/*.py
+  FUENTES: apps/commons apps/etl-platform-api tools/etl-platform-mcp etls
+  COVERAGE_INCLUDE: apps/commons/*/*.py,apps/etl-platform-api/*/*.py,tools/etl-platform-mcp/*/*.py
   SERVICE: etl-unificador
   VERSION: '{{default "local" .VERSION}}'
   ENV: '{{default "dev" .ENV}}'
@@ -19,7 +19,7 @@ tasks:
     desc: Compila las fuentes para detectar errores de sintaxis o import.
     deps: [sync]
     cmds:
-      - uv run python -m compileall -q etl_core orchestrator platform_api platform_mcp
+      - uv run python -m compileall -q apps/commons apps/etl-platform-api tools/etl-platform-mcp
 
   lint:
     desc: Corre ruff sobre las fuentes propias.
@@ -37,7 +37,7 @@ tasks:
     desc: Paridad byte a byte contra los repos upstream del Desktop. Un skip NO es un pase.
     deps: [sync]
     cmds:
-      - uv run python -m pytest tests/uat_upstream -v -rs
+      - uv run python -m pytest test/integration -v -rs
 
   coverage:
     desc: Suite con reporte de cobertura y XML para SonarQube.

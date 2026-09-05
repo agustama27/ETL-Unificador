@@ -19,8 +19,8 @@
 var/
 
 # Frontend: el servicio de dev monta ./frontend, no necesita estar en la imagen
-frontend/node_modules
-frontend/dist
+apps/etl-console/node_modules
+apps/etl-console/dist
 
 # Datos reales de clientes: jamás dentro de la imagen
 **/.env

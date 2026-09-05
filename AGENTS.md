@@ -19,6 +19,9 @@ Desvíos respecto del layout canónico, y por qué:
 |---|---|
 | `openspec/` fuera del catálogo | Almacén de artefactos SDD y archivo histórico. ARC-022 excluye datos de proceso. Sus referencias a rutas previas al reordenamiento quedan sin actualizar: reescribir un registro lo invalida. |
 | `etls/<cliente>/README.md` fuera del catálogo | Documentación por unidad desplegable, análoga a `apps/<servicio>/docs/` de ARC-002 §docs. Un cliente no aparece en el índice de otro. |
+| `etls/` como carpeta de primer nivel | No es `apps/` (no son procesos desplegables: los ejecuta el orquestador como subprocesos) ni `apps/commons/` (no es código compartido nuestro). ARC-002 admite carpetas especializadas que no dupliquen un rol ya definido. Ver `docs/decisions/ADR-002-alineacion-evoltis.md`. |
+| `tools/etl-platform-mcp/` | El servidor MCP es **stdio**: corre en la máquina del desarrollador, no en Kubernetes. `apps/` está reservado a procesos desplegables. |
+| `tests/` junto a `test/` | `tests/` es el árbol unitario que descubre pytest; `test/integration/` es el de ARC-002. Renombrar `tests/` rompería imports (`tests.support.*`) a cambio de nada. |
 | `explanation/DESPLIEGUE-CLOUD.md` mezcla cuadrantes | Tiene criterio (explanation) y procedimiento (how-to). Partirlo exige decidir qué procedimiento rige; ARC-022 §8 lo clasifica como "se propone, no se reescribe en silencio". |
 
 Ruteo de contenido nuevo: un flag, default o contrato vigente va a `reference/`; el motivo de

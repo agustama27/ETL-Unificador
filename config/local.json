@@ -1,0 +1,10 @@
+{
+  "_comment": "Configuracion para ejecucion local. El entorno SIEMPRE tiene prioridad sobre este archivo. No poner secretos de produccion aca (ADR-ARC-002).",
+  "service": "etl-platform-api",
+  "env": {
+    "ETL_AUTH_DISABLED": "1",
+    "ETL_MAX_CONCURRENT_RUNS": "2",
+    "ETL_RETENTION_DAYS": "30",
+    "TZ": "America/Argentina/Buenos_Aires"
+  }
+}

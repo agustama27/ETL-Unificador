@@ -13,7 +13,7 @@ Flujo completo: `docs/how-to/GUIA_NUEVO_CLIENTE.md`. Resumen:
    propias, completá `adapter.py`. Si acepta `--input`/`--output_dir`, borrá ambos y usá
    `adapter: etl_core.contracts:SubprocessAdapter`.
 5. Escribí los tests en `tests/` copiando `etls/petersen/tests/` como referencia.
-6. Registrá el nombre legible en `platform_api/catalog_meta.py::CLIENTS`.
+6. Registrá el nombre legible en `apps/etl-platform-api/platform_api/catalog_meta.py::CLIENTS`.
 7. `pytest` completo en verde y checklist del Paso 4 de la guía.
 
 Las carpetas que empiezan con `_` no se cargan en el catálogo ni se ejecutan: esta

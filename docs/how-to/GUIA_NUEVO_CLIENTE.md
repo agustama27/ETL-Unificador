@@ -86,14 +86,14 @@ ejecutable. Los campos y sus reglas de validación están en `docs/reference/ARQ
 ### Convenciones del manifiesto
 
 - **`id`:** `<cliente>.<canal o proceso>.<variante>`, minúsculas, separado por puntos. El
-  prefijo agrupa por cliente en la UI (`platform_api/catalog_meta.py::CLIENTS`).
+  prefijo agrupa por cliente en la UI (`apps/etl-platform-api/platform_api/catalog_meta.py::CLIENTS`).
 - **`glob`:** relativo a `output/`, sin `..` ni rutas absolutas. Puede incluir subcarpeta.
 - **`date_format`:** sólo `YYYYMMDD`, `YYMMDD` o `DDMMYYYY`; verificá cada salida por
   separado.
 - **`command`:** relativo al `working_dir` (que suele ser `etls/<cliente>/legacy`); un
   `job.py` en la raíz del paquete se invoca como `[python, ../job.py]`.
 - **ETLs todavía no implementados:** `executable: false` + motivo legible en
-  `INERT_REASONS` (`platform_api/catalog_meta.py`) — único archivo compartido que se toca,
+  `INERT_REASONS` (`apps/etl-platform-api/platform_api/catalog_meta.py`) — único archivo compartido que se toca,
   junto con `CLIENTS` para el nombre legible.
 
 ---

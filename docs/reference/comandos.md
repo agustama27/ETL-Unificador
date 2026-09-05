@@ -30,11 +30,11 @@ Sin Task, cada tarea se puede correr a mano con el `uv run ...` equivalente que 
 
 ## Estado esperado de la suite
 
-`379 passed, 1 xfailed`. **Cero skips.**
+`401 passed, 1 xfailed`. **Cero skips.**
 
 Un skip no es un pase. Los dos lugares donde un skip es fácil de confundir con verde:
 
-- `tests/uat_upstream/` se saltea entero si los repos upstream no están en el Escritorio.
+- `test/integration/uat_upstream/` se saltea entero si los repos upstream no están en el Escritorio.
   Ver [../explanation/paridad-upstream.md](../explanation/paridad-upstream.md) para qué cubre
   y qué no.
 - Los tests que usan `pytest.importorskip` se saltean si falta una dependencia opcional.

@@ -62,7 +62,7 @@ target-version = "py312"
 line-length = 100
 # Los legacy vendorizados son cajas negras en produccion (AGENTS.md, regla dura 1):
 # no se lintean ni se formatean, para que el diff contra el upstream quede limpio.
-extend-exclude = ["**/legacy/**", "**/legacy_base/**", "var", "frontend"]
+extend-exclude = ["**/legacy/**", "**/legacy_base/**", "var", "apps/etl-console"]
 
 [tool.ruff.lint]
 # Ruleset por defecto de ruff, igual que los repos de referencia de Evoltis.
@@ -72,11 +72,21 @@ extend-exclude = ["**/legacy/**", "**/legacy_base/**", "var", "frontend"]
 # huso se resuelve fijando TZ en el contenedor, no reescribiendo los wrappers.
 select = ["E4", "E7", "E9", "F"]
 
+# Los paquetes viven bajo apps/ y tools/ (ADR-ARC-002) pero conservan su nombre de
+# import de primer nivel. No es cosmetico: los manifest.yaml de los 25 ETLs declaran
+# el adapter como string (`etl_core.contracts:SubprocessAdapter`) y se resuelve en
+# runtime, asi que renombrar el paquete obligaria a reescribir contrato de cliente.
+# Los directorios se declaran como raices de codigo, igual que hace el scaffolding de
+# referencia de Evoltis con apps/commons.
+[tool.setuptools]
+package-dir = {"" = "."}
+
 [tool.setuptools.packages.find]
+where = ["apps/commons", "apps/etl-platform-api", "tools/etl-platform-mcp", "."]
 include = ["etl_core*", "orchestrator*", "platform_api*", "platform_mcp*", "etls*"]
 exclude = ["etls._template*", "etls.*.legacy*", "etls.*.tests*", "etls.*.fixtures*"]
 
 [tool.pytest.ini_options]
-testpaths = ["tests", "etls"]
-pythonpath = ["."]
+testpaths = ["tests", "test/integration", "etls"]
+pythonpath = [".", "apps/commons", "apps/etl-platform-api", "tools/etl-platform-mcp"]
 norecursedirs = ["*.egg", ".*", "build", "dist", "node_modules", "venv", "legacy", "legacy_base"]

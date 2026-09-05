@@ -14,6 +14,7 @@ from .run_store import RunStore
 from .runner import Runner
 from .service import RunService
 from .state_store import StateStore
+from .workspace import workspace_root
 
 
 class Service(Protocol):
@@ -70,7 +71,7 @@ def _service(definition: ETLDefinition, workspace: Path, adapter: ETLAdapter) ->
 def main(argv: Sequence[str] | None = None, *, adapters: Mapping[str, ETLAdapter] | None = None,
          service_factory: ServiceFactory | None = None) -> int:
     arguments = _parser().parse_args(argv)
-    workspace = Path(__file__).resolve().parents[1]
+    workspace = workspace_root()
     definition = Catalog.load_workspace(workspace, adapters=adapters)[arguments.etl]
     if not definition.executable or definition.adapter is None:
         raise CatalogError(f"ETL is not executable: {definition.id}")

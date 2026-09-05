@@ -1,0 +1,9 @@
+{
+  "_comment": "Ambiente dev remoto no productivo. ETL_CONSOLE_TOKEN NO se define aca: viene del entorno del cluster, y sin el la API es fail-closed a proposito.",
+  "service": "etl-platform-api",
+  "env": {
+    "ETL_MAX_CONCURRENT_RUNS": "2",
+    "ETL_RETENTION_DAYS": "30",
+    "TZ": "America/Argentina/Buenos_Aires"
+  }
+}

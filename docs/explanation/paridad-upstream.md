@@ -1,6 +1,6 @@
 # Qué cubre la paridad byte a byte, y qué no
 
-`tests/uat_upstream/test_upstream_parity.py` es el criterio de aceptación de cada ETL
+`test/integration/uat_upstream/test_upstream_parity.py` es el criterio de aceptación de cada ETL
 vendorizado: corre el mismo `job.py` contra el legacy del repositorio y contra el repo
 upstream del Escritorio, y compara los artefactos **byte a byte**.
 

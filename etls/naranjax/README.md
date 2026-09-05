@@ -17,7 +17,7 @@ El cliente más grande: siete ETLs sobre tres proyectos legacy.
 ## Particularidades
 
 - **Estado mensual**: los daily MA leen/escriben `estado_YYYYMM.csv`; la promoción durable
-  y el bloqueo por recovery viven en el núcleo (`orchestrator/state_store.py`).
+  y el bloqueo por recovery viven en el núcleo (`apps/commons/orchestrator/state_store.py`).
 - **PLANES/PAGOS**: entradas opcionales de los daily MA; el hook `input_destination` de
   `MaChatAdapter` las ancla en `input/diarios/`. `no_planes_today` es el único parámetro.
 - `--chat` viaja como `fixed_arguments` del manifiesto, no está hardcodeado en el adapter.

@@ -31,7 +31,7 @@ del proyecto legacy del cliente. El núcleo sólo sabe de archivos, comandos, es
 │  Núcleo orquestador                                          │
 │  Catálogo · Servicio · Runner · Sandbox · Estado · Locks     │
 │  No conoce ningún cliente. Sólo archivos, procesos, estados. │
-│  Importa el contrato desde etl_core/contracts.py.            │
+│  Importa el contrato desde apps/commons/etl_core/contracts.py.            │
 └──────────────────────────┬───────────────────────────────────┘
                            │  Protocol ETLAdapter (etl_core)
 ┌──────────────────────────▼───────────────────────────────────┐
@@ -51,10 +51,10 @@ ETLs existen, qué comando ejecutan, qué entradas piden y qué salidas prometen
 validando que la clase satisfaga el Protocol antes de aceptar el ETL como ejecutable.
 Agregar un cliente = agregar una carpeta; ningún archivo del núcleo se toca.
 
-Sobre el núcleo, `platform_api/` agrega la capa operativa: índice SQLite de corridas
+Sobre el núcleo, `apps/etl-platform-api/platform_api/` agrega la capa operativa: índice SQLite de corridas
 (`var/index.sqlite` — `run.json` sigue siendo la fuente de verdad), recuperación de
 corridas huérfanas al arrancar (código `orphaned`), retención de evidencia con PII,
-autenticación por token fail-closed y notificaciones por webhook. `platform_mcp/` expone
+autenticación por token fail-closed y notificaciones por webhook. `tools/etl-platform-mcp/platform_mcp/` expone
 las mismas operaciones como servidor MCP stdio para agentes (`list_etls`, `describe_etl`,
 `run_etl`, `get_run`, `download_artifact`).
 
@@ -62,7 +62,7 @@ las mismas operaciones como servidor MCP stdio para agentes (`list_etls`, `descr
 
 ## 3. Flujo completo de una corrida
 
-Implementado en `orchestrator/service.py::RunService.execute()`. Cada paso escribe en `run.json`
+Implementado en `apps/commons/orchestrator/service.py::RunService.execute()`. Cada paso escribe en `run.json`
 antes de avanzar, así una corrida interrumpida deja rastro de dónde quedó.
 
 ```
@@ -117,7 +117,7 @@ Se guardan en `run.json` bajo `error.code` y, si el estado es `blocked`, tambié
 
 ## 4. El catálogo declarativo
 
-Un `manifest.yaml` por cliente en `etls/<cliente>/`. `orchestrator/catalog.py`
+Un `manifest.yaml` por cliente en `etls/<cliente>/`. `apps/commons/orchestrator/catalog.py`
 (`Catalog.load_workspace`) los descubre todos, los valida estrictamente y falla al
 arrancar si algo no cierra. Las carpetas que empiezan con `_` (como `etls/_template/`)
 se ignoran.
@@ -153,7 +153,7 @@ se ignoran.
 - Todas las rutas son relativas y deben quedar dentro del workspace. `..` y rutas absolutas se rechazan.
 - Roles de entrada y roles de salida no se pueden repetir dentro de un ETL.
 - Las extensiones se declaran con punto: `.csv`, no `csv`.
-- El rol de salida debe existir en el enum `ArtifactRole` de `orchestrator/models.py`.
+- El rol de salida debe existir en el enum `ArtifactRole` de `apps/commons/orchestrator/models.py`.
 - Un ETL con `executable: true` **exige** `readiness: ready`, un `adapter` registrado, `entrypoint`,
   `command`, `inputs`, `outputs`, `allowed_exits` y `timeout_seconds`. Si falta algo, no arranca.
 
@@ -161,7 +161,7 @@ se ignoran.
 
 ## 5. El contrato de adapter
 
-El contrato es el `Protocol` `ETLAdapter` de `etl_core/contracts.py` (runtime-checkable:
+El contrato es el `Protocol` `ETLAdapter` de `apps/commons/etl_core/contracts.py` (runtime-checkable:
 el catálogo valida con `isinstance` al resolver la referencia del manifiesto). Ahí también
 viven las excepciones compartidas (`ValidationError`, `PostconditionError`) y el
 `SubprocessAdapter` genérico.

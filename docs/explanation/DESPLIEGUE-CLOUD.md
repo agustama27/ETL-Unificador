@@ -111,7 +111,7 @@ var/runs/<etl_id>/<timestamp>_<uuid>/
 
 `var/` es **el único estado del sistema**. No hay base de datos relacional: el índice SQLite
 (`var/index.sqlite`) es una vista derivada y reconstruible desde los `run.json`
-(`platform_api/hardening.py:88` `refresh_full`).
+(`apps/etl-platform-api/platform_api/hardening.py:88` `refresh_full`).
 
 ### 3.3 Ciclo de vida
 
@@ -136,7 +136,7 @@ sólo crece el contenido de la imagen.
 | Componente | Tecnología | Cómo se despliega | Notas |
 |---|---|---|---|
 | **API + orquestador** | Python 3.12, FastAPI, Uvicorn | Contenedor Linux (`Dockerfile` en la raíz) | Único proceso servidor. Ejecuta los ETLs como subprocesos hijos. |
-| **Consola web** | React 18 + Vite 6 + TypeScript | Build estático (`npm run build` → `frontend/dist/`) | **La API no la sirve.** Ver §7.2. |
+| **Consola web** | React 18 + Vite 6 + TypeScript | Build estático (`npm run build` → `apps/etl-console/dist/`) | **La API no la sirve.** Ver §7.2. |
 | **ETLs legacy** | Python puro + pandas/openpyxl | Van *dentro* de la imagen de la API | Se invocan por `subprocess`, no por import. |
 | **Servidor MCP** | Python, transporte stdio | No se despliega en la nube | Corre en la máquina del agente y le pega a la API por HTTP. |
 
@@ -164,16 +164,16 @@ Esta es la sección que decide la topología. Todo acá es comportamiento **deli
 
 | # | Restricción | Evidencia | Consecuencia para el deploy |
 |---|---|---|---|
-| **5.1** | **El trabajo ocurre en background threads, después de responder** | `POST /api/runs` devuelve `202` y encola en un `ThreadPoolExecutor` de módulo (`platform_api/main.py:66`, `main.py:311`) | La instancia necesita **CPU asignada permanentemente**, no sólo durante el request. Descarta serverless por request. |
-| **5.2** | **El arranque marca como `failed` toda corrida viva** | `recover_orphans` (`platform_api/hardening.py:135`), invocado en `create_app` (`main.py:156`) | Con **dos réplicas sobre el mismo volumen, cada una mata las corridas en vuelo de la otra**. Es el argumento más fuerte para instancia única. También implica: rolling deploy = corridas abortadas. |
-| **5.3** | **Lock por período basado en `mkdir` atómico + `os.replace` de directorios + `fsync` de directorios** | `orchestrator/run_store.py:93` (`acquire_lock`), `run_store.py:118` (`release_lock`), `run_store.py:14` (`_fsync_directory`) | Exige un filesystem con **semántica POSIX real**. Un disco de bloques la garantiza. NFS es aceptable con reservas; SMB y los montajes tipo FUSE sobre object storage **no**. |
-| **5.4** | **Índice SQLite local** | `platform_api/hardening.py:57` | Escritor único. Sobre red compartida el locking de SQLite es frágil. Refuerza instancia única + disco local. |
-| **5.5** | **Concurrencia acotada a 2 corridas simultáneas** | `ETL_MAX_CONCURRENT_RUNS`, default `2` (`platform_api/main.py:67`) | El dimensionado de CPU/RAM se calcula sobre este número, no sobre requests/segundo. |
-| **5.6** | **Timeout de 900s por corrida** | `timeout_seconds: 900` en los 15 manifiestos; `orchestrator/runner.py:48` | Los timeouts de load balancer / ingress **no aplican** (el request ya respondió), pero el health check debe tolerar una instancia ocupada 15 minutos. |
-| **5.7** | **`business_date` debe ser el día de hoy — regla de negocio, no deuda** | `platform_api/main.py:251` usa `date.today()`; ADR-001 decisión 7 | `date.today()` es **hora local del contenedor**. Ver §7.1: es el bug de despliegue más probable. |
+| **5.1** | **El trabajo ocurre en background threads, después de responder** | `POST /api/runs` devuelve `202` y encola en un `ThreadPoolExecutor` de módulo (`apps/etl-platform-api/platform_api/main.py:66`, `main.py:311`) | La instancia necesita **CPU asignada permanentemente**, no sólo durante el request. Descarta serverless por request. |
+| **5.2** | **El arranque marca como `failed` toda corrida viva** | `recover_orphans` (`apps/etl-platform-api/platform_api/hardening.py:135`), invocado en `create_app` (`main.py:156`) | Con **dos réplicas sobre el mismo volumen, cada una mata las corridas en vuelo de la otra**. Es el argumento más fuerte para instancia única. También implica: rolling deploy = corridas abortadas. |
+| **5.3** | **Lock por período basado en `mkdir` atómico + `os.replace` de directorios + `fsync` de directorios** | `apps/commons/orchestrator/run_store.py:93` (`acquire_lock`), `run_store.py:118` (`release_lock`), `run_store.py:14` (`_fsync_directory`) | Exige un filesystem con **semántica POSIX real**. Un disco de bloques la garantiza. NFS es aceptable con reservas; SMB y los montajes tipo FUSE sobre object storage **no**. |
+| **5.4** | **Índice SQLite local** | `apps/etl-platform-api/platform_api/hardening.py:57` | Escritor único. Sobre red compartida el locking de SQLite es frágil. Refuerza instancia única + disco local. |
+| **5.5** | **Concurrencia acotada a 2 corridas simultáneas** | `ETL_MAX_CONCURRENT_RUNS`, default `2` (`apps/etl-platform-api/platform_api/main.py:67`) | El dimensionado de CPU/RAM se calcula sobre este número, no sobre requests/segundo. |
+| **5.6** | **Timeout de 900s por corrida** | `timeout_seconds: 900` en los 15 manifiestos; `apps/commons/orchestrator/runner.py:48` | Los timeouts de load balancer / ingress **no aplican** (el request ya respondió), pero el health check debe tolerar una instancia ocupada 15 minutos. |
+| **5.7** | **`business_date` debe ser el día de hoy — regla de negocio, no deuda** | `apps/etl-platform-api/platform_api/main.py:251` usa `date.today()`; ADR-001 decisión 7 | `date.today()` es **hora local del contenedor**. Ver §7.1: es el bug de despliegue más probable. |
 | **5.8** | **Los outputs llevan la fecha del sistema estampada** | `output_date_source: system_date` en los manifiestos | Mismo problema de zona horaria que 5.7, pero peor: contamina los nombres de archivo entregados al cliente. |
-| **5.9** | **Los inputs se persisten a disco antes de correr** | `platform_api/main.py:286` (`var/uploads/<uuid>`) | El ingress debe permitir multipart de varios MB. Verificar límites del proxy elegido. |
-| **5.10** | **Búsqueda de corrida por escaneo de directorios** | `find_run` (`platform_api/main.py:191`) itera `var/runs/*` | Costo O(n) por request de detalle. Con retención de 30 días es irrelevante; si suben la retención, medir. |
+| **5.9** | **Los inputs se persisten a disco antes de correr** | `apps/etl-platform-api/platform_api/main.py:286` (`var/uploads/<uuid>`) | El ingress debe permitir multipart de varios MB. Verificar límites del proxy elegido. |
+| **5.10** | **Búsqueda de corrida por escaneo de directorios** | `find_run` (`apps/etl-platform-api/platform_api/main.py:191`) itera `var/runs/*` | Costo O(n) por request de detalle. Con retención de 30 días es irrelevante; si suben la retención, medir. |
 
 ---
 
@@ -215,7 +215,7 @@ borra irreversiblemente lo vencido.
 Internet / VPN
       │
       ▼
-Reverse proxy / Ingress  ──── /        → SPA estática (frontend/dist)
+Reverse proxy / Ingress  ──── /        → SPA estática (apps/etl-console/dist)
                           └── /api/*   → contenedor API :8000
 ```
 
@@ -238,7 +238,7 @@ Ordenados por riesgo. Los tres primeros son de código; los demás son de config
 ### 7.1 🔴 Zona horaria del contenedor — **el más probable de morder**
 
 `python:3.12-slim` corre en **UTC**. La API valida `business_date == date.today()` en hora local
-(`platform_api/main.py:251`) y los ETLs legacy estampan la fecha del sistema en los nombres de salida.
+(`apps/etl-platform-api/platform_api/main.py:251`) y los ETLs legacy estampan la fecha del sistema en los nombres de salida.
 
 Entre las **21:00 y las 24:00 de Argentina**, un contenedor en UTC ya está en el día siguiente.
 Una corrida lanzada a esa hora se rechaza con `422` o —peor— genera archivos con la fecha equivocada
@@ -250,9 +250,9 @@ Definir explícitamente qué pasa con Claro Uruguay (misma UTC-3 hoy, pero es un
 
 ### 7.2 🟠 CORS fijo a localhost
 
-`platform_api/main.py:182` permite sólo `http://localhost:5173` y `http://127.0.0.1:5173`.
+`apps/etl-platform-api/platform_api/main.py:182` permite sólo `http://localhost:5173` y `http://127.0.0.1:5173`.
 
-La SPA llama rutas **relativas** (`/api/...`, `frontend/src/api.ts`), así que **si la sirven bajo el mismo origen
+La SPA llama rutas **relativas** (`/api/...`, `apps/etl-console/src/api.ts`), así que **si la sirven bajo el mismo origen
 que la API, CORS no se dispara y esto no bloquea**. Sólo es bloqueante si eligen dominios separados
 (ej. SPA en un CDN y API en otro host).
 
@@ -262,7 +262,7 @@ que la API, CORS no se dispara y esto no bloquea**. Sólo es bloqueante si elige
 ### 7.3 🟠 No hay endpoint de health
 
 No existe `/health` ni `/ready`. El middleware de auth sólo protege rutas bajo `/api`
-(`platform_api/main.py:166`), así que `/docs` y `/openapi.json` **quedan públicos** y podrían usarse como
+(`apps/etl-platform-api/platform_api/main.py:166`), así que `/docs` y `/openapi.json` **quedan públicos** y podrían usarse como
 sonda — pero eso expone la superficie de la API a cualquiera que llegue al host.
 
 **Arreglo:** agregar `GET /health` sin auth (que no toque disco, para que no falle durante una corrida pesada)
@@ -339,7 +339,7 @@ PostgreSQL en lugar del índice SQLite + locking distribuido en vez de `mkdir`.
 ### 9.1 Datos personales — leer antes de elegir región
 
 `var/` contiene **PII real de deudores**: DNI, teléfonos, montos, domicilios, según el cliente.
-El `Redactor` (`orchestrator/logging_utils.py`) enmascara secretos de entorno y rutas absolutas del host,
+El `Redactor` (`apps/commons/orchestrator/logging_utils.py`) enmascara secretos de entorno y rutas absolutas del host,
 pero **no enmascara datos de negocio**. Los artefactos y los logs de corrida son material sensible.
 
 Implicancias:
@@ -371,10 +371,10 @@ lo segundo es un cambio acotado en `platform_api`.
 ### 9.3 Superficie de ataque
 
 - **Ejecución de subprocesos:** `shell=False` y comando construido desde el manifiesto declarativo
-  (`orchestrator/runner.py:66`), no desde input del usuario. Sin inyección de shell.
-- **Uploads:** se valida la extensión declarada en el manifiesto (`platform_api/main.py:279`), **no el contenido**.
+  (`apps/commons/orchestrator/runner.py:66`), no desde input del usuario. Sin inyección de shell.
+- **Uploads:** se valida la extensión declarada en el manifiesto (`apps/etl-platform-api/platform_api/main.py:279`), **no el contenido**.
   No hay antivirus ni verificación de tipo real. Evaluarlo si la consola se expone más allá de la VPN.
-- **Rutas:** el catálogo rechaza rutas fuera del workspace (`orchestrator/catalog.py`).
+- **Rutas:** el catálogo rechaza rutas fuera del workspace (`apps/commons/orchestrator/catalog.py`).
 - **`/docs` y `/openapi.json`** quedan fuera del middleware de auth (§7.3).
 
 ---
@@ -384,7 +384,7 @@ lo segundo es un cambio acotado en `platform_api`.
 ### 10.1 Lo que hay
 
 - **`run.json` por corrida:** evidencia completa e inmutable. Excelente para forensia post-mortem.
-- **Recuperación de huérfanas al arranque**, reportada en `GET /api/schedule` (`platform_api/main.py:350`).
+- **Recuperación de huérfanas al arranque**, reportada en `GET /api/schedule` (`apps/etl-platform-api/platform_api/main.py:350`).
 - **Webhook de notificación** configurable (`ETL_NOTIFY_WEBHOOK`, compatible Slack/Teams/n8n), con
   registro durable de respaldo en `var/notifications.jsonl` aunque la entrega falle.
 - **Códigos de salida de CLI diferenciados:** `0` ok, `1` falló, `2` bloqueada. Útiles si más adelante

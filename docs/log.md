@@ -34,3 +34,22 @@ Formato: `## [YYYY-MM-DD] <op> | <tema>`. Grepeable con `grep '^## \[' docs/log.
   [explanation/paridad-upstream.md](explanation/paridad-upstream.md)
 - Entran `Taskfile.yml`, `ruff`, `.coveragerc` y `sonar-project.properties`. El ruleset de
   ruff es el default; `DTZ` queda afuera a propósito → [reference/comandos.md](reference/comandos.md)
+
+## [2026-09-05] update | scaffolding de monorepo (ADR-ARC-002)
+
+- Los paquetes bajan a `apps/commons/` (etl_core, orchestrator), `apps/etl-platform-api/`
+  y `tools/etl-platform-mcp/`. El frontend pasa a `apps/etl-console/`. Los nombres de
+  import de primer nivel se conservan: los 25 `manifest.yaml` resuelven el adapter por
+  string en runtime → [reference/ARQUITECTURA.md](reference/ARQUITECTURA.md)
+- La raíz del workspace pasa a resolverse por marcador y no contando niveles con
+  `parents[n]`. El conteo se rompió con la mudanza y se llevó 103 tests de una vez →
+  [reference/ARQUITECTURA.md](reference/ARQUITECTURA.md)
+- La API gana `/health` y `/ready`, fuera del prefijo `/api` para que no pasen por el
+  token. Antes no había ninguna: un probe de Kubernetes habría recibido 401 →
+  [reference/ARQUITECTURA.md](reference/ARQUITECTURA.md)
+- Entran `config/{local,local-compose,dev}.json` con un loader que siembra defaults sin
+  pisar el entorno, y `test/{integration,assets}` + `test/docker-compose.yaml`. La suite
+  de paridad pasa a `test/integration/` → [reference/comandos.md](reference/comandos.md)
+- El `Dockerfile` pasa a `apps/etl-platform-api/` y fija `TZ=America/Argentina/Buenos_Aires`.
+  No es cosmético: los wrappers nombran su salida con la fecha local →
+  [decisions/ADR-002-alineacion-evoltis.md](decisions/ADR-002-alineacion-evoltis.md)
