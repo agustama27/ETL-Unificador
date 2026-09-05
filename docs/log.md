@@ -92,3 +92,16 @@ Formato: `## [YYYY-MM-DD] <op> | <tema>`. Grepeable con `grep '^## \[' docs/log.
   [how-to/desplegar-en-vm-stage.md](how-to/desplegar-en-vm-stage.md)
 - `.gitignore` tenía `.env.*`, que también excluía `.env.example`. Se agregó la negación:
   la plantilla lleva nombres de variables, nunca valores → [index.md](index.md)
+
+## [2026-09-05] deploy | primer despliegue en SRV-APP-STAGE
+
+- Stack `etl-unificador` levantado en `/opt/stacks/etl-unificador`, frontend en el puerto
+  **8082** (elegido tras inspeccionar: 8000, 8081, 8088 y 9443 estaban ocupados por
+  `cupones-bancor`, `cora`, `axis` y `portainer`) →
+  [how-to/desplegar-en-vm-stage.md](how-to/desplegar-en-vm-stage.md)
+- `ai-agent` no está en el grupo `docker`: todos los comandos van con `sudo docker`. No se
+  corrigió con `usermod` porque es un cambio permanente a una VM compartida →
+  [how-to/desplegar-en-vm-stage.md](how-to/desplegar-en-vm-stage.md)
+- Verificado en la VM: frontend 200, `/ready` con 25 ETLs, 401 sin token y 200 con token,
+  `date` en `-03`, `var/` escribible sobre el volumen. Los ocho contenedores de los otros
+  equipos conservan su uptime → [how-to/desplegar-en-vm-stage.md](how-to/desplegar-en-vm-stage.md)

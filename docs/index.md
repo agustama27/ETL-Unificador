@@ -10,6 +10,9 @@ ocupa** — el alcance, no un resumen. Estructura según
   qué carpeta crear bajo `etls/`, qué campos lleva el manifiesto y cómo verificar el alta
 - [how-to/desplegar-en-kubernetes.md](how-to/desplegar-en-kubernetes.md) — publicar imagen y
   chart, hacer el rollout y verificarlo; qué hacer si `/ready` devuelve 503
+- [how-to/desplegar-en-vm-stage.md](how-to/desplegar-en-vm-stage.md) — deploy con Docker
+  Compose en `SRV-APP-STAGE`: elección de puerto en VM compartida, `.env` en el servidor y
+  verificación post-deploy
 
 ## Reference
 
