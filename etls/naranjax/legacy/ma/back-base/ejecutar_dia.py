@@ -19,7 +19,7 @@ from core.procesar_dia import procesar_dia
 
 LOGGER = logging.getLogger("ejecutar_dia")
 SCRIPT_DIR = Path(__file__).resolve().parent
-DEFAULT_INPUT_PATH = SCRIPT_DIR / "archivo-recibido" / "NARANJAX_MA_BaseMensual.xlsx"
+DEFAULT_INPUT_PATH = SCRIPT_DIR / "archivo-recibido" / "Formato completo de archivo de entrada.xlsx"
 DEFAULT_DIARIOS_DIR = SCRIPT_DIR / "diarios" / "entrada"
 DEFAULT_ESTADOS_DIR = SCRIPT_DIR / "estados"
 DEFAULT_OUTPUT_DIR = SCRIPT_DIR / "base-generada"
@@ -93,7 +93,7 @@ def main() -> None:
         diarios_dir=Path(args.diarios_dir),
         planes=Path(args.planes) if args.planes else None,
         pagos=Path(args.pagos) if args.pagos else None,
-        usar_pagos=True,
+        usar_pagos=bool(args.pagos),
     )
 
     resultado = procesar_dia(config=config, archivos=archivos, log_cb=None)

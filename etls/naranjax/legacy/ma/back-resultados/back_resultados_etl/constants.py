@@ -30,38 +30,20 @@ OUTPUT_COLUMNS = [
 OUTPUT_FILENAME_PREFIX = "NARANJAX_PCT_"
 OUTPUT_FILENAME_EXTENSION = ".csv"
 OBSERVACIONES_MAX_CHARS = 1500
-OUTPUT_DELIMITER = "|"
-OUTPUT_ENCODING = "cp1252"
-OUTPUT_DATE_FORMAT = "yyyyMMdd"
-OUTPUT_COLUMNS_COUNT = len(OUTPUT_COLUMNS)
 
 TIPIF_MAP = {
-    "LOGCALL": "26",
     "PROMESA_DE_PAGO": "12",
     "DIFICULTAD_DE_PAGO": "47",
     "SIN_VOLUNTAD_DE_PAGO": "17",
     "NO_RECONOCE_DEUDA": "15",
+    "MANIFIESTA_PAGO": "37",
     "NOTIFICADO_TITULAR": "8",
     "NOTIFICADO_FAMILIAR": "8",
     "CONOCE_TITULAR": "8",
-    "NO_RESPONDE": "7",
-    "CONTESTADOR": "26",
+    "NO_RESPONDE": "11",
+    "CONTESTADOR": "11",
     "FALLECIDO": "16",
     "NO_ES_TITULAR": "61",
-    "MENSAJE": "28",
-    "MENSAJE_DEUDOR": "28",
-    "MENSAJE_TERCERO": "29",
-    "YA_PAGO_TOTAL_MORA": "37",
-    "YA_PAGO_TOTAL_CUENTA": "38",
-    "YA_PAGO_PLAN_DE_PAGO": "39",
-    "YA_PAGO_PLAN_DE_CUOTAS": "40",
-    "YA_PAGO_MES_VENCIDO": "41",
-    "DIF_DE_PAGO_BOTON_DE_PAGO": "43",
-    "DIF_DE_PAGO_SIN_TRABAJO": "44",
-    "DIF_DE_PAGO_PROBLEMAS_DE_SALUD": "45",
-    "DIF_DE_PAGO_PROBLEMAS_CON_EL_COBRO": "46",
-    "DIF_DE_PAGO_GENERAL": "47",
-    "DIF_DE_PAGO_PRIORIZA_OTRAS_DEUDAS": "48",
 }
 
 COLUMN_ALIASES = {
@@ -72,17 +54,10 @@ COLUMN_ALIASES = {
         "id_dni",
         "[Entrada] id_cliente",
         "id_cliente",
-        "[Entrada] user_number",
-        "user_number",
-        "[Entrada] msisdn",
-        "msisdn",
-        "[Entrada] customer_id",
-        "customer_id",
     ],
     "tipificaciones": [
         "[Salida] Tipificaciones",
         "[Salida] tipificaciones",
-        "[Salida] categoria",
         "Tipificaciones",
     ],
     "observaciones": [

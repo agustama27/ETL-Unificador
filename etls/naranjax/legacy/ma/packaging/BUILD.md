@@ -2,41 +2,10 @@
 
 Este documento define la validacion limpia en Windows sin Python instalado en maquina destino.
 
-## Convencion de build por rama
-
-- `packaging\\build.bat` detecta rama + commit corto y genera el ejecutable en `dist-<rama-normalizada>-<commit>\\naranjax_etl.exe`.
-- Normalizacion Windows: reemplaza `/` y `\\` por `-` para asegurar una carpeta valida en ramas tipo `feature/x`.
-- Ejemplo: rama `feature/archivoPagos`, commit `a1b2c3d` -> carpeta `dist-feature-archivoPagos-a1b2c3d`.
-- Override manual soportado con variable de entorno `DIST_DIR`.
-- Build limpio obligatorio por defecto: si hay cambios sin commit en el working tree, el script aborta.
-- Override explicito para casos excepcionales: `ALLOW_DIRTY_BUILD=1`.
-- Metadata obligatoria en cada build: `build-info.txt` con rama, commit, timestamp y dirty true/false.
-
-Comandos:
-
-```bat
-packaging\build.bat
-```
-
-```bat
-set DIST_DIR=C:\tmp\dist-manual && packaging\build.bat
-```
-
-```bat
-set ALLOW_DIRTY_BUILD=1 && packaging\build.bat
-```
-
-Dry-run de resolucion de ruta (sin build):
-
-```bat
-set BUILD_DRY_RUN=1 && packaging\build.bat
-```
-
 ## 1) Prerequisitos
 
 - SO: Windows 10/11 x64.
-- Artefacto disponible: `dist-<rama-normalizada>-<commit>\naranjax_etl.exe`.
-- Metadata de build: `dist-<rama-normalizada>-<commit>\build-info.txt`.
+- Artefacto disponible: `dist\naranjax_etl.exe`.
 - Permisos de lectura sobre archivos de entrada (base mensual, PLANES mensual, PAGOS diario).
 - Permisos de escritura en carpeta temporal local (para no tocar salida/estado productivo).
 - No requiere Python en maquina destino.
@@ -44,7 +13,7 @@ set BUILD_DRY_RUN=1 && packaging\build.bat
 ## 2) Validacion UI (doble clic + cold start)
 
 1. Cerrar cualquier instancia previa de `naranjax_etl.exe`.
-2. Hacer doble clic en `dist-<rama-normalizada>-<commit>\naranjax_etl.exe`.
+2. Hacer doble clic en `dist\naranjax_etl.exe`.
 3. Verificar que la UI abre sin error de runtime (sin popup de dependencia faltante).
 4. Cerrar la UI.
 5. Repetir apertura (cold start) luego de reiniciar sesion o reiniciar equipo.
@@ -68,7 +37,7 @@ Usar rutas reales de entrada y rutas temporales para salida/estado.
 Comando (ejemplo):
 
 ```powershell
-dist-<rama-normalizada>\naranjax_etl.exe --cli --base "C:\RUTA\BASE\base_mensual.xlsx" --planes "C:\RUTA\BASE\planes_mensual.xlsx" --pagos "C:\RUTA\DIARIOS\pagos.csv" --estado "C:\TEMP\nx_uat\estado" --salida "C:\TEMP\nx_uat\salida" --fecha 20260428
+dist\naranjax_etl.exe --cli --base "C:\RUTA\BASE\base_mensual.xlsx" --planes "C:\RUTA\BASE\planes_mensual.xlsx" --pagos "C:\RUTA\DIARIOS\pagos.csv" --estado "C:\TEMP\nx_uat\estado" --salida "C:\TEMP\nx_uat\salida" --fecha 20260428
 ```
 
 Chequeos:
@@ -85,7 +54,7 @@ Objetivo: comprobar manejo de error y codigo de salida sin tocar datos productiv
 Comando sugerido (flag invalida controlada):
 
 ```powershell
-dist-<rama-normalizada>\naranjax_etl.exe --cli --arg-no-existe --base "C:\RUTA\BASE\base_mensual.xlsx" --planes "C:\RUTA\BASE\planes_mensual.xlsx" --pagos "C:\RUTA\DIARIOS\pagos.csv" --estado "C:\TEMP\nx_uat\estado" --salida "C:\TEMP\nx_uat\salida" --fecha 20260428
+dist\naranjax_etl.exe --cli --arg-no-existe --base "C:\RUTA\BASE\base_mensual.xlsx" --planes "C:\RUTA\BASE\planes_mensual.xlsx" --pagos "C:\RUTA\DIARIOS\pagos.csv" --estado "C:\TEMP\nx_uat\estado" --salida "C:\TEMP\nx_uat\salida" --fecha 20260428
 ```
 
 Resultado esperado:
@@ -97,8 +66,7 @@ Resultado esperado:
 
 Liberacion Fase 4 en modo cierre = PASS solo si se cumplen todos:
 
-- `dist-<rama-normalizada>-<commit>\naranjax_etl.exe` existe y abre UI por doble clic.
-- `dist-<rama-normalizada>-<commit>\build-info.txt` existe y refleja branch/commit esperados.
+- `dist\naranjax_etl.exe` existe y abre UI por doble clic.
 - Cold start UI exitoso (segunda ejecucion limpia).
 - CLI valido retorna `0` y escribe solo en rutas temporales de UAT.
 - CLI invalido retorna no-cero y deja evidencia de validacion.
@@ -114,8 +82,7 @@ Copiar y completar:
 Fecha/Hora:
 Tester:
 Maquina:
-Version artefacto: dist-<rama-normalizada>\naranjax_etl.exe
-Build info: dist-<rama-normalizada>-<commit>\build-info.txt
+Version artefacto: dist\naranjax_etl.exe
 
 UI doble clic: PASS/FAIL
 UI cold start: PASS/FAIL
@@ -139,7 +106,7 @@ Resultado final UAT: PASS/FAIL
 Para una corrida rapida automatizada, usar:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File packaging\uat_quick.ps1 -ExePath "dist-<rama-normalizada>-<commit>\naranjax_etl.exe" -BasePath "C:\RUTA\BASE\base_mensual.xlsx" -PlanesPath "C:\RUTA\BASE\planes_mensual.xlsx" -PagosPath "C:\RUTA\DIARIOS\pagos.csv"
+powershell -ExecutionPolicy Bypass -File packaging\uat_quick.ps1 -ExePath "dist\naranjax_etl.exe" -BasePath "C:\RUTA\BASE\base_mensual.xlsx" -PlanesPath "C:\RUTA\BASE\planes_mensual.xlsx" -PagosPath "C:\RUTA\DIARIOS\pagos.csv"
 ```
 
 Notas operativas:

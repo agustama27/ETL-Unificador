@@ -49,9 +49,6 @@ class ResultadoDia:
 @dataclass(frozen=True)
 class ConfigTipificaciones:
     output_dir: Path
-    cruce_origen: str = "none"
-    cruce_path: Path | None = None
-    cruce_lookup_path: Path | None = None
 
 
 @dataclass(frozen=True)
@@ -63,5 +60,4 @@ class ResultadoTipificaciones:
     omitted_by_reason: dict[str, int] = field(default_factory=dict)
     warning_count: int = 0
     output_path: Path | None = None
-    output_contract: dict[str, str | int] = field(default_factory=dict)
     errores: list[str] = field(default_factory=list)

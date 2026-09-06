@@ -778,3 +778,66 @@ def test_run_pipeline_uses_fixed_exports_in_selected_dated_partition(tmp_path: P
     assert result.approach_path == partition / "ALVAREZ_MAQUINARIAS_E1KIA_260728.csv"
     assert result.roman_path.exists()
     assert result.approach_path.exists()
+
+
+@pytest.mark.parametrize(
+    ("crudo", "esperado"),
+    [
+        # la marca de moneda puede venir pegada al numero: en 'USD1.149,20' no
+        # hay frontera de palabra entre la D y el 1, y exigirla dejaba el
+        # importe entero sin parsear (USD 3.184,56 fuera del ROMAN, 01/09/2026)
+        ("USD1.149,20", 1149.20),
+        ("USD241,33", 241.33),
+        ("U$S1.482,67", 1482.67),
+        ("US$1.482,67", 1482.67),
+        ("usd1.149,20", 1149.20),
+        # separada: no debe cambiar
+        ("USD 850,00", 850.00),
+        ("$1.200,50", 1200.50),
+        ("U$S 1.200,50", 1200.50),
+        # la marca sola no es un importe
+        ("USD", None),
+        ("$", None),
+    ],
+)
+def test_parse_currency_acepta_la_marca_de_moneda_pegada_o_separada(crudo, esperado):
+    resultado = parse_currency_amount(crudo)
+    if esperado is None:
+        assert resultado is None
+    else:
+        assert resultado == pytest.approx(esperado, abs=0.001)
+
+
+@pytest.mark.parametrize(
+    ("con_puntos", "sin_puntos"),
+    [
+        # sociedad de hecho: la inicial del socio precede a la sigla y la
+        # corrida de letras las mezclaba (`R S H` -> `RSH`), asi que la misma
+        # sociedad escrita `SH` daba otra clave y se partia en dos filas
+        ("ALESSO GERMAN R S.H.", "ALESSO GERMAN R SH"),
+        ("ALESSO LEONARDO J, ALESSO DIEGO M Y ALESSO GERMAN R  S.H.",
+         "ALESSO LEONARDO J, ALESSO DIEGO M Y ALESSO GERMAN R SH"),
+        # dos iniciales antes de la sigla: se unen entre si en ambas grafias
+        ("MOLINO J M S.A.S.", "MOLINO J M SAS"),
+        ("AGRO J L S.C.S.", "AGRO J L SCS"),
+        # sin iniciales previas: comportamiento de siempre, no debe cambiar
+        ("TIGONBU S.A.", "TIGONBU SA"),
+        ("PEREZ JUAN Y HERMANOS S.H.", "PEREZ JUAN Y HERMANOS SH"),
+        ("CONSTRUCTORA LOS ALAMOS S.R.L.", "CONSTRUCTORA LOS ALAMOS SRL"),
+    ],
+)
+def test_la_sigla_societaria_se_separa_de_las_iniciales_del_nombre(con_puntos, sin_puntos):
+    """La sigla escrita con puntos o sin ellos tiene que dar la misma clave,
+    tambien cuando viene precedida por las iniciales de un socio."""
+    from src.etl.utils import normalize_client_name
+
+    assert normalize_client_name(con_puntos) == normalize_client_name(sin_puntos)
+
+
+def test_las_iniciales_sin_sigla_siguen_uniendose(config: PipelineConfig):
+    """Sin sufijo societario al final, la corrida de iniciales se une como
+    antes: el cambio no debe alterar ese caso."""
+    from src.etl.utils import normalize_client_name
+
+    assert normalize_client_name("MOLINO J M") == "MOLINO JM"
+    assert normalize_client_name("ALESSO GERMAN R") == "ALESSO GERMAN R"

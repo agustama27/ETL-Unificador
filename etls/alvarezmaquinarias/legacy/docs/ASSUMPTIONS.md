@@ -50,6 +50,15 @@ decimal y el otro agrupa miles. Cuando aparece uno solo, es separador de miles
 cualquier otro caso es decimal (`965.47`, `853,01`). Asumir siempre coma
 decimal dividía por mil todo importe escrito en convención inglesa.
 
+La marca de moneda se saca esté separada (`USD 850,00`) o pegada al número
+(`USD1.149,20`, `U$S1.149,20`, `US$…`). Exigir frontera de palabra dejaba el
+prefijo puesto cuando venía pegado, y el importe entero quedaba sin parsear.
+
+Los Remitos de Servicios mezclan números nativos de Excel con celdas de texto
+en la misma hoja, así que el `Total` de cada fila se toma como el último valor
+que resuelva a un importe, no como el último valor numérico: exigir número
+nativo descartaba filas completas con deuda real.
+
 ## Identidad del cliente
 
 Solo una de las cuatro fuentes trae el ID de Autologica. Las demás se unen por
@@ -61,6 +70,9 @@ grafía parte al mismo deudor en dos registros. Dos causas observadas:
    palabra. La sigla societaria escrita con puntos (`S.A.`) también rompía la
    clave, porque al sacar la puntuación quedaban tokens de una letra que el
    stripper de sufijos no reconocía; `normalize_client_name` los vuelve a unir.
+   Cuando la sigla viene precedida por la inicial de un socio —el patrón de las
+   sociedades de hecho, `... GERMAN R S.H.`— la corrida de letras se corta por
+   el sufijo más largo del final, así `S.H.` y `SH` siguen dando la misma clave.
 2. **Erratas de carga.** Una letra de más o de menos en el nombre.
 
 `resolve_duplicate_clients` fusiona dos claves solo con evidencia:

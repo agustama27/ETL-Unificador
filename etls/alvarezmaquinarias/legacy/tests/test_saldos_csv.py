@@ -515,3 +515,45 @@ def test_saldos_csv_rescata_sin_saldo_usd_no_agrega_fila(
 def test_codigos_de_area_agregados_en_la_corrida_2508(localidad, local, esperado) -> None:
     from src.etl.codigos_area import area_code_for_locality
     assert complete_national_phone(local, area_code_for_locality(localidad)) == esperado
+
+
+def test_servicios_toma_el_total_aunque_el_importe_venga_como_texto(tmp_path: Path) -> None:
+    """La hoja mezcla números nativos de Excel con celdas de texto
+    ('USD1.149,20') en el mismo archivo. Exigir número nativo descartaba
+    filas enteras con deuda real (caso EL CACIQUE, corrida 01/09/2026)."""
+    from datetime import datetime
+    from src.etl.extractors import RemitosServiciosExtractor
+
+    source = tmp_path / "servicios.xlsx"
+    filas = [
+        ["N° Remito", "Código", "Cliente", "Detalles", "Fecha", "Precio", "IVA 21%", "Total"],
+        [8000, 111, "CLIENTE NATIVO", None, datetime(2026, 4, 5), 100.0, 21.0, 121.0],
+        [8558, 1236, "CLIENTE TEXTO", None, datetime(2026, 4, 5),
+         "USD1.149,20", "USD241,33", "USD1.390,53"],
+    ]
+    _write_xlsx(source, {"Remitos Servicios": filas})
+
+    rows = RemitosServiciosExtractor().extract(source).rows
+
+    assert list(rows[schema.COL_CLIENTE_RAW]) == ["CLIENTE NATIVO", "CLIENTE TEXTO"]
+    assert list(rows[schema.COL_MONTO_ORIGINAL]) == pytest.approx([121.0, 1390.53], abs=0.01)
+    assert list(rows[schema.COL_CLIENTE_ID]) == ["111", "1236"]
+
+
+def test_servicios_descarta_la_fila_si_ningun_campo_es_un_importe(tmp_path: Path) -> None:
+    """Sin ningún importe posterior a la fecha no hay Total que tomar: la fila
+    se descarta con warning en vez de inventar un monto."""
+    from datetime import datetime
+    from src.etl.extractors import RemitosServiciosExtractor
+
+    source = tmp_path / "servicios.xlsx"
+    filas = [
+        ["N° Remito", "Código", "Cliente", "Detalles", "Fecha", "Precio", "IVA 21%", "Total"],
+        [8000, 111, "CLIENTE VALIDO", None, datetime(2026, 4, 5), 100.0, 21.0, 121.0],
+        [8001, 112, "CLIENTE SIN MONTO", None, datetime(2026, 4, 5), "s/d", "s/d", "s/d"],
+    ]
+    _write_xlsx(source, {"Remitos Servicios": filas})
+
+    rows = RemitosServiciosExtractor().extract(source).rows
+
+    assert list(rows[schema.COL_CLIENTE_RAW]) == ["CLIENTE VALIDO"]

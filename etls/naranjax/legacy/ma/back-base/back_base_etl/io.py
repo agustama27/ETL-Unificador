@@ -394,6 +394,10 @@ def load_input(filepath: str) -> pd.DataFrame:
             continue
         mapping[canonical] = found_idx
 
+    if "nroproducto" not in mapping and "dni" in mapping:
+        mapping["nroproducto"] = mapping["dni"]
+        missing_required = [column for column in missing_required if column != "nroproducto"]
+
     if missing_required:
         available = ", ".join(header for header in original_headers if header) or "(none)"
         details = "; ".join(

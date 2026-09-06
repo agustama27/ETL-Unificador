@@ -103,33 +103,6 @@ def _resolve_plan_coverage_threshold() -> float:
     return parsed
 
 
-def _build_monto_deuda_vencida_actual_map(df_pagos: pd.DataFrame | None) -> pd.Series | None:
-    if df_pagos is None or df_pagos.empty or "nroproducto" not in df_pagos.columns:
-        return None
-
-    pagos = df_pagos.copy()
-    pagos["nroproducto"] = pagos["nroproducto"].fillna("").astype(str).str.strip()
-    pagos = pagos[pagos["nroproducto"] != ""]
-    if pagos.empty:
-        return None
-
-    def _clean_amount(series: pd.Series) -> pd.Series:
-        raw = series.fillna("").astype(str).str.replace("$", "", regex=False).str.strip()
-        both_separators = raw.str.contains(".", regex=False) & raw.str.contains(",", regex=False)
-        normalized = raw.where(~both_separators, raw.str.replace(".", "", regex=False))
-        normalized = normalized.str.replace(",", ".", regex=False)
-        return pd.to_numeric(normalized, errors="coerce")
-
-    dv_actual_raw = pagos.get("dv_actual", pd.Series("", index=pagos.index, dtype=object)).fillna("").astype(str).str.strip()
-    deuda_vencida_raw = pagos.get("deuda_vencida", pd.Series("", index=pagos.index, dtype=object)).fillna("").astype(str).str.strip()
-
-    dv_actual = _clean_amount(dv_actual_raw)
-    deuda_vencida = _clean_amount(deuda_vencida_raw)
-    pagos["monto_deuda_vencida_actual"] = dv_actual.where(dv_actual_raw != "", deuda_vencida)
-
-    return pagos.groupby("nroproducto")["monto_deuda_vencida_actual"].last()
-
-
 def procesar_dia(config: ConfigDia, archivos: ArchivosDia, log_cb: Callable[[str], None] | None = None) -> ResultadoDia:
     with bind_log_callback(log_cb):
         try:
@@ -232,13 +205,6 @@ def procesar_dia(config: ConfigDia, archivos: ArchivosDia, log_cb: Callable[[str
 
             df_estado_actualizado = update_estado(df_estado_vigente, df_planes_pivot, df_pagos=df_pagos, logger=LOGGER)
             df_roman, resumen_filtros = aplicar_filtros(df_estado_actualizado, scope_cajones=DEFAULT_CAJONES_SCOPE, logger=LOGGER)
-
-            pagos_monto_map = _build_monto_deuda_vencida_actual_map(df_pagos)
-            if pagos_monto_map is not None and not pagos_monto_map.empty and "nroproducto" in df_roman.columns:
-                df_roman = df_roman.copy()
-                df_roman["monto_deuda_vencida_actual"] = (
-                    df_roman["nroproducto"].fillna("").astype(str).str.strip().map(pagos_monto_map)
-                )
 
             output_df = transform(
                 df_roman,

@@ -15,7 +15,7 @@ import pandas as pd
 REPO_ROOT = Path(__file__).resolve().parents[2]
 BACK_BASE_DIR = REPO_ROOT / "back-base"
 ENTRYPOINT = BACK_BASE_DIR / "etl_naranjax.py"
-INPUT_WORKBOOK = BACK_BASE_DIR / "archivo-recibido" / "NARANJAX_MA_BaseMensual.xlsx"
+INPUT_WORKBOOK = BACK_BASE_DIR / "archivo-recibido" / "Formato completo de archivo de entrada.xlsx"
 LEGACY_BASELINE = BACK_BASE_DIR / "base-generada" / "NARANJAX_CARTERA_20260417.csv"
 GOLDEN_HEADER = Path(__file__).with_name("golden_output_header.txt")
 
@@ -98,12 +98,7 @@ class RelocationContractTests(unittest.TestCase):
 
         self.assertEqual(list(current_df.columns), OUTPUT_COLUMNS)
         self.assertEqual(list(baseline_df.columns), OUTPUT_COLUMNS)
-
-        if len(current_df) != len(baseline_df):
-            self.skipTest(
-                "Legacy baseline row count does not match current fixture input; "
-                "pre/post proxy check requires aligned artifacts."
-            )
+        self.assertEqual(len(current_df), len(baseline_df))
 
         self.assertEqual(
             (current_df["id_nro_dni"].str.strip() != "").sum(),

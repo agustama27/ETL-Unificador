@@ -12,12 +12,8 @@ import pandas as pd
 from .cleaners import normalize_upper_snake
 from .constants import (
     COLUMN_ALIASES,
-    OUTPUT_DELIMITER,
-    OUTPUT_ENCODING,
     OPTIONAL_SOURCE_COLUMNS,
     OUTPUT_COLUMNS,
-    OUTPUT_COLUMNS_COUNT,
-    OUTPUT_DATE_FORMAT,
     OUTPUT_FILENAME_EXTENSION,
     OUTPUT_FILENAME_PREFIX,
     REQUIRED_SOURCE_COLUMNS,
@@ -135,18 +131,12 @@ def save_output(df: pd.DataFrame, output_dir: str) -> str:
     output_df = df.reindex(columns=OUTPUT_COLUMNS)
     output_df.to_csv(
         output_path,
-        sep=OUTPUT_DELIMITER,
+        sep="|",
         header=True,
         index=False,
-        encoding=OUTPUT_ENCODING,
+        encoding="cp1252",
         lineterminator="\n",
         quoting=csv.QUOTE_NONE,
         escapechar="\\",
     )
-    output_df.attrs["output_contract"] = {
-        "delimiter": OUTPUT_DELIMITER,
-        "encoding": OUTPUT_ENCODING,
-        "columns": OUTPUT_COLUMNS_COUNT,
-        "date_format": OUTPUT_DATE_FORMAT,
-    }
     return output_path

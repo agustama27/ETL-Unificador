@@ -66,8 +66,7 @@ def test_cli_phase2_with_planes_and_pagos_ignores_pagos_for_output(tmp_path: Pat
                 "recupero": "NO",
                 "tipo_pago": "PAGO_LINK",
                 "importe_pago": "100",
-                "cajon_asig_prod": "M90",
-                "cajon_actual_prod": "",
+                "cajon_actual_prod": "M10",
             }
         ]
     ).to_csv(pagos_file, sep=";", index=False, lineterminator="\n")
@@ -108,24 +107,22 @@ def test_cli_phase2_with_planes_and_pagos_ignores_pagos_for_output(tmp_path: Pat
     assert row["tel_1"] == ""
     assert row["tel_2"] == ""
     assert row["tel_3"] == ""
-    assert row["tel_4"] == ""
     assert row["id_dni"] == "20333444"
     assert set(result["id_producto"]) == {"1001", "1002"}
     columns = result.columns.tolist()
-    tel_4_idx = columns.index("tel_4")
+    tel_3_idx = columns.index("tel_3")
     id_dni_idx = columns.index("id_dni")
     id_producto_idx = columns.index("id_producto")
-    assert id_dni_idx == tel_4_idx + 1
+    assert id_dni_idx == tel_3_idx + 1
     assert id_producto_idx == id_dni_idx + 1
-    assert columns.index("tipo_cajon") == id_producto_idx + 1
-    assert columns.index("plan_ok") == columns.index("tipo_cajon") + 1
+    assert columns.index("tipo_marca_plan") == id_producto_idx + 1
     assert row["monto_entrega_3"] == ""
-    assert row["plan_ok"] == "no"
+    assert row["tipo_marca_plan"] == "Sin Plan"
 
     row_with_plan = result[result["id_producto"] == "1001"].iloc[0]
     assert _as_float(row_with_plan["monto_entrega_3"]) == 200.0
     assert _as_float(row_with_plan["monto_cuota_3"]) == 200.0
-    assert row_with_plan["plan_ok"] == "si"
+    assert row_with_plan["tipo_marca_plan"] == "Con Plan"
 
     actual_keys = [
         (

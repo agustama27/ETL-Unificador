@@ -160,7 +160,6 @@ PAGOS_REQUIRED_COLUMNS = [
     "nroproducto",
     "recupero",
     "tipo_pago",
-    "cajon_asig_prod",
     "cajon_actual_prod",
 ]
 

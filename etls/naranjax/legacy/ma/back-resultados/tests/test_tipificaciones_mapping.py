@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import unittest
-import tempfile
 from pathlib import Path
 import sys
 
@@ -23,7 +22,6 @@ from back_resultados_etl.constants import (  # noqa: E402
     OBSERVACIONES_MAX_CHARS,
     TIPIF_MAP,
 )
-from back_resultados_etl.io import load_input  # noqa: E402
 
 
 class TipificacionesMappingTests(unittest.TestCase):
@@ -31,11 +29,11 @@ class TipificacionesMappingTests(unittest.TestCase):
 
     def test_todas_tipificaciones_mapeadas(self) -> None:
         expected = {
-            "LOGCALL",
             "PROMESA_DE_PAGO",
             "DIFICULTAD_DE_PAGO",
             "SIN_VOLUNTAD_DE_PAGO",
             "NO_RECONOCE_DEUDA",
+            "MANIFIESTA_PAGO",
             "NOTIFICADO_TITULAR",
             "NOTIFICADO_FAMILIAR",
             "CONOCE_TITULAR",
@@ -43,20 +41,6 @@ class TipificacionesMappingTests(unittest.TestCase):
             "CONTESTADOR",
             "FALLECIDO",
             "NO_ES_TITULAR",
-            "MENSAJE",
-            "MENSAJE_DEUDOR",
-            "MENSAJE_TERCERO",
-            "YA_PAGO_TOTAL_MORA",
-            "YA_PAGO_TOTAL_CUENTA",
-            "YA_PAGO_PLAN_DE_PAGO",
-            "YA_PAGO_PLAN_DE_CUOTAS",
-            "YA_PAGO_MES_VENCIDO",
-            "DIF_DE_PAGO_BOTON_DE_PAGO",
-            "DIF_DE_PAGO_SIN_TRABAJO",
-            "DIF_DE_PAGO_PROBLEMAS_DE_SALUD",
-            "DIF_DE_PAGO_PROBLEMAS_CON_EL_COBRO",
-            "DIF_DE_PAGO_GENERAL",
-            "DIF_DE_PAGO_PRIORIZA_OTRAS_DEUDAS",
         }
         self.assertEqual(expected, set(TIPIF_MAP.keys()))
 
@@ -118,25 +102,6 @@ class TipificacionesMappingTests(unittest.TestCase):
 
     def test_column_alias_entrada_id_dni(self) -> None:
         self.assertIn("[Entrada] id_dni", COLUMN_ALIASES["id_cliente"])
-
-    def test_column_alias_entrada_user_number(self) -> None:
-        self.assertIn("[Entrada] user_number", COLUMN_ALIASES["id_cliente"])
-
-    def test_load_input_fallback_a_user_number_para_id_cliente(self) -> None:
-        with tempfile.TemporaryDirectory() as tmpdir:
-            input_path = Path(tmpdir) / "input_user_number_alias.csv"
-            input_path.write_text(
-                "\n".join(
-                    [
-                        "Call ID,[Salida] Tipificaciones,[Salida] observaciones,[Entrada] user_number",
-                        "call_1,Promesa de pago,ok,5493517710632",
-                    ]
-                ),
-                encoding="utf-8",
-            )
-
-            loaded = load_input(str(input_path))
-            self.assertEqual(loaded.loc[0, "id_cliente"], "5493517710632")
 
 
 if __name__ == "__main__":

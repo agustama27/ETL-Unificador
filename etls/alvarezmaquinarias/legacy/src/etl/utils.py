@@ -24,11 +24,39 @@ _MULTISPACE = re.compile(r"\s+")
 # Un unico separador solo agrupa miles si los grupos son de tres digitos
 # exactos (`17.264`, `17,264`). Ver parse_currency_amount.
 _GRUPOS_DE_MILES = re.compile(r"^-?\d{1,3}(?:[.,]\d{3})+$")
+# Marca de moneda, pegada al numero o separada. Sin `\b`: en `USD1.149,20` no
+# hay frontera de palabra entre la D y el 1, asi que exigirla dejaba el
+# prefijo puesto y el importe entero sin parsear. Las variantes largas van
+# primero para que `U$S`/`US$` no se coman solo el `$`.
+_MARCA_DE_MONEDA = re.compile(r"(?i)\s*(?:USD|U\$S|US\$|\$)\s*")
 
 
 def _strip_accents(text: str) -> str:
     normalized = unicodedata.normalize("NFKD", text)
     return "".join(ch for ch in normalized if not unicodedata.combining(ch))
+
+
+def _cerrar_corrida_de_iniciales(run: list[str]) -> list[str]:
+    """Cierra una corrida de letras sueltas separando la sigla societaria.
+
+    La corrida puede mezclar la inicial de un nombre con la sigla: en
+    `ALESSO GERMAN R S.H.` quedan `R`, `S`, `H` juntos, y pegarlos enteros
+    daba `RSH`, que el stripper de sufijos no reconoce. La misma sociedad
+    escrita `SH` sin puntos producía `ALESSO GERMAN R` — dos claves para el
+    mismo deudor, que es justo lo que esta normalización viene a evitar.
+
+    Se corta por el sufijo **más largo** que quede al final de la corrida;
+    las iniciales que lo preceden vuelven como tokens sueltos.
+    """
+    for corte in range(len(run)):
+        candidato = "".join(run[corte:])
+        if candidato in _LEGAL_SUFFIXES:
+            # Las iniciales que preceden a la sigla se unen entre si, igual
+            # que si la sigla no estuviera: `MOLINO J M S.A.S.` y
+            # `MOLINO J M SAS` tienen que dar la misma clave.
+            previas = ["".join(run[:corte])] if corte else []
+            return previas + [candidato]
+    return ["".join(run)]
 
 
 def _merge_initial_runs(tokens: list[str]) -> list[str]:
@@ -38,6 +66,10 @@ def _merge_initial_runs(tokens: list[str]) -> list[str]:
     stripper de sufijos deja de reconocerlo: `TIGONBU S.A.` y `TIGONBU SA`
     terminaban con claves distintas y el cliente se duplicaba. Reunir la
     corrida devuelve `SA` y las dos grafías vuelven a ser la misma.
+
+    Cuando la corrida arranca con iniciales de un nombre —el patrón de las
+    sociedades de hecho, `... GERMAN R S.H.`— la sigla se separa del resto
+    (ver `_cerrar_corrida_de_iniciales`).
     """
     merged: list[str] = []
     run: list[str] = []
@@ -46,11 +78,11 @@ def _merge_initial_runs(tokens: list[str]) -> list[str]:
             run.append(token)
             continue
         if run:
-            merged.append("".join(run))
+            merged.extend(_cerrar_corrida_de_iniciales(run))
             run = []
         merged.append(token)
     if run:
-        merged.append("".join(run))
+        merged.extend(_cerrar_corrida_de_iniciales(run))
     return merged
 
 
@@ -157,7 +189,8 @@ def complete_national_phone(
 
 
 def parse_currency_amount(raw_value) -> Optional[float]:
-    """Parsea montos en formato AR (`$1.200,50`) o con prefijo `USD 850,00`.
+    """Parsea montos en formato AR (`$1.200,50`) o con marca de moneda,
+    separada (`USD 850,00`) o pegada al numero (`USD1.149,20`, `U$S1.149,20`).
 
     Devuelve None si el valor está vacío o no es parseable (fila inválida,
     se descarta aguas arriba en vez de asumir 0).
@@ -182,7 +215,7 @@ def parse_currency_amount(raw_value) -> Optional[float]:
         return float(raw_value)
 
     text = str(raw_value).strip()
-    text = re.sub(r"(?i)\bUSD\b|\bU\$S\b|\$", "", text).strip()
+    text = _MARCA_DE_MONEDA.sub("", text).strip()
     if not text:
         return None
 

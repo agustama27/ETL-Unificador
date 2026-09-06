@@ -46,14 +46,10 @@ def test_roman_output_includes_id_producto_after_id_dni() -> None:
     roman = transform(df, output_columns_base=OUTPUT_COLUMNS_ROMAN)
 
     assert "id_producto" in roman.columns
-    assert "tipo_cajon" in roman.columns
     row = roman.iloc[0]
     assert row["id_producto"] == "1003"
-    assert row["tipo_cajon"] == "M30"
 
     columns = roman.columns.tolist()
-    assert columns.index("tel_4") == columns.index("tel_3") + 1
-    assert columns.index("id_dni") == columns.index("tel_4") + 1
     assert columns.index("id_producto") == columns.index("id_dni") + 1
     assert columns.index("tipo_cajon") == columns.index("id_producto") + 1
     assert columns.index("plan_ok") == columns.index("tipo_cajon") + 1
@@ -62,8 +58,8 @@ def test_roman_output_includes_id_producto_after_id_dni() -> None:
 def test_roman_plan_ok_is_si_when_entrega_and_cuota_exist() -> None:
     row = _base_row()
     row["plan_1_cuotas"] = "6"
-    row["plan_1_entrega"] = "1000"
-    row["plan_1_cuota_mensual"] = "250"
+    row["plan_1_entrega"] = "100"
+    row["plan_1_cuota_mensual"] = "50"
 
     roman = transform(
         pd.DataFrame([row]),
@@ -81,8 +77,9 @@ def test_roman_plan_ok_is_no_when_no_plan_columns_exist() -> None:
 
 def test_roman_plan_ok_is_no_when_only_one_of_entrega_or_cuota_exists() -> None:
     row = _base_row()
-    row["plan_1_cuotas"] = "3"
-    row["plan_1_entrega"] = "1000"
+    row["marca_plan"] = "CON PLAN"
+    row["plan_1_cuotas"] = "6"
+    row["plan_1_entrega"] = "100"
     row["plan_1_cuota_mensual"] = ""
 
     roman = transform(
@@ -92,6 +89,19 @@ def test_roman_plan_ok_is_no_when_only_one_of_entrega_or_cuota_exists() -> None:
     )
 
     assert roman.iloc[0]["plan_ok"] == "no"
+
+
+def test_roman_output_includes_july_contract_columns() -> None:
+    row = _base_row()
+    row["telefono4"] = "5491199998888"
+    row["total_vencida"] = "123,45"
+
+    roman = transform(pd.DataFrame([row]), output_columns_base=OUTPUT_COLUMNS_ROMAN)
+
+    assert "tipo_marca_plan" not in roman.columns
+    assert roman.iloc[0]["tel_4"] == "5491199998888"
+    assert roman.iloc[0]["tipo_cajon"] == "M30"
+    assert roman.iloc[0]["monto_deuda_vencida_actual"] == 123.45
 
 
 def test_roman_output_preserves_raw_dni_with_prefix() -> None:

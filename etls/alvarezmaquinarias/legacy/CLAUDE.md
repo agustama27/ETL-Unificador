@@ -46,6 +46,10 @@ abajo sabe que las fuentes eran reportes de Autologica.
 - **`transformers.py`** — reglas de negocio. Lo no obvio es la **resolución de
   identidad**: solo Saldos trae ID de Autologica, el resto se une por nombre
   normalizado, así que un mismo deudor llega partido en varias claves.
+  `normalize_client_name` reune las iniciales sueltas que deja la puntuacion
+  (`S.A.` -> `SA`) y separa el sufijo societario cuando lo precede la inicial de
+  un socio (`GERMAN R S.H.` -> `R` + `SH`): sin eso, la misma sociedad de hecho
+  escrita con o sin puntos daba dos claves distintas.
   `resolve_duplicate_clients` fusiona con union-find y solo con evidencia
   (truncamiento contra el techo de largo medido por fuente, o teléfono
   compartido + nombre reconociblemente igual). Nunca aflojes esas condiciones
@@ -104,7 +108,14 @@ abajo sabe que las fuentes eran reportes de Autologica.
   17264.70, `17,264.70` → 17264.70); con uno solo, agrupa miles solo si los
   grupos son de tres dígitos exactos. Asumir coma decimal dividía por mil todo
   importe en convención inglesa — USD 140.310 subestimados sobre 41 clientes en
-  la corrida del 12/08/2026.
+  la corrida del 12/08/2026. La marca de moneda se saca pegada o separada
+  (`USD1.149,20`): la frontera de palabra que se exigía
+  antes no existe entre la `D` y el `1`.
+- **Las fuentes mezclan tipos de celda dentro de la misma hoja.** Remitos de
+  Servicios trae el importe como número nativo de Excel en casi todas las filas
+  y como texto (`USD1.149,20`) en unas pocas. Ningún adapter debe decidir por
+  `isinstance`: pasá la celda por `parse_currency_amount` y quedate con lo que
+  resuelva. Exigir número nativo costó USD 3.184 en la corrida del 01/09/2026.
 - **`FlagPrioridad` sale siempre `False`.** `COL_PRIORIDAD_RAW` está fijo en
   `None` en los seis puntos de extracción y ninguna fuente trae el dato, así que
   la primera clave del orden de `consolidate_by_client` es inerte y el ROMAN

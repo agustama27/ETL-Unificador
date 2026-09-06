@@ -159,6 +159,42 @@ def test_load_input_missing_optional_asignacion_returns_na_column(tmp_path: Path
     assert df.iloc[0]["cajon"] == "M90"
 
 
+def test_load_input_uses_dni_as_nroproducto_when_base_has_no_product_column(tmp_path: Path) -> None:
+    df_source = _legacy_21_column_df().drop(columns=["nroproducto", "asignacion", "email2"])
+    df_source = df_source.rename(
+        columns={
+            "dni": "DNI",
+            "nombre_apellido": "NOMBRE APELLIDO",
+            "deuda_vencida_tc": "DEUDA VENCIDA TC",
+            "deuda_vencida_nd": "DEUDA VENCIDA ND",
+            "total_vencida": "TOTAL VENCIDA",
+            "deuda_total_tc": "DEUDA TOTAL TC",
+            "deuda_total_nd": "DEUDA TOTAL ND",
+            "total_deuda": "TOTAL DEUDA",
+            "estrategia": "ESTRATEGIA",
+            "cajon": "CAJON",
+            "marca_plan": "MARCA_PLAN",
+            "telefono1": "TELEFONO1",
+            "telefono2": "TELEFONO2",
+            "telefono3": "TELEFONO3",
+            "telefono4": "TELEFONO4",
+            "email1": "EMAIL1",
+            "email3": "EMAIL3",
+            "ecosistema": "ECOSISTEMA",
+        }
+    )
+    df_source["Grupo"] = "M90"
+    workbook_path = _write_workbook(tmp_path / "base_sin_producto.xlsx", df_source)
+
+    df = load_input(str(workbook_path))
+
+    row = df.iloc[0]
+    assert str(row["dni"]) == "20111222"
+    assert str(row["nroproducto"]) == "20111222"
+    assert row["asignacion"] is pd.NA
+    assert row["email2"] is pd.NA
+
+
 def test_inicializar_estado_zero_row_guard_raises_when_no_m90_match(tmp_path: Path) -> None:
     df_base = pd.DataFrame(
         [

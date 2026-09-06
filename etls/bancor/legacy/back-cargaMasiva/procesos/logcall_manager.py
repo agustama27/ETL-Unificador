@@ -5,6 +5,8 @@ Filtra los registros con resultado CONTESTADOR/OCUPADO/NO RESPONDE/NO LLAMA,
 cruza por RECNUMBER con el DataFrame ROMAN (posición 1-indexed) para obtener
 el CUIT, y retorna registros ya en el formato CRM de 13 columnas.
 """
+import re
+
 import pandas as pd
 from pathlib import Path
 from typing import Any
@@ -40,8 +42,10 @@ def _normalizar_cuit(valor: Any) -> str:
     if valor is None:
         return ''
     s = str(valor).strip()
-    if s.endswith('.0'):
-        s = s[:-2]
+    # Artefacto decimal de export: acepta separador punto y coma (20439278820,0)
+    artefacto_decimal = re.fullmatch(r'(\d+)[.,]0*', s)
+    if artefacto_decimal:
+        return artefacto_decimal.group(1)
     return ''.join(c for c in s if c.isdigit())
 
 

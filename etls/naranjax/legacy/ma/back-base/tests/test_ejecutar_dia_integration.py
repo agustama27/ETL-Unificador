@@ -77,8 +77,7 @@ def test_ejecutar_dia_aplica_pagos_y_mantiene_estado_sin_planes(tmp_path: Path) 
                 "recupero": "NO",
                 "tipo_pago": "PAGO_LINK",
                 "importe_pago": "100",
-                "cajon_asig_prod": "M90",
-                "cajon_actual_prod": "M90",
+                "cajon_actual_prod": "M10",
             }
         ],
     )
@@ -114,65 +113,6 @@ def test_ejecutar_dia_aplica_pagos_y_mantiene_estado_sin_planes(tmp_path: Path) 
     assert row_1002["cajon"] == "M90"
     assert row_1002["recupero"] == "NO"
     assert row_1002["tipo_pago"] == "PAGO_LINK"
-
-
-def test_ejecutar_dia_aplica_dt_dv_actual_y_usa_importe_pago_como_fallback(tmp_path: Path) -> None:
-    input_workbook = _build_input_workbook(tmp_path)
-    diarios_dir = tmp_path / "diarios"
-    diarios_dir.mkdir(parents=True, exist_ok=True)
-    output_dir = tmp_path / "out"
-    estado_dir = tmp_path / "estados"
-    logs_dir = tmp_path / "logs"
-    procesados_dir = tmp_path / "procesados"
-
-    pagos_path = _write_pagos(
-        diarios_dir,
-        [
-            {
-                "nroproducto": "1002",
-                "recupero": "NO",
-                "tipo_pago": "PAGO_LINK",
-                "importe_pago": "100",
-                "dt_actual": "999",
-                "dv_actual": "",
-                "cajon_asig_prod": "M90",
-                    "cajon_actual_prod": "M90",
-            }
-        ],
-    )
-
-    run = _run_daily(
-        "--fecha",
-        "20260418",
-        "--input",
-        str(input_workbook),
-        "--diarios_dir",
-        str(diarios_dir),
-        "--estado_dir",
-        str(estado_dir),
-        "--output_dir",
-        str(output_dir),
-        "--logs_dir",
-        str(logs_dir),
-        "--procesados_dir",
-        str(procesados_dir),
-        "--pagos",
-        str(pagos_path),
-        cwd=REPO_ROOT,
-    )
-
-    assert run.returncode == 0, f"Daily run failed\nstdout:\n{run.stdout}\nstderr:\n{run.stderr}"
-
-    estado_vigente = pd.read_csv(estado_dir / "estado_202604.csv", sep=";", dtype=str, keep_default_na=False)
-    row_1002 = estado_vigente[estado_vigente["nroproducto"] == "1002"].iloc[0]
-    assert row_1002["total_deuda"] == "999"
-    assert row_1002["total_vencida"] == "0"
-
-    roman = _load_single_output(output_dir)
-    roman_row = roman[roman["id_producto"] == "1002"].iloc[0]
-    assert roman_row["monto_deuda_total"] == "999.0"
-    if "monto_deuda_vencida" in roman.columns:
-        assert roman_row["monto_deuda_vencida"] == "0.0"
 
 
 def test_ejecutar_dia_persiste_vigente_y_snapshot(tmp_path: Path) -> None:
@@ -251,7 +191,7 @@ def test_ejecutar_dia_es_compatible_si_faltan_diarios(tmp_path: Path) -> None:
     assert set(roman["id_dni"]) == {"20333444"}
     assert set(roman["id_producto"]) == {"1002"}
     columns = roman.columns.tolist()
-    assert columns.index("id_dni") == columns.index("tel_4") + 1
+    assert columns.index("id_dni") == columns.index("tel_3") + 1
     assert columns.index("id_producto") == columns.index("id_dni") + 1
 
 
@@ -285,8 +225,7 @@ def test_ejecutar_dia_crea_log_y_copia_insumos_en_exito(tmp_path: Path) -> None:
                 "nroproducto": "1002",
                 "recupero": "NO",
                 "tipo_pago": "PAGO_LINK",
-                "cajon_asig_prod": "M90",
-                "cajon_actual_prod": "M90",
+                "cajon_actual_prod": "M10",
             }
         ],
     )
@@ -375,7 +314,7 @@ def test_ejecutar_dia_aplica_transformaciones_solo_en_salida_roman(tmp_path: Pat
         assert f"plan_{idx}_cuotas" not in roman.columns
     assert "monto_entrega_3" in roman.columns
     assert "monto_cuota_3" in roman.columns
-    assert set(roman["plan_ok"]) <= {"si", "no"}
+    assert set(roman["tipo_marca_plan"]) <= {"Con Plan", "Sin Plan"}
 
     estado_vigente = pd.read_csv(estado_dir / "estado_202604.csv", sep=";", dtype=str, keep_default_na=False)
     assert "plan_1_entrega" in estado_vigente.columns

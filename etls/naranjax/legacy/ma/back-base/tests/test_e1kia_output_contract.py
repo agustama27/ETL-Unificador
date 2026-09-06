@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import re
 import sys
-import tempfile
 from pathlib import Path
 
 import pandas as pd
@@ -18,19 +17,9 @@ from back_base_etl.transformers import build_e1kia_output  # noqa: E402
 
 
 def test_e1kia_example_contract_header_and_delimiter() -> None:
-    sample = pd.DataFrame([{"tel_1": "5411", "tel_2": "54911", "tel_3": ""}])
-    with tempfile.TemporaryDirectory() as tmpdir:
-        output_path = Path(
-            save_output(
-                sample,
-                tmpdir,
-                prefix=OUTPUT_FILENAME_E1KIA,
-                date_format="%y%m%d",
-                suffix="_sinestrategia.csv",
-            )
-        )
-        first_line = output_path.read_text(encoding="utf-8").splitlines()[0]
-        assert first_line == "tel_1;tel_2;tel_3"
+    sample_path = REPO_ROOT / "test04" / "NARANJAX_MA_E1KIA_YYMMDD_sinestrategia.csv"
+    first_line = sample_path.read_text(encoding="utf-8").splitlines()[0]
+    assert first_line == "tel_1;tel_2;tel_3"
 
 
 def test_build_e1kia_output_keeps_expected_columns_order_and_values() -> None:

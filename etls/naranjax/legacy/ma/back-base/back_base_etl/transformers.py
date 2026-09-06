@@ -198,7 +198,9 @@ def transform(
                 "monto_deuda_tc": record["monto_deuda_total_tc_ars"],
                 "monto_deuda_nd": record["monto_deuda_total_nd_ars"],
                 "monto_deuda_total": record["monto_deuda_total_ars"],
-                "monto_deuda_vencida_actual": clean_monto(row.get("monto_deuda_vencida_actual", row.get("total_vencida", 0))),
+                "monto_deuda_vencida_actual": clean_monto(
+                    row.get("monto_deuda_vencida_actual", row.get("total_vencida", 0))
+                ),
                 "fecha_limite_sistema": execution_date_iso,
             }
             for plan_column in plan_columns:

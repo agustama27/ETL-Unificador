@@ -16,7 +16,7 @@ from back_base_etl.update_estado import update_estado
 
 LOGGER = logging.getLogger("etl_naranjax")
 SCRIPT_DIR = Path(__file__).resolve().parent
-DEFAULT_INPUT_PATH = SCRIPT_DIR / "archivo-recibido" / "NARANJAX_MA_BaseMensual.xlsx"
+DEFAULT_INPUT_PATH = SCRIPT_DIR / "archivo-recibido" / "Formato completo de archivo de entrada.xlsx"
 DEFAULT_OUTPUT_DIR = SCRIPT_DIR / "base-generada"
 
 

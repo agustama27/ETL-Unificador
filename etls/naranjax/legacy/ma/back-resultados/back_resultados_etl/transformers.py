@@ -49,19 +49,6 @@ def transform(source_df: pd.DataFrame, logger: logging.Logger | None = None) -> 
             active_logger.warning("Row %s: missing id_cliente, row omitted", row_number)
             continue
 
-        nroproducto = to_clean_str(row.get("id_nro_producto", ""))
-        if dni_for_validation == "1":
-            omitted_by_reason["invalid_dni"] += 1
-            warning_count += 1
-            active_logger.warning("Row %s: invalid id_cliente='1', row omitted", row_number)
-            continue
-
-        if codigo_pct == "26" and not nroproducto:
-            omitted_by_reason["missing_nroproducto"] += 1
-            warning_count += 1
-            active_logger.warning("Row %s: missing id_nro_producto, row omitted", row_number)
-            continue
-
         fecha = resolve_fecha_promesa(
             to_clean_str(row.get("fecha_compromiso_tc", "")),
             to_clean_str(row.get("fecha_compromiso_nd", "")),
@@ -71,7 +58,7 @@ def transform(source_df: pd.DataFrame, logger: logging.Logger | None = None) -> 
             {
                 "DNI": dni_raw,
                 "TIPIFICACION": codigo_pct,
-                "NROPRODUCTO": nroproducto,
+                "NROPRODUCTO": to_clean_str(row.get("id_nro_producto", "")),
                 "FECHA_PROMESA": format_fecha_compromiso(fecha),
                 "MONTO_PROMESA": to_clean_str(row.get("monto_compromiso", "")),
                 "CALL_REFID": to_clean_str(row.get("call_refid", row.get("call_id", ""))),

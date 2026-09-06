@@ -117,3 +117,20 @@ Formato: `## [YYYY-MM-DD] <op> | <tema>`. Grepeable con `grep '^## \[' docs/log.
 - `api.ts` gana `ApiError` con el status. Un 401 y una caída de red ya no se ven igual.
   El 503 (backend sin `ETL_CONSOLE_TOKEN`) muestra un mensaje distinto: no se arregla
   desde el navegador → [reference/comandos.md](reference/comandos.md)
+
+## [2026-09-06] update | sincronización de lógica con los ETLs individuales
+
+- Bancor carga masiva, Alvarez y Naranja X MA quedan alineados con sus repos upstream:
+  37 archivos. La paridad byte a byte estaba verde y aun así el código difería, porque
+  compara la salida sobre un fixture sintético, no el código →
+  [explanation/paridad-upstream.md](explanation/paridad-upstream.md)
+- Naranja X MA cambia una regla de negocio: `DEFAULT_CAJONES_SCOPE` pasa de
+  `("M60","M90")` a `("M90",)`. Cambia qué clientes entran al proceso →
+  [reference/ARQUITECTURA.md](reference/ARQUITECTURA.md)
+- La sincronización de `io.py` de MA pisó la tolerancia de hoja autorizada por
+  operaciones y rompió 3 tests. Se rehízo fusionando: se conserva la tolerancia y se porta
+  el fallback `nroproducto`→`dni` del upstream →
+  [decisions/tolerancia-hoja-asignacion.md](decisions/tolerancia-hoja-asignacion.md)
+- CartaSur y Naranja X MT ya estaban al día. El único archivo que MT parecía tener
+  desactualizado es un test **sin trackear** del upstream que contradice su propio código
+  de producción y falla al correrlo → [explanation/paridad-upstream.md](explanation/paridad-upstream.md)

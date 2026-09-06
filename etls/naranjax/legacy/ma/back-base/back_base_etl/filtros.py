@@ -7,7 +7,7 @@ import logging
 import pandas as pd
 
 
-DEFAULT_CAJONES_SCOPE = ("M60", "M90")
+DEFAULT_CAJONES_SCOPE = ("M90",)
 
 
 def aplicar_filtros(

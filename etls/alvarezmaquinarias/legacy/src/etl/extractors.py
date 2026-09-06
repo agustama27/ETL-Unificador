@@ -619,7 +619,8 @@ def _parse_servicios_detail_row(
     row: list,
 ) -> Optional[tuple[str, str, Optional[str], object, float]]:
     """Heurística por fila (no por hoja fija): ubica la fecha por tipo de
-    dato, toma el último valor numérico posterior como `Total`, y separa
+    dato, toma el último importe posterior como `Total` —sea número nativo o
+    texto con marca de moneda, que la fuente mezcla—, y separa
     remito/cliente de las celdas previas — layout combinado (remito y
     cliente pegados en una celda, con posible truncamiento a ~29
     caracteres), separado en columnas, o plano con columna `Código`
@@ -634,10 +635,21 @@ def _parse_servicios_detail_row(
         return None
     fecha = row[fecha_idx]
 
-    numeric_after = [v for v in row[fecha_idx + 1 :] if isinstance(v, (int, float)) and not _is_blank(v)]
-    if not numeric_after:
+    # El Total se toma como el ultimo importe posterior a la fecha. La hoja
+    # mezcla numeros nativos de Excel con celdas de texto ("USD1.149,20") en
+    # el mismo archivo, asi que no alcanza con mirar el tipo: cada celda pasa
+    # por parse_currency_amount y entra la que resuelve a un importe. Exigir
+    # numero nativo descartaba filas enteras con deuda real.
+    montos_after = [
+        monto
+        for monto in (
+            parse_currency_amount(v) for v in row[fecha_idx + 1 :] if not _is_blank(v)
+        )
+        if monto is not None
+    ]
+    if not montos_after:
         return None
-    total = float(numeric_after[-1])
+    total = montos_after[-1]
 
     pre = [v for v in row[:fecha_idx] if not _is_blank(v)]
     codigo: Optional[str] = None
