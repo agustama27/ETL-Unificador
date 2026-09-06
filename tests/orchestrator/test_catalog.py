@@ -9,8 +9,8 @@ from orchestrator.models import ArtifactRole, Readiness
 
 def _entry(**changes: object) -> dict[str, object]:
     entry: dict[str, object] = {
-        "id": "naranjax.ma.chat.daily",
-        "name": "Chat daily",
+        "id": "naranjax.ma.voice.daily",
+        "name": "Voice daily",
         "repository_status": "present",
         "readiness": "candidate",
         "executable": False,
@@ -26,10 +26,10 @@ def _write(tmp_path: Path, entry: dict[str, object], **root: object) -> Path:
     return path
 
 
-def test_repository_catalog_promotes_only_daily_chat_and_voice() -> None:
-    adapters = {"naranjax.ma.chat": object(), "naranjax.ma.voice": object(),
+def test_repository_catalog_promotes_only_daily_and_pct_voice() -> None:
+    adapters = {"naranjax.ma.voice": object(),
                 "naranjax.ma.voice.pct": object(), "naranjax.mt.voice": object(),
-                  "naranjax.ma.chat.pct": object(), "naranjax.mt.voice.pct": object(),
+                  "naranjax.mt.voice.pct": object(),
                   "naranjax.mt.voice.back": object()}
     catalog = Catalog.load(
         Path("etls/naranjax/manifest.yaml"), Path.cwd(),
@@ -37,19 +37,19 @@ def test_repository_catalog_promotes_only_daily_chat_and_voice() -> None:
     )
 
     assert tuple(item.id for item in catalog) == (
-        "naranjax.ma.chat.daily", "naranjax.ma.voice.daily",
-        "naranjax.ma.voice.pct", "naranjax.ma.chat.pct",
+        "naranjax.ma.voice.daily",
+        "naranjax.ma.voice.pct",
         "naranjax.mt.voice.pct", "naranjax.mt.voice.back",
         "naranjax.mt.voice.daily")
     assert all(item.executable and item.readiness is Readiness.READY for item in catalog)
-    chat = catalog["naranjax.ma.chat.daily"]
-    assert (chat.readiness, chat.executable, chat.command) == (Readiness.READY, True, (
+    voice = catalog["naranjax.ma.voice.daily"]
+    assert (voice.readiness, voice.executable, voice.command) == (Readiness.READY, True, (
         "python", "back-base/ejecutar_dia.py",
     ))
-    assert chat.arguments["business_date"] == "--fecha"
-    roles = tuple(output.role for output in chat.outputs)
-    assert roles == (ArtifactRole.ROMAN, ArtifactRole.CHAT, ArtifactRole.E1KIA)
-    assert chat.adapter == "etls.naranjax.ma_chat:MaChatAdapter"
+    assert voice.arguments["business_date"] == "--fecha"
+    roles = tuple(output.role for output in voice.outputs)
+    assert roles == (ArtifactRole.ROMAN, ArtifactRole.E1KIA)
+    assert voice.adapter == "etls.naranjax.ma_voice:MaVoiceAdapter"
     voice = catalog["naranjax.ma.voice.daily"]
     assert (voice.readiness, voice.executable, voice.command) == (
         Readiness.READY, True, ("python", "back-base/ejecutar_dia.py")
@@ -80,11 +80,6 @@ def test_repository_catalog_promotes_only_daily_chat_and_voice() -> None:
         "etl_core.contracts:SubprocessAdapter", (0,), 900
     )
     assert pct.environment_allowlist == ()
-    chat_pct = catalog["naranjax.ma.chat.pct"]
-    assert (chat_pct.adapter, chat_pct.project_path) == (
-        "etl_core.contracts:SubprocessAdapter", Path("etls/naranjax/legacy/chat")
-    )
-    assert tuple(output.glob for output in chat_pct.outputs) == ("NARANJAX_PCT_*.csv",)
     mt_pct = catalog["naranjax.mt.voice.pct"]
     assert (mt_pct.adapter, mt_pct.project_path) == (
         "etl_core.contracts:SubprocessAdapter", Path("etls/naranjax/legacy/mt")
@@ -220,9 +215,9 @@ def test_load_directory_rejects_cross_file_duplicates_and_empty(tmp_path: Path) 
 
 
 def test_repository_registry_directory_exposes_all_client_entries() -> None:
-    adapters = {"naranjax.ma.chat": object(), "naranjax.ma.voice": object(),
+    adapters = {"naranjax.ma.voice": object(),
                 "naranjax.ma.voice.pct": object(), "naranjax.mt.voice": object(),
-                "naranjax.ma.chat.pct": object(), "naranjax.mt.voice.pct": object(),
+                "naranjax.mt.voice.pct": object(),
                 "naranjax.mt.voice.back": object(), "encuestacx.base": object(),
                 "bancor.base": object(), "epec.base": object(), "fravega.base": object(), "clarouy.base": object(),
                 "social.argentina": object(), "social.chile": object(),
@@ -230,7 +225,7 @@ def test_repository_registry_directory_exposes_all_client_entries() -> None:
 
     catalog = Catalog.load_workspace(Path.cwd(), adapters=adapters)
 
-    assert len(tuple(catalog)) == 25
+    assert len(tuple(catalog)) == 23
     bancor = catalog["bancor.base.daily"]
     assert (bancor.adapter, bancor.project_path) == (
         "etl_core.contracts:SubprocessAdapter", Path("etls/bancor/legacy"))
@@ -256,7 +251,7 @@ def test_output_date_format_is_optional(tmp_path: Path) -> None:
 
     catalog = Catalog.load(_write(tmp_path, entry), tmp_path)
 
-    output = catalog["naranjax.ma.chat.daily"].outputs[0]
+    output = catalog["naranjax.ma.voice.daily"].outputs[0]
     assert (output.role, output.glob, output.date_format) == (
         "survey_base", "base_encuesta.csv", None
     )

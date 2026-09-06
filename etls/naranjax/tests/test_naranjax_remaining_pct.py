@@ -21,7 +21,6 @@ from tests.support.synthetic_naranjax import write_result
 
 TODAY = date(2026, 7, 21)
 ENTRIES = {
-    "naranjax.ma.chat.pct": ("pct", "NARANJAX_PCT_20260721.csv"),
     "naranjax.mt.voice.pct": ("mt_pct", "DEELO_NAR_USUEVOLTIS_20260721.txt"),
 }
 

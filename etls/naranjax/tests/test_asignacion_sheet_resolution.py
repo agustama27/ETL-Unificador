@@ -1,9 +1,12 @@
 """Resolución de la hoja de base mensual en el legacy (issue #101).
 
-Cubre las dos copias de ``back_base_etl`` (chat y ma) con el mismo contrato:
-alias primero, fallback a hoja única con encabezados validados, fallo claro
-en el resto. Único cambio a código legacy de la migración — ver
+Contrato: alias primero, fallback a hoja única con encabezados validados, fallo
+claro en el resto. Único cambio a código legacy de la migración — ver
 ``docs/decisions/tolerancia-hoja-asignacion.md``.
+
+Hasta la baja del ETL de Chat había dos copias de ``back_base_etl`` y un test que
+verificaba que compartieran el bloque de resolución textualmente. Queda una sola,
+así que ese test ya no tiene contra qué comparar.
 """
 
 import importlib
@@ -16,7 +19,6 @@ from openpyxl import Workbook
 
 NARANJAX = Path(__file__).resolve().parents[1]
 COPIES = {
-    "chat": NARANJAX / "legacy/chat/back-base",
     "ma": NARANJAX / "legacy/ma/back-base",
 }
 
@@ -91,10 +93,14 @@ def test_multiple_sheets_without_match_fail_listing_them(legacy_io, tmp_path: Pa
         legacy_io._resolve_input_sheet_name(path)
 
 
-def test_both_copies_share_the_exact_resolution_code() -> None:
-    start, end = "def _missing_required_input_headers", "def _resolve_planes_column_mapping"
-    blocks = []
-    for root in COPIES.values():
-        source = (root / "back_base_etl/io.py").read_text("utf-8")
-        blocks.append(source[source.index(start):source.index(end)])
-    assert blocks[0] == blocks[1]
+def test_la_tolerancia_autorizada_sigue_en_el_legacy() -> None:
+    """Guardia contra una resincronización que la pise.
+
+    Ya pasó: sincronizar `io.py` con el upstream borró este bloque de un saque,
+    porque el upstream no lo tiene ni debe tenerlo. La tolerancia es un cambio
+    propio del Unificador, autorizado en el issue #101.
+    """
+    fuente = (COPIES["ma"] / "back_base_etl/io.py").read_text("utf-8")
+
+    assert "def _missing_required_input_headers" in fuente
+    assert "using the workbook's " in fuente

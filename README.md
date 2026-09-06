@@ -76,7 +76,7 @@ El CORS del backend está abierto sólo a `http://localhost:5173` y `http://127.
 
 ```bash
 python -m orchestrator.run \
-  --etl naranjax.ma.chat.daily \
+  --etl naranjax.ma.voice.daily \
   --fecha 20260806 \
   --base ./inputs/base_mensual.xlsx \
   --input planes=./inputs/planes.xlsx \
@@ -87,7 +87,7 @@ Cuando el día no tiene archivo de PLANES, se declara explícitamente con un par
 
 ```bash
 python -m orchestrator.run \
-  --etl naranjax.ma.chat.daily \
+  --etl naranjax.ma.voice.daily \
   --fecha 20260806 \
   --base ./inputs/base_mensual.xlsx \
   --param no_planes_today
@@ -207,7 +207,7 @@ y sus patrones de salida.
 
 | Cliente | Paquete | Estado general |
 |---|---|---|
-| Naranja X | `etls/naranjax/` | 7 ETLs operativos (MA Chat, MA Voz, MT Voz, PCT) |
+| Naranja X | `etls/naranjax/` | 5 ETLs operativos (MA Voz, MT Voz, PCT) |
 | Bancor | `etls/bancor/` | Base diaria operativa; resultados, carga masiva y cupones pendientes |
 | Petersen | `etls/petersen/` | Gestiones y tabla integradora operativos; Retell pendiente |
 | EPEC | `etls/epec/` | Base operativa; tipificaciones Retell pendientes |
@@ -267,7 +267,7 @@ si el token no coincide, no se borra.
 
 ### Estado persistente y promoción
 
-Los ETLs con estado (por ejemplo Naranja X MA Chat) leen y escriben un archivo mensual acumulado.
+Los ETLs con estado (por ejemplo Naranja X MA Voz) leen y escriben un archivo mensual acumulado.
 El flujo es: se copia el estado corriente al sandbox → el legacy lo modifica → si la corrida
 tuvo éxito, se promueven dos archivos de forma durable:
 

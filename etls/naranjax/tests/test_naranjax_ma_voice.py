@@ -68,8 +68,7 @@ def _adapters():
 
 @pytest.mark.parametrize(
     ("etl_id", "adapter_key"),
-    [("naranjax.ma.chat.daily", "etls.naranjax.ma_chat:MaChatAdapter"),
-     (VOICE, "etls.naranjax.ma_voice:MaVoiceAdapter")],
+    [(VOICE, "etls.naranjax.ma_voice:MaVoiceAdapter")],
 )
 def test_cli_selects_catalog_adapter(tmp_path: Path, etl_id: str, adapter_key: str) -> None:
     adapters = _adapters()

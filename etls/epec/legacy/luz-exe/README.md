@@ -4,7 +4,7 @@ Aplicacion de escritorio para ejecutar el flujo `luz` usando la misma logica de 
 
 ## Flujo funcional
 
-1. Abrir la app (`python main.py` o `luz.exe`).
+1. Abrir la app (`python main.py` o `generacion-salida-EPEC.exe`).
 2. Seleccionar uno o varios CSV de Roman.
 3. Seleccionar uno o varios CSV de Logcall.
 4. Hacer click en `Procesar`.
@@ -57,7 +57,7 @@ pyinstaller luz.spec
 
 Salida esperada:
 
-- `dist\luz.exe`
+- `dist\generacion-salida-EPEC.exe`
 
 Notas:
 

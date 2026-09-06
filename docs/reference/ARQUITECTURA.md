@@ -135,7 +135,7 @@ se ignoran.
 | `working_dir` | no | `cwd` del subprocess |
 | `entrypoint` | no | Script que se ejecuta |
 | `command` | no | Comando base, por ejemplo `[python, back-base/ejecutar_dia.py]` |
-| `fixed_arguments` | no | Flags siempre presentes, por ejemplo `[--chat]` |
+| `fixed_arguments` | no | Flags siempre presentes, por ejemplo `[--pct]` |
 | `arguments` | no | Mapa rol → flag CLI |
 | `adapter` | no | Ruta de importación `modulo:Clase` (ej. `etl_core.contracts:SubprocessAdapter`); debe satisfacer el Protocol `ETLAdapter` |
 | `inputs` | no | Lista de `{role, extensions, required}` |
@@ -205,7 +205,7 @@ anclar PLANES/PAGOS en `input/diarios/`); sin el hook, el servicio usa
 
 | Referencia del manifiesto | Clase | Nota |
 |---|---|---|
-| `etls.naranjax.ma_chat:MaChatAdapter` | `MaChatAdapter` | Stateful. `--chat` viaja como `fixed_arguments` del manifiesto |
+| `etls.naranjax.ma_voice:MaVoiceAdapter` | `MaVoiceAdapter` | Stateful. Compone `MaChatAdapter`, que tras la baja del ETL de Chat quedó como implementación compartida de Naranja X y ya no es adapter de ningún ETL |
 | `etls.naranjax.ma_voice:MaVoiceAdapter` | `MaVoiceAdapter` | Stateful, exige cambio de estado |
 | `etls.naranjax.mt_voice:MtVoiceAdapter` | `MtVoiceAdapter` | Vía `mt_voice_job.py` |
 | `etls.naranjax.mt_voice_back:MtVoiceBackAdapter` | `MtVoiceBackAdapter` | Tres entradas obligatorias |

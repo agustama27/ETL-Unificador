@@ -134,3 +134,24 @@ Formato: `## [YYYY-MM-DD] <op> | <tema>`. Grepeable con `grep '^## \[' docs/log.
 - CartaSur y Naranja X MT ya estaban al día. El único archivo que MT parecía tener
   desactualizado es un test **sin trackear** del upstream que contradice su propio código
   de producción y falla al correrlo → [explanation/paridad-upstream.md](explanation/paridad-upstream.md)
+
+## [2026-09-06] update | EPEC a la rama CXI y baja del ETL de Chat
+
+- EPEC se sincroniza contra `feature/cxi-luz-salientes-v1.1`, por decisión explícita.
+  **Cambia el contrato de salida: de 33 a 24 columnas**, y suma
+  `[Salida] Utilidad Informacion`. Entra además el test del consolidador →
+  [reference/ARQUITECTURA.md](reference/ARQUITECTURA.md)
+- Se dan de baja `naranjax.ma.chat.daily` y `naranjax.ma.chat.pct` y se borra
+  `legacy/chat`. El catálogo pasa de 25 entradas / 18 ejecutables a **23 / 16** →
+  [../etls/naranjax/README.md](../etls/naranjax/README.md)
+- `ma_chat.py` **no** se borró: `MaVoiceAdapter`, `MtVoiceAdapter` y `MtVoiceBackAdapter`
+  lo componen (`self._shared = MaChatAdapter(...)`). Quedó como implementación compartida
+  de Naranja X sin ETL propio; el nombre engaña y conviene renombrarlo →
+  [reference/ARQUITECTURA.md](reference/ARQUITECTURA.md)
+- `test_both_copies_share_the_exact_resolution_code` se queda sin segunda copia y se
+  reemplaza por un guard que verifica que la tolerancia autorizada siga en el legacy.
+  No es equivalente: es mejor. Cubre el modo de falla real, que es una resincronización
+  que la pise → [decisions/tolerancia-hoja-asignacion.md](decisions/tolerancia-hoja-asignacion.md)
+- Los ADR-001 y de tolerancia quedan sin editar: son registros de decisión y ARC-022 pide
+  superseder, no reescribir. Sus menciones a las dos copias describen lo que era cierto
+  cuando se escribieron → [index.md](index.md)

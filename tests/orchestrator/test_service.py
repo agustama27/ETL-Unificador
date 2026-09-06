@@ -5,7 +5,7 @@ from typing import Any
 
 import pytest
 
-from etls.naranjax.ma_chat import MaChatAdapter
+from etls.naranjax.ma_voice import MaVoiceAdapter
 from etls.naranjax.ma_voice_pct import MaVoicePctAdapter
 from orchestrator.catalog import Catalog
 from orchestrator.models import (ETLDefinition, InputSpec, Readiness,
@@ -17,7 +17,7 @@ from orchestrator.state_store import StatePromotionError
 from tests.support.synthetic_naranjax import write_result
 
 
-TODAY, ETL, SECRET = date(2026, 7, 21), "naranjax.ma.chat.daily", "host-secret"
+TODAY, ETL, SECRET = date(2026, 7, 21), "naranjax.ma.voice.daily", "host-secret"
 
 
 class FakeRunner:
@@ -30,7 +30,7 @@ class FakeRunner:
         self.calls += 1
         run = next(path for path in map(Path, command) if path.name == "base.xlsx").parents[1]
         if self.mode in {"success", "missing", "ambiguous", "promotion"}:
-            write_result(run, "success" if self.mode == "promotion" else self.mode)
+            write_result(run, "success" if self.mode == "promotion" else self.mode, channel="voice")
         (run / "logs" / "legacy.log").write_text(f"legacy {SECRET}", encoding="utf-8")
         exit_code = {"nonzero": 7, "spawn": None}.get(self.mode, 0)
         timed_out = self.mode == "timeout"
@@ -50,7 +50,9 @@ class FakeState:
     def promote(self, etl_id: str, business_date: date, staged: Path, run_id: str,
                 *, require_change: bool = False) -> object:
         self.promotions += 1
-        assert require_change is False
+        # El servicio propaga la propiedad del adapter, no un valor fijo:
+        # MaVoiceAdapter la declara True y MtVoice/MtVoiceBack, False.
+        assert require_change is True
         assert staged.read_text("utf-8") == "state"
         if self.error:
             raise self.error
@@ -66,12 +68,11 @@ def service(tmp_path: Path, mode: str = "success", state_error: Any = None):
         uuid_factory=iter((f"id-{n}" for n in range(30))).__next__,
     )
     definition = Catalog.load(Path("etls/naranjax/manifest.yaml"), Path.cwd(),
-                              adapters={"naranjax.ma.chat": object(),
-                                        "naranjax.ma.voice": object(),
+                              adapters={"naranjax.ma.voice": object(),
                   "naranjax.ma.voice.pct": object(), "naranjax.mt.voice": object(),
-                  "naranjax.ma.chat.pct": object(), "naranjax.mt.voice.pct": object(),
+                  "naranjax.mt.voice.pct": object(),
                   "naranjax.mt.voice.back": object()})[ETL]
-    subject = RunService(definition, MaChatAdapter(today=lambda: TODAY), runner, store, state,
+    subject = RunService(definition, MaVoiceAdapter(today=lambda: TODAY), runner, store, state,
                          workspace=Path.cwd(), now=lambda: "2026-07-21T15:00:00+00:00")
     return subject, runner, state, store
 
@@ -96,7 +97,7 @@ def test_success_persists_complete_relative_redacted_evidence(tmp_path: Path) ->
     assert [event["status"] for event in evidence["lifecycle"]] == ["preparing", "running", "succeeded"]
     assert evidence["inputs"][0]["sha256"] == "68828f0b413235f5c2d7d6803a3570a7e3ebd0fd4481be30f82aa490082d788b"
     assert evidence["postconditions"] == {"outputs": "passed", "state": "promoted"}
-    assert {item["role"] for item in evidence["artifacts"]} == {"roman", "chat", "e1kia"}
+    assert {item["role"] for item in evidence["artifacts"]} == {"roman", "e1kia"}
     assert evidence["logs"] == ["logs/stdout.log", "logs/stderr.log", "logs/legacy-legacy.log"]
     serialized = json.dumps(evidence)
     forbidden = (SECRET, str(tmp_path), "/srv/private/data.csv", r"D:\Agents\private\input.xlsx", r"\\server\share\private.csv", " dir/data.csv", r" Private\input.xlsx")

@@ -7,7 +7,7 @@ import tkinter as tk
 from tkinter import filedialog, messagebox
 
 
-WINDOW_TITLE = "Flujo Luz"
+WINDOW_TITLE = "Flujo Luz — v1.1 (16 columnas)"
 
 
 def _configure_back_resultados_path() -> None:

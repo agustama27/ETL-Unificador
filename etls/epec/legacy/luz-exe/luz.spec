@@ -28,7 +28,7 @@ exe = EXE(
     a.binaries,
     a.datas,
     [],
-    name='luz',
+    name='generacion-salida-EPEC',
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,
