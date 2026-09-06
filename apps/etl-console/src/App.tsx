@@ -1,8 +1,10 @@
 import { ClockCounterClockwise, FlowArrow, Play, SquaresFour, Stack } from "@phosphor-icons/react";
 import { useQuery } from "@tanstack/react-query";
 import { NavLink, Route, Routes } from "react-router-dom";
-import { LIVE, fetchHistory, todayIso } from "./api";
+import { useEffect, useState } from "react";
+import { ACCESO_DENEGADO, LIVE, clearToken, fetchHistory, getToken, todayIso } from "./api";
 import { ToastProvider } from "./components/shared";
+import Acceso from "./screens/Acceso";
 import Catalogo from "./screens/Catalogo";
 import DetalleCorrida from "./screens/DetalleCorrida";
 import Historial from "./screens/Historial";
@@ -44,6 +46,25 @@ function Sidebar() {
 }
 
 export default function App() {
+  // Sin token no se dispara ni un pedido: mostrar cuatro pantallas con "No se pudo
+  // cargar" cuando lo que falta es la credencial es indistinguible de un servidor caido.
+  const [acceso, setAcceso] = useState<{ status: number; detalle?: string } | null>(
+    () => (getToken() ? null : { status: 401 }),
+  );
+
+  useEffect(() => {
+    const alDenegar = (evento: Event) => {
+      const { status, detalle } = (evento as CustomEvent).detail ?? {};
+      // Un token rechazado no sirve para el proximo pedido: se descarta.
+      if (status === 401) clearToken();
+      setAcceso({ status, detalle });
+    };
+    window.addEventListener(ACCESO_DENEGADO, alDenegar);
+    return () => window.removeEventListener(ACCESO_DENEGADO, alDenegar);
+  }, []);
+
+  if (acceso) return <Acceso status={acceso.status} detalle={acceso.detalle} />;
+
   return (
     <ToastProvider>
       <div className="layout">

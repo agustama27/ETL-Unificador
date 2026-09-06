@@ -31,18 +31,40 @@ export interface RunDetail extends RunSummary {
 
 export interface HistoryPage { items: RunSummary[]; total: number; page: number; pages: number }
 
+/** Error de la API que conserva el status: sin el, un 401 se ve igual que una caida. */
+export class ApiError extends Error {
+  constructor(message: string, readonly status: number) {
+    super(message);
+    this.name = "ApiError";
+  }
+}
+
+export const TOKEN_KEY = "etl_token";
+export const getToken = () => localStorage.getItem(TOKEN_KEY) ?? "";
+export const setToken = (valor: string) => localStorage.setItem(TOKEN_KEY, valor.trim());
+export const clearToken = () => localStorage.removeItem(TOKEN_KEY);
+
+/** Evento global de acceso denegado. Lo escucha App para mostrar la pantalla de acceso. */
+export const ACCESO_DENEGADO = "etl:acceso-denegado";
+
 const json = async <T>(response: Response): Promise<T> => {
   if (!response.ok) {
     const body = await response.json().catch(() => ({ detail: response.statusText }));
-    throw new Error(typeof body.detail === "string" ? body.detail : response.statusText);
+    const detalle = typeof body.detail === "string" ? body.detail : response.statusText;
+    // 401: token ausente o invalido. 503: el backend no tiene ETL_CONSOLE_TOKEN
+    // configurado, que es fail-closed a proposito y NO se arregla desde el navegador.
+    if (response.status === 401 || response.status === 503) {
+      window.dispatchEvent(new CustomEvent(ACCESO_DENEGADO,
+        { detail: { status: response.status, detalle } }));
+    }
+    throw new ApiError(detalle, response.status);
   }
   return response.json() as Promise<T>;
 };
 
-// Con ETL_CONSOLE_TOKEN activo en el backend, guardá el token en
-// localStorage("etl_token") para que la consola lo adjunte en cada request.
+// El token se carga desde la pantalla de acceso y vive en localStorage.
 const apiFetch = (input: string, init: RequestInit = {}) => {
-  const token = localStorage.getItem("etl_token");
+  const token = getToken();
   const headers: Record<string, string> = {
     ...((init.headers as Record<string, string>) ?? {}),
     ...(token ? { Authorization: `Bearer ${token}` } : {}),

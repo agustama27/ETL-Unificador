@@ -105,3 +105,15 @@ Formato: `## [YYYY-MM-DD] <op> | <tema>`. Grepeable con `grep '^## \[' docs/log.
 - Verificado en la VM: frontend 200, `/ready` con 25 ETLs, 401 sin token y 200 con token,
   `date` en `-03`, `var/` escribible sobre el volumen. Los ocho contenedores de los otros
   equipos conservan su uptime → [how-to/desplegar-en-vm-stage.md](how-to/desplegar-en-vm-stage.md)
+
+## [2026-09-06] fix | pantalla de acceso en la consola
+
+- La consola mostraba "No se pudo cargar el tablero" cuando el backend devolvía 401 por
+  falta de token, que es indistinguible de un servidor caído. Entra `screens/Acceso.tsx`
+  con un campo para pegar el token → [reference/comandos.md](reference/comandos.md)
+- Hasta ahora la única forma de cargar el token era abrir DevTools y escribir en
+  `localStorage` a mano: no era un flujo que se le pudiera pedir a operaciones →
+  [how-to/desplegar-en-vm-stage.md](how-to/desplegar-en-vm-stage.md)
+- `api.ts` gana `ApiError` con el status. Un 401 y una caída de red ya no se ven igual.
+  El 503 (backend sin `ETL_CONSOLE_TOKEN`) muestra un mensaje distinto: no se arregla
+  desde el navegador → [reference/comandos.md](reference/comandos.md)

@@ -105,12 +105,9 @@ curl -s -o /dev/null -w '%{http_code}\n' http://localhost:8082/api/catalog   # 4
 
 Ese `401` es la señal correcta: la API es fail-closed y el token todavía no se envió.
 
-Desde el navegador en la red corporativa: `http://10.0.32.181:8082`. Para que la consola
-autentique, cargar el token una vez en la consola del navegador:
-
-```javascript
-localStorage.setItem("etl_token", "<token>")
-```
+Desde el navegador en la red corporativa: `http://10.0.32.181:8082`. La consola muestra la
+pantalla de acceso y pide el token; se pega ahí una sola vez y queda guardado en ese
+navegador.
 
 Confirmar la zona horaria, de la que dependen los nombres de los archivos de salida:
 
