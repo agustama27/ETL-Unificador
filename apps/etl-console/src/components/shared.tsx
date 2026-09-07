@@ -1,4 +1,5 @@
-import { Check, CheckCircle, CircleNotch, Info, LockSimple, Minus, Prohibit, Timer, Warning, X } from "@phosphor-icons/react";
+import { ArrowClockwise, Check, CheckCircle, CircleNotch, Copy, Info, LockSimple, Minus,
+         Plugs, Prohibit, Timer, Warning, X } from "@phosphor-icons/react";
 import { createContext, useCallback, useContext, useMemo, useRef, useState } from "react";
 import type { ReactNode } from "react";
 import { Link } from "react-router-dom";
@@ -86,8 +87,8 @@ export function ToastProvider({ children }: { children: ReactNode }) {
 
 export function InertRow({ entry }: { entry: CatalogEntry }) {
   return (
-    <div className="row muted" style={{ fontSize: 12 }}>
-      <Prohibit size={14} color="var(--status-blocked)" />
+    <div className="row ink-muted" style={{ fontSize: 12 }}>
+      <Prohibit size={14} color="var(--status-blocked-fg)" aria-hidden="true" />
       <span>{entry.reason}</span>
     </div>
   );
@@ -101,4 +102,56 @@ export function TimelineIcon({ state }: { state: "done" | "active" | "fail" | "i
     return null;
   }, [state]);
   return <span className="tl-node">{icon}</span>;
+}
+
+// Un estado vacío dice qué falta, por qué y qué hacer — "sin datos" no es un
+// estado vacío. `danger` es el único tono que rompe la regla de "nunca
+// rellenar con el acento": ahí el ícono va sólido en el color de falla.
+export function Empty({ icon, title, body, actions, danger, diagnostic, inline }: {
+  icon: ReactNode; title: string; body: ReactNode; actions?: ReactNode;
+  danger?: boolean; diagnostic?: string; inline?: boolean;
+}) {
+  return (
+    <div className={`empty${inline ? " empty--inline" : ""}`}>
+      <span className="empty__icon" style={danger ? { color: "var(--status-failed-fg)", opacity: 1 } : undefined}>
+        {icon}
+      </span>
+      <div className="empty__title">{title}</div>
+      <p className="empty__body">{body}</p>
+      {actions && <div className="empty__actions">{actions}</div>}
+      {diagnostic && <div className="mono ink-subtle" style={{ marginTop: 16, fontSize: 10.5 }}>{diagnostic}</div>}
+    </div>
+  );
+}
+
+// Los cuatro .banner-error de "no se pudo cargar" repetidos por pantalla. La
+// diferencia con el banner viejo: dice qué NO se rompió (las corridas en
+// curso siguen en el servidor) y deja un diagnóstico copiable en vez de sólo
+// "no se pudo cargar".
+export function ConnectionError({ endpoint, onRetry }: { endpoint: string; onRetry: () => void }) {
+  const [copied, setCopied] = useState(false);
+  const diagnostic = `ERR_NETWORK · ${new Date().toLocaleString("es-AR")} · ${endpoint}`;
+  return (
+    <Empty
+      icon={<Plugs size={32} aria-hidden="true" />}
+      danger
+      title="La consola no llega a la API"
+      body={<>Los últimos pedidos a <span className="mono">{endpoint}</span> no tuvieron respuesta.
+        Las corridas que ya están en curso siguen ejecutándose en el servidor: esto es la vista, no el motor.</>}
+      actions={<>
+        <button className="btn btn--primary" onClick={onRetry}>
+          <ArrowClockwise size={13} aria-hidden="true" /> Reintentar
+        </button>
+        <button className="btn btn--quiet" onClick={() => {
+          navigator.clipboard?.writeText(diagnostic).then(() => {
+            setCopied(true);
+            setTimeout(() => setCopied(false), 2000);
+          });
+        }}>
+          <Copy size={13} aria-hidden="true" /> {copied ? "Copiado" : "Copiar diagnóstico"}
+        </button>
+      </>}
+      diagnostic={diagnostic}
+    />
+  );
 }

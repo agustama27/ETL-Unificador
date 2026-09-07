@@ -1,10 +1,10 @@
-import { Download, Play, WarningOctagon } from "@phosphor-icons/react";
+import { Download, Play, SunHorizon, WarningOctagon } from "@phosphor-icons/react";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { LIVE, downloadArtifactsZip, fetchCatalog, fetchHistory, todayIso } from "../api";
 import type { RunStatus, RunSummary } from "../api";
-import { StatusBadge, useToast } from "../components/shared";
+import { ConnectionError, Empty, StatusBadge, useToast } from "../components/shared";
 
 // Tinta de .etl-row__meta en una fila con problema: el error_code se lee sin
 // abrir la corrida. Sólo estos tres estados cuentan como "con problemas".
@@ -46,21 +46,62 @@ export default function Tablero() {
     }
   }, [runs.data, toast]);
 
+  // El skeleton copia la geometría de lo que reemplaza: título+subtítulo, la
+  // grilla de métricas con el líder más grande, y dos grupos de filas — si la
+  // página salta cuando llegan los datos, el skeleton está mal.
   if (catalog.isLoading || runs.isLoading) {
-    return <div className="page stack">{[1, 2, 3, 4].map((n) => <div key={n} className="skeleton" />)}</div>;
+    return (
+      <div className="page">
+        <div className="skel skel--title" style={{ width: 180, marginBottom: 8 }} />
+        <div className="skel skel--text" style={{ width: 280, marginBottom: 24 }} />
+        <div className="metric-row" style={{ gridTemplateColumns: "1.35fr 1fr 1fr 1fr", marginBottom: 28 }}>
+          <div className="skel skel--metric" style={{ height: 86 }} />
+          <div className="skel skel--metric" />
+          <div className="skel skel--metric" />
+          <div className="skel skel--metric" />
+        </div>
+        <div className="skel skel--text" style={{ width: 90, marginBottom: 12 }} />
+        <div className="etl-list" style={{ marginBottom: 24 }}>
+          <div className="skel skel--row" />
+          <div className="skel skel--row" style={{ opacity: 0.75 }} />
+          <div className="skel skel--row" style={{ opacity: 0.5 }} />
+        </div>
+        <div className="skel skel--text" style={{ width: 70, marginBottom: 12 }} />
+        <div className="etl-list">
+          <div className="skel skel--row" style={{ opacity: 0.4 }} />
+          <div className="skel skel--row" style={{ opacity: 0.28 }} />
+        </div>
+      </div>
+    );
   }
   if (catalog.isError || runs.isError) {
     return (
       <div className="page">
-        <div className="banner-error">
-          No se pudo cargar el tablero.
-          <button className="btn btn--secondary" onClick={() => { catalog.refetch(); runs.refetch(); }}>Reintentar</button>
-        </div>
+        <ConnectionError
+          endpoint={[catalog.isError && "/api/catalog", runs.isError && "/api/runs"].filter(Boolean).join(", ")}
+          onRetry={() => { catalog.refetch(); runs.refetch(); }}
+        />
       </div>
     );
   }
 
   const executables = (catalog.data ?? []).filter((entry) => entry.executable);
+  if (executables.length === 0) {
+    return (
+      <div className="page">
+        <header className="page-header">
+          <h1>Tablero del día</h1>
+          <div className="page-header__sub">{longDate()} · fecha de negocio fija en hoy</div>
+        </header>
+        <Empty
+          icon={<SunHorizon size={32} aria-hidden="true" />}
+          title="Todavía no corrió nada hoy"
+          body="El catálogo no tiene ningún ETL ejecutable programado para hoy."
+          actions={<Link className="btn btn--ghost" to="/catalogo">Ver el catálogo</Link>}
+        />
+      </div>
+    );
+  }
   const latestByEtl = new Map<string, RunSummary>();
   for (const run of runs.data?.items ?? []) {
     if (!latestByEtl.has(run.etl_id)) latestByEtl.set(run.etl_id, run);

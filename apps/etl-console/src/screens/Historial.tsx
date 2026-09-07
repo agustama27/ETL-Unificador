@@ -1,9 +1,9 @@
-import { CaretLeft, CaretRight } from "@phosphor-icons/react";
+import { CaretLeft, CaretRight, FunnelX } from "@phosphor-icons/react";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { LIVE, fetchCatalog, fetchHistory, formatDuration, formatMoment } from "../api";
-import { StatusBadge } from "../components/shared";
+import { ConnectionError, Empty, StatusBadge } from "../components/shared";
 
 const STATUS_FILTERS = [
   ["", "Todos los estados"], ["succeeded", "Exitosa"], ["failed", "Fallida"],
@@ -45,12 +45,27 @@ export default function Historial() {
       </div>
 
       {history.isLoading ? (
-        <div className="stack">{[1, 2, 3].map((n) => <div key={n} className="skeleton" />)}</div>
-      ) : history.isError ? (
-        <div className="banner-error">
-          No se pudo cargar el historial.
-          <button className="btn btn--secondary" onClick={() => history.refetch()}>Reintentar</button>
+        <div className="etl-list">
+          <div className="skel skel--row" />
+          <div className="skel skel--row" style={{ opacity: 0.75 }} />
+          <div className="skel skel--row" style={{ opacity: 0.5 }} />
         </div>
+      ) : history.isError ? (
+        <ConnectionError endpoint="/api/runs" onRetry={() => history.refetch()} />
+      ) : history.data!.items.length === 0 ? (
+        <Empty
+          inline
+          icon={<FunnelX size={28} aria-hidden="true" />}
+          title={client || status ? "Ninguna corrida coincide con el filtro" : "Todavía no hay corridas registradas"}
+          body={client || status
+            ? "Probá sacando el cliente o el estado que elegiste."
+            : "Cuando se ejecute un ETL, la corrida va a aparecer acá."}
+          actions={(client || status) && (
+            <button className="btn btn--secondary" onClick={() => { setClient(""); setStatus(""); setPage(1); }}>
+              Quitar el filtro
+            </button>
+          )}
+        />
       ) : (
         <>
           <table className="data-table">
