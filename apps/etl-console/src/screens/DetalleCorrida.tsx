@@ -304,10 +304,19 @@ export default function DetalleCorrida() {
             )}
           </div>
           {data.artifacts.length === 0 && !incomplete ? (
-            <div className="ink-muted">
-              {live ? "Los artefactos aparecen cuando la corrida termina bien."
-                    : "Esta corrida no generó artefactos."}
-            </div>
+            live ? (
+              <Empty inline icon={<HourglassHigh size={26} aria-hidden="true" />} title="Aparecen cuando termine"
+                     body={entry && entry.outputs.length > 0
+                       ? <>Este ETL declara {entry.outputs.length} {entry.outputs.length === 1 ? "salida" : "salidas"}:{" "}
+                           {entry.outputs.map((o) => <span key={o.role} className="mono">{o.role} </span>)}</>
+                       : "Los artefactos aparecen cuando la corrida termina bien."} />
+            ) : data.status === "timed_out" ? (
+              <Empty inline icon={<FileDashed size={26} aria-hidden="true" />} title="No hay artefactos, y está bien"
+                     body="La corrida se interrumpió por timeout antes de escribir salidas. No se promovió nada: el estado mensual quedó intacto." />
+            ) : (
+              <Empty inline icon={<FileDashed size={26} aria-hidden="true" />} title="Esta corrida no generó artefactos"
+                     body="No se produjo ningún archivo de salida." />
+            )
           ) : (
             <div className="stack" style={{ gap: 8 }}>
               {data.artifacts.map((artifact) => (
