@@ -15,7 +15,7 @@ from pathlib import Path
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="Bancor base (unified)")
-    parser.add_argument("--input", required=True, help="Raw Bancor CSV")
+    parser.add_argument("--input", required=True, help="Base Bancor (.csv, .xlsx o .xls)")
     parser.add_argument("--output_dir", required=True, help="Sandbox output directory")
     arguments = parser.parse_args()
 
@@ -28,7 +28,10 @@ def main() -> int:
     (work / "base-recibida").mkdir(parents=True, exist_ok=True)
     (work / "base-generada" / "con-filtros").mkdir(parents=True, exist_ok=True)
     (work / "base-generada" / "sin-filtros").mkdir(parents=True, exist_ok=True)
-    shutil.copy2(arguments.input, work / "base-recibida" / "base.csv")
+    # La extension se preserva: `leer_archivo_entrada` elige el lector por el
+    # sufijo, asi que copiar un .xlsx como base.csv lo mandaria al parser de CSV.
+    entrada = Path(arguments.input)
+    shutil.copy2(entrada, work / "base-recibida" / f"base{entrada.suffix.casefold()}")
     base_generator.__file__ = str(work / "procesos" / "base_generator.py")
 
     try:

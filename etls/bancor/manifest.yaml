@@ -13,7 +13,9 @@ etls:
     arguments:
       base: --input
     inputs:
-      - {role: base, extensions: [.csv], required: true}
+      # El legacy lee CSV y Excel (`listar_archivos_entrada` glosa *.csv, *.xlsx,
+      # *.xls) y la UI del repo individual acepta los tres. Declararlos todos.
+      - {role: base, extensions: [.csv, .xlsx, .xls], required: true}
     outputs:
       - {role: base_filtrada, glob: 'con-filtros/base_bancor_*.csv', date_format: DDMMYYYY}
       - {role: telefonos, glob: 'con-filtros/telefonos_x_cliente_*.csv', date_format: DDMMYYYY}

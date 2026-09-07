@@ -155,3 +155,16 @@ Formato: `## [YYYY-MM-DD] <op> | <tema>`. Grepeable con `grep '^## \[' docs/log.
 - Los ADR-001 y de tolerancia quedan sin editar: son registros de decisión y ARC-022 pide
   superseder, no reescribir. Sus menciones a las dos copias describen lo que era cierto
   cuando se escribieron → [index.md](index.md)
+
+## [2026-09-06] fix | la base de Bancor puede llegar en Excel
+
+- El manifiesto de `bancor.base.daily` declaraba solo `.csv`, pero el legacy lee CSV y
+  Excel y la UI del repo individual ofrece los tres formatos. Ahora declara
+  `[.csv, .xlsx, .xls]` → [../etls/bancor/README.md](../etls/bancor/README.md)
+- `SubprocessAdapter` construía la ruta del input con la **primera extensión declarada**
+  mientras el staging usa la **real**. Con un solo formato coincidían y nadie lo notaba;
+  con varios, el subproceso recibía una ruta inexistente. Es la razón por la que Alvarez,
+  CartaSur y Petersen tienen adapter propio → [reference/ARQUITECTURA.md](reference/ARQUITECTURA.md)
+- El `job.py` de Bancor copiaba el input con el nombre fijo `base.csv`. El legacy elige
+  el lector **por la extensión**, así que un `.xlsx` renombrado iba al parser de CSV →
+  [../etls/bancor/README.md](../etls/bancor/README.md)

@@ -61,7 +61,13 @@ class SubprocessAdapter:
         self, definition: ETLDefinition, request: RunRequest, run: Path
     ) -> tuple[str, ...]:
         self.validate(request)
-        suffix = definition.inputs[0].extensions[0]
+        # La extension REAL del archivo subido, no la primera declarada. El staging
+        # guarda `input/<rol><sufijo real>`, asi que tomar extensions[0] apuntaba a
+        # una ruta inexistente en cuanto un ETL declaraba mas de un formato — y es
+        # la razon por la que Alvarez, CartaSur y Petersen necesitaron adapter propio.
+        # Con una sola extension declarada el resultado es identico: `copy_input`
+        # rechaza cualquier sufijo fuera de lo declarado.
+        suffix = request.inputs["base"].suffix.casefold()
         return (
             sys.executable,
             definition.command[1],

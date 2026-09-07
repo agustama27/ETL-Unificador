@@ -241,3 +241,53 @@ def test_la_salida_sin_filtros_activa_la_campania_preventa(tmp_path: Path) -> No
     assert fila["oferta_preventa"] == "si"
     assert fila["monto_total_preventa"] == "1500.00"
     assert fila["tipo_bancon_usr"] == "Activo"
+
+
+# --- La base puede llegar en Excel, no solo en CSV --------------------------------
+#
+# El legacy lee los tres formatos (`listar_archivos_entrada`) y la UI del repo
+# individual los ofrece. El Unificador declaraba solo `.csv`.
+
+
+def _write_input_xlsx(tmp_path: Path) -> Path:
+    """La misma fila del fixture CSV, en un libro de Excel."""
+    openpyxl = pytest.importorskip("openpyxl")
+
+    origen = _write_input(tmp_path)
+    with origen.open(encoding="latin-1", newline="") as handle:
+        filas = list(csv.reader(handle, delimiter=";"))
+
+    libro = openpyxl.Workbook()
+    hoja = libro.active
+    for fila in filas:
+        hoja.append(fila)
+    destino = tmp_path / "base.xlsx"
+    libro.save(destino)
+    return destino
+
+
+def test_una_base_en_excel_produce_los_mismos_cuatro_artefactos(tmp_path: Path) -> None:
+    output = _run_ok(tmp_path, _write_input_xlsx(tmp_path))
+
+    today_ddmmyyyy = date.today().strftime("%d%m%Y")
+    today_yyyymmdd = date.today().strftime("%Y%m%d")
+    assert (output / "con-filtros" / f"base_bancor_{today_ddmmyyyy}.csv").exists()
+    assert (output / "con-filtros" / f"telefonos_x_cliente_{today_ddmmyyyy}.csv").exists()
+    assert (output / "sin-filtros" / f"BANCOR_ROMAN_{today_yyyymmdd}.csv").exists()
+    assert (output / "sin-filtros" / f"BANCOR_E1KIA_{today_yyyymmdd}_sinestrategia.csv").exists()
+
+
+def test_excel_y_csv_con_los_mismos_datos_dan_la_misma_salida(tmp_path: Path) -> None:
+    """Si difirieran, el formato de entrada estaría cambiando el resultado."""
+    desde_csv = _roman_rows(_run_ok(tmp_path / "csv", _write_input(tmp_path)))
+    desde_xlsx = _roman_rows(_run_ok(tmp_path / "xlsx", _write_input_xlsx(tmp_path)))
+
+    assert desde_csv == desde_xlsx
+
+
+def test_la_extension_real_llega_al_legacy(tmp_path: Path) -> None:
+    """El legacy elige el lector por el sufijo: renombrar un .xlsx a .csv lo rompe."""
+    output = _run_ok(tmp_path, _write_input_xlsx(tmp_path))
+    recibida = output.parent / "legacy" / "base-recibida"
+
+    assert [p.name for p in recibida.glob("base.*")] == ["base.xlsx"]
