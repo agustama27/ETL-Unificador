@@ -1,26 +1,29 @@
-import { File as FileIcon, Info, UploadSimple, X } from "@phosphor-icons/react";
+import { Check, Database, File as FileIcon, Info, UploadSimple, X } from "@phosphor-icons/react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import type { DragEvent } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { fetchCatalog, formatBytes, launchRun, todayIso } from "../api";
 import type { CatalogEntry, InputSpec } from "../api";
-import { useToast } from "../components/shared";
+import { Dialog, useToast } from "../components/shared";
 
 function Dropzone({ spec, file, onFile, onClear, onError }: {
   spec: InputSpec; file: File | undefined;
   onFile: (file: File) => void; onClear: () => void; onError: (message: string) => void;
 }) {
   const [over, setOver] = useState(false);
+  const [invalid, setInvalid] = useState(false);
   const accept = spec.extensions.join(",");
 
   const take = (candidate: File | undefined) => {
     if (!candidate) return;
     const suffix = candidate.name.slice(candidate.name.lastIndexOf(".")).toLowerCase();
     if (!spec.extensions.map((ext) => ext.toLowerCase()).includes(suffix)) {
+      setInvalid(true);
       onError(`Extensión inválida para ${spec.role}: se espera ${spec.extensions.join(", ")}`);
       return;
     }
+    setInvalid(false);
     onFile(candidate);
   };
 
@@ -32,27 +35,28 @@ function Dropzone({ spec, file, onFile, onClear, onError }: {
 
   if (file) {
     return (
-      <div className="filerow">
-        <FileIcon size={15} />
+      <div className="file-row">
+        <FileIcon size={15} aria-hidden="true" />
         <span className="mono">{file.name}</span>
-        <span className="size">{formatBytes(file.size)}</span>
-        <button className="btn-ghost" onClick={onClear} aria-label={`Quitar ${spec.role}`}><X size={12} /></button>
+        <span className="file-row__size">{formatBytes(file.size)}</span>
+        <button className="btn btn--ghost btn--icon btn--sm" onClick={onClear} aria-label={`Quitar ${spec.role}`}>
+          <X size={12} aria-hidden="true" />
+        </button>
       </div>
     );
   }
   return (
-    <label className={`dropzone${over ? " over" : ""}`}
+    // El input real queda oculto con .sr-only, no display:none: el drop sigue
+    // funcionando sobre el label, y el click y el foco los da el input nativo.
+    <label className="dropzone" data-over={over} data-error={invalid}
            onDragOver={(event) => { event.preventDefault(); setOver(true); }}
            onDragLeave={() => setOver(false)} onDrop={onDrop}>
-      <input type="file" accept={accept} style={{ display: "none" }}
+      <input type="file" accept={accept} className="sr-only"
              onChange={(event) => take(event.target.files?.[0] ?? undefined)} />
-      <div className="row" style={{ justifyContent: "center" }}>
-        <UploadSimple size={16} />
-        <span className="role">{spec.role}</span>
-        <span className={spec.required ? "req" : "opt"}>{spec.required ? "requerido" : "opcional"}</span>
-        <span className="mono">{spec.extensions.join(" ")}</span>
-      </div>
-      <div style={{ marginTop: 6, fontSize: 12 }}>Arrastrá el archivo acá o hacé click para elegirlo</div>
+      <UploadSimple size={22} className="dropzone__icon" aria-hidden="true" />
+      <span className="dropzone__role">{spec.role}</span>
+      <span className="dropzone__req">{spec.required ? "Obligatorio" : "Opcional"} · {spec.extensions.join(" ")}</span>
+      <span className="dropzone__hint">Arrastrá el archivo acá o hacé clic para elegirlo</span>
     </label>
   );
 }
@@ -72,6 +76,7 @@ function Formulario({ entry }: { entry: CatalogEntry }) {
   const [files, setFiles] = useState<Record<string, File>>({});
   const [noPlanes, setNoPlanes] = useState(false);
   const [inlineError, setInlineError] = useState<string | null>(null);
+  const [confirming, setConfirming] = useState(false);
 
   const missing = entry.inputs.filter((spec) => spec.required && !files[spec.role]);
   const launch = useMutation({
@@ -83,19 +88,24 @@ function Formulario({ entry }: { entry: CatalogEntry }) {
     },
     onError: (error: Error) => setInlineError(error.message),
   });
+  // El dialog se gasta sólo en lo irreversible: promover estado mensual. Todo
+  // ETL sin estado (la mayoría) ejecuta directo, sin interrumpir.
+  const ejecutar = () => { if (entry.stateful) setConfirming(true); else launch.mutate(); };
+  const mesLargo = new Date().toLocaleDateString("es-AR", { month: "long", year: "numeric" });
 
   return (
-    <div className="two-col">
+    <div className="split">
       <div className="stack">
         <div>
-          <span className="field-label">Fecha de negocio</span>
+          <span className="field__label">Fecha de negocio</span>
           <div className="row">
-            <input type="text" disabled value={`${todayIso()} (hoy)`} />
-            <span className="tag accent">Fija en HOY</span>
+            <input type="text" disabled className="input" value={`${todayIso()} (hoy)`} />
+            <span className="tag tag--accent">Fija en HOY</span>
           </div>
-          <div className="note-info" style={{ marginTop: 8 }}>
-            <Info size={13} style={{ verticalAlign: "-2px" }} /> Regla del sistema: solo se acepta la
-            fecha de negocio de hoy. Los nombres de los archivos de salida se generan con la fecha del sistema.
+          <div className="notice notice--info" style={{ marginTop: 8 }}>
+            <Info size={13} className="notice__icon" aria-hidden="true" />
+            <div>Regla del sistema: solo se acepta la fecha de negocio de hoy. Los nombres de los
+              archivos de salida se generan con la fecha del sistema.</div>
           </div>
         </div>
         {entry.inputs.map((spec) => (
@@ -105,43 +115,52 @@ function Formulario({ entry }: { entry: CatalogEntry }) {
                     onError={setInlineError} />
         ))}
         {entry.params.includes("no_planes_today") && (
-          <label className="row" style={{ fontSize: 12.5 }}>
+          <label className="check" style={{ fontSize: 12.5 }}>
             <input type="checkbox" checked={noPlanes} onChange={(e) => setNoPlanes(e.target.checked)} />
+            <span className="check__box"><Check size={11} weight="bold" aria-hidden="true" /></span>
             <span>
               <strong>Hoy no hay archivo de PLANES.</strong>{" "}
               Ejecuta sin cruce de planes. Queda registrado en la evidencia de la corrida.
             </span>
           </label>
         )}
-        {inlineError && <div className="banner-error">{inlineError}</div>}
+        {inlineError && (
+          <div className="notice notice--danger">
+            <X size={16} className="notice__icon" aria-hidden="true" />
+            <div>{inlineError}</div>
+          </div>
+        )}
         <div className="row">
-          <button className="btn-primary" disabled={missing.length > 0 || launch.isPending}
-                  onClick={() => launch.mutate()}>
+          <button className="btn btn--primary" disabled={missing.length > 0 || launch.isPending}
+                  onClick={ejecutar}>
             Ejecutar ahora
           </button>
           {missing.length > 0
-            ? <span className="req">Falta el archivo requerido: {missing.map((s) => s.role).join(", ")}</span>
-            : <span className="muted">Listo para ejecutar · tiempo máximo 15 min</span>}
+            ? <span style={{ fontSize: 12, color: "var(--feedback-warning-fg)" }}>
+                Falta el archivo requerido: {missing.map((s) => s.role).join(", ")}
+              </span>
+            : <span className="ink-muted">Listo para ejecutar · tiempo máximo 15 min</span>}
         </div>
       </div>
       <div className="card">
-        <h3>Qué va a pasar</h3>
+        <div className="card__head"><span className="card__title">Qué va a pasar</span></div>
         <div className="stack" style={{ gap: 10 }}>
-          <div className="muted">La corrida tiene un tiempo máximo de 15 minutos; si lo supera, se interrumpe.</div>
+          <div className="ink-muted">La corrida tiene un tiempo máximo de 15 minutos; si lo supera, se interrumpe.</div>
           {entry.stateful && (
-            <div className="note-warn">
-              ETL con estado mensual: al terminar bien, promueve un snapshot del día y no permite re-ejecutar hoy.
+            <div className="notice notice--warning">
+              <Database size={14} className="notice__icon" aria-hidden="true" />
+              <div>ETL con estado mensual: al terminar bien, promueve un snapshot del día y no permite re-ejecutar hoy.</div>
             </div>
           )}
-          <div className="muted">
+          <div className="ink-muted">
             Toda la corrida queda registrada con evidencia inmutable: comando, hashes de entrada, logs y artefactos.
           </div>
           <div>
-            <span className="field-label">Salidas esperadas</span>
+            <span className="field__label">Salidas esperadas</span>
             <div className="stack" style={{ gap: 6 }}>
               {entry.outputs.map((output) => (
                 <div key={output.role} className="row">
-                  <span className="tag accent">{output.role}</span>
+                  <span className="tag tag--accent">{output.role}</span>
                   <span className="mono">{resolveOutputName(output.glob, output.date_format)}</span>
                 </div>
               ))}
@@ -149,7 +168,34 @@ function Formulario({ entry }: { entry: CatalogEntry }) {
           </div>
         </div>
       </div>
+
+      <Dialog open={confirming} tone="warning" icon={<Database size={20} aria-hidden="true" />}
+              title={`Esto cierra ${mesLargo}`} confirmLabel="Ejecutar y promover"
+              onClose={() => setConfirming(false)}
+              onConfirm={() => { setConfirming(false); launch.mutate(); }}>
+        <p>Si la corrida termina bien, el snapshot mensual de {entry.client} queda promovido y el
+          ETL no vuelve a aceptar corridas sobre el <span className="mono">{todayIso()}</span>.</p>
+        <p>Revertirlo requiere que desarrollo borre el snapshot a mano. No hay botón para eso.</p>
+      </Dialog>
     </div>
+  );
+}
+
+// Sin referencia en el handoff: ni el README ni los .dc.html muestran esta
+// pantalla (el picker de ETL antes de elegir uno). Compuesta con las mismas
+// piezas del sistema (.card, .tag--accent) en vez de inventar clases nuevas.
+function LauncherTile({ entry, onClick }: { entry: CatalogEntry; onClick: () => void }) {
+  const [hover, setHover] = useState(false);
+  return (
+    <button className="card" onClick={onClick}
+            onMouseEnter={() => setHover(true)} onMouseLeave={() => setHover(false)}
+            style={{ textAlign: "left", cursor: "pointer", background: hover ? "var(--surface-hover)" : undefined }}>
+      <span className="tag tag--accent">{entry.client}</span>
+      <div style={{ fontWeight: 500, margin: "8px 0 4px" }}>{entry.name}</div>
+      <div className="ink-subtle" style={{ fontSize: 11.5 }}>
+        {entry.inputs.map((input) => `${input.role}${input.required ? "" : " (opcional)"}`).join(" · ")}
+      </div>
+    </button>
   );
 }
 
@@ -158,7 +204,15 @@ export default function Lanzador() {
   const navigate = useNavigate();
   const catalog = useQuery({ queryKey: ["catalog"], queryFn: fetchCatalog, staleTime: 5 * 60_000 });
 
-  if (catalog.isLoading) return <div className="page stack"><div className="skeleton" /><div className="skeleton" /></div>;
+  if (catalog.isLoading) {
+    return (
+      <div className="page">
+        <div className="skel skel--title" style={{ width: 180, marginBottom: 8 }} />
+        <div className="skel skel--text" style={{ width: 300, marginBottom: 24 }} />
+        <div className="skel skel--card" />
+      </div>
+    );
+  }
   const executables = (catalog.data ?? []).filter((entry) => entry.executable);
   const entry = executables.find((candidate) => candidate.id === etlId);
 
@@ -168,19 +222,11 @@ export default function Lanzador() {
         <>
           <header className="page-header">
             <h1>Lanzar corrida</h1>
-            <div className="subtitle">Elegí el ETL a ejecutar con la fecha de negocio de hoy.</div>
+            <div className="page-header__sub">Elegí el ETL a ejecutar con la fecha de negocio de hoy.</div>
           </header>
-          <div className="launch-grid">
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: "var(--space-3)" }}>
             {executables.map((candidate) => (
-              <button key={candidate.id} className="launch-card"
-                      onClick={() => navigate(`/lanzar/${candidate.id}`)}>
-                <div className="client">{candidate.client}</div>
-                <div style={{ fontWeight: 500, margin: "4px 0" }}>{candidate.name}</div>
-                <div className="muted" style={{ fontSize: 11.5 }}>
-                  {candidate.inputs.map((input) =>
-                    `${input.role}${input.required ? "" : " (opcional)"}`).join(" · ")}
-                </div>
-              </button>
+              <LauncherTile key={candidate.id} entry={candidate} onClick={() => navigate(`/lanzar/${candidate.id}`)} />
             ))}
           </div>
         </>
@@ -190,10 +236,10 @@ export default function Lanzador() {
             <div className="row">
               <div>
                 <h1>{entry.client} — {entry.name}</h1>
-                <div className="subtitle mono">{entry.id}</div>
+                <div className="page-header__sub mono">{entry.id}</div>
               </div>
               <span className="spacer" />
-              <Link className="btn-ghost" to="/lanzar">Cambiar ETL</Link>
+              <Link className="btn btn--ghost" to="/lanzar">Cambiar ETL</Link>
             </div>
           </header>
           <Formulario entry={entry} />
