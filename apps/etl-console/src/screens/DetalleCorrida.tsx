@@ -1,11 +1,11 @@
-import { DownloadSimple, FileDashed, FileZip, HourglassHigh, WarningOctagon } from "@phosphor-icons/react";
+import { DownloadSimple, FileDashed, FileZip, HourglassHigh, LockSimpleOpen, WarningOctagon } from "@phosphor-icons/react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { ERROR_COPY, FALLBACK_ERROR, LIVE, downloadArtifact, downloadArtifactsZip,
          fetchCatalog, fetchRun, formatBytes, formatDuration, formatMoment, runAction } from "../api";
 import type { ErrorCopy, RunDetail } from "../api";
-import { ConnectionError, Empty, StatusBadge, TimelineIcon, useToast } from "../components/shared";
+import { ConnectionError, Dialog, Empty, StatusBadge, TimelineIcon, useToast } from "../components/shared";
 
 function LiveCard({ run }: { run: RunDetail }) {
   const [elapsed, setElapsed] = useState(0);
@@ -50,6 +50,7 @@ const ACTION_LABEL: Record<ErrorCopy["actions"][number], string> = {
 function ErrorCard({ run }: { run: RunDetail }) {
   const navigate = useNavigate();
   const toast = useToast();
+  const [confirmingLock, setConfirmingLock] = useState(false);
   const copy = (run.error_code && ERROR_COPY[run.error_code]) || FALLBACK_ERROR;
   const mark = run.status === "blocked" ? "var(--status-blocked-mark)"
     : run.status === "timed_out" ? "var(--status-timed-out-mark)" : "var(--status-failed-mark)";
@@ -84,14 +85,25 @@ function ErrorCard({ run }: { run: RunDetail }) {
               const cls = action === lead ? "btn btn--secondary" : action === "retry" ? "btn btn--quiet" : "btn btn--ghost";
               const label = action === "retry" && action !== lead ? "Reintentar de todas formas" : ACTION_LABEL[action];
               if (action === "view_promoted") return <Link key={action} className={cls} to="/historial">{label}</Link>;
+              // Liberar un lock que quizá sea de otra corrida viva es irreversible
+              // en la práctica (dos procesos pisándose), así que pasa por el dialog
+              // en vez de ejecutarse directo.
               const onClick = action === "retry" ? () => navigate(`/lanzar/${run.etl_id}`)
-                : action === "free_lock" ? () => act("free_lock") : () => act("notify_dev");
+                : action === "free_lock" ? () => setConfirmingLock(true) : () => act("notify_dev");
               return <button key={action} className={cls} onClick={onClick}>{label}</button>;
             })}
             <span className="mono ink-subtle" style={{ marginLeft: "auto" }}>{run.error_code ?? "desconocido"}</span>
           </div>
         </div>
       </div>
+      <Dialog open={confirmingLock} tone="danger" icon={<LockSimpleOpen size={20} aria-hidden="true" />}
+              title={`Liberar el lock de ${run.etl_id}`} confirmLabel="Liberar lock"
+              onClose={() => setConfirmingLock(false)}
+              onConfirm={() => { setConfirmingLock(false); act("free_lock"); }}>
+        <p>Si otra corrida de este ETL sigue en curso, esto le puede pisar el resultado: dos
+          procesos escribiendo al mismo tiempo.</p>
+        <p>Revisá el Tablero antes de confirmar — si no hay ninguna corrida activa, es seguro liberarlo.</p>
+      </Dialog>
     </div>
   );
 }

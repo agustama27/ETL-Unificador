@@ -1,6 +1,6 @@
 import { ArrowClockwise, Check, CheckCircle, CircleNotch, Copy, Info, LockSimple, Minus,
          Plugs, Prohibit, Timer, Warning, X } from "@phosphor-icons/react";
-import { createContext, useCallback, useContext, useMemo, useRef, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useId, useMemo, useRef, useState } from "react";
 import type { ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { READINESS_LABELS, STATUS_LABELS } from "../api";
@@ -153,5 +153,51 @@ export function ConnectionError({ endpoint, onRetry }: { endpoint: string; onRet
       </>}
       diagnostic={diagnostic}
     />
+  );
+}
+
+// El dialog es un recurso escaso: interrumpe, roba el foco y no se puede
+// ignorar. Se gasta sólo en lo irreversible — promover estado mensual,
+// liberar un lock ajeno — nunca para mostrar información (eso va en .notice).
+export function Dialog({ open, onClose, onConfirm, icon, tone, title, confirmLabel, aside, children }: {
+  open: boolean; onClose: () => void; onConfirm: () => void;
+  icon: ReactNode; tone?: "warning" | "danger"; title: string; confirmLabel: string;
+  aside?: ReactNode; children: ReactNode;
+}) {
+  const titleId = useId();
+  const dialogRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const trigger = document.activeElement as HTMLElement | null;
+    dialogRef.current?.querySelector<HTMLElement>("button, [href]")?.focus();
+    const onKey = (event: KeyboardEvent) => { if (event.key === "Escape") onClose(); };
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      trigger?.focus();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open]);
+
+  if (!open) return null;
+  return (
+    // Sin onClick en el backdrop a propósito: un clic accidental afuera no
+    // puede ser lo que promueve un mes.
+    <div className="dialog-backdrop">
+      <div ref={dialogRef} className={`dialog${tone ? ` dialog--${tone}` : ""}`}
+           role="dialog" aria-modal="true" aria-labelledby={titleId}>
+        <div className="dialog__head">
+          <span className="dialog__icon">{icon}</span>
+          <div className="dialog__title" id={titleId}>{title}</div>
+        </div>
+        <div className="dialog__body">{children}</div>
+        <div className="dialog__actions">
+          {aside && <span className="dialog__aside">{aside}</span>}
+          <button className="btn btn--quiet" onClick={onClose}>Cancelar</button>
+          <button className="btn btn--primary" onClick={onConfirm}>{confirmLabel}</button>
+        </div>
+      </div>
+    </div>
   );
 }
