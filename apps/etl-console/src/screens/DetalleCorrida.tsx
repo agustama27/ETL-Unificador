@@ -1,10 +1,10 @@
-import { DownloadSimple, FileZip } from "@phosphor-icons/react";
+import { DownloadSimple, FileZip, WarningOctagon } from "@phosphor-icons/react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { ERROR_COPY, FALLBACK_ERROR, LIVE, downloadArtifact, downloadArtifactsZip,
-         fetchRun, formatBytes, formatDuration, formatMoment, runAction } from "../api";
-import type { RunDetail } from "../api";
+         fetchCatalog, fetchRun, formatBytes, formatDuration, formatMoment, runAction } from "../api";
+import type { ErrorCopy, RunDetail } from "../api";
 import { StatusBadge, TimelineIcon, useToast } from "../components/shared";
 
 function LiveCard({ run }: { run: RunDetail }) {
@@ -21,26 +21,38 @@ function LiveCard({ run }: { run: RunDetail }) {
       <div>{run.status === "preparing"
         ? "Preparando la corrida: validando parámetros y tomando lock…"
         : "Ejecutando el ETL. Podés quedarte mirando o volver al tablero."}</div>
-      <div className="mono" style={{ color: "var(--color-accent-300)", fontSize: 15 }}>
+      {/* El cronómetro no es una región activa: si viviera dentro de un aria-live
+          anunciaría el segundero entero. El dato accesible va aparte, con
+          granularidad de minuto, en el texto de arriba. */}
+      <div className="mono" aria-hidden="true" style={{ color: "var(--brand-text)", fontSize: 15 }}>
         {minutes}:{String(seconds).padStart(2, "0")}
       </div>
-      <div style={{ height: 4, borderRadius: 4, background: "var(--color-neutral-900)", overflow: "hidden" }}>
-        <div style={{ height: "100%", width: "35%", background: "var(--color-accent)",
+      <div style={{ height: 4, borderRadius: 4, background: "var(--surface-sunken)", overflow: "hidden" }}>
+        <div style={{ height: "100%", width: "35%", background: "var(--brand-base)",
                       animation: "shimmer 1.4s ease-in-out infinite" }} />
       </div>
       <div className="row">
-        <Link className="btn-secondary" to="/">Volver al tablero y seguir con otro ETL</Link>
-        <span className="muted">Te avisamos acá y en el tablero cuando termine.</span>
+        <Link className="btn btn--secondary" to="/">Volver al tablero y seguir con otro ETL</Link>
+        <span className="ink-muted">Te avisamos acá y en el tablero cuando termine.</span>
       </div>
     </div>
   );
 }
 
+// Rótulo de cada acción posible en ERROR_COPY. El texto de "retry" cambia
+// cuando queda demovida (ver ACTION_CLASS): reintentar sin ser la acción
+// recomendada es "de todas formas", no la salida obvia.
+const ACTION_LABEL: Record<ErrorCopy["actions"][number], string> = {
+  retry: "Reintentar corrida", free_lock: "Liberar lock",
+  view_promoted: "Ver corrida promovida", notify: "Notificar a desarrollo",
+};
+
 function ErrorCard({ run }: { run: RunDetail }) {
   const navigate = useNavigate();
   const toast = useToast();
   const copy = (run.error_code && ERROR_COPY[run.error_code]) || FALLBACK_ERROR;
-  const tone = run.status === "blocked" ? "blocked" : run.status === "timed_out" ? "timeout" : "";
+  const mark = run.status === "blocked" ? "var(--status-blocked-mark)"
+    : run.status === "timed_out" ? "var(--status-timed-out-mark)" : "var(--status-failed-mark)";
 
   const act = async (action: "free_lock" | "notify_dev") => {
     try {
@@ -51,29 +63,42 @@ function ErrorCard({ run }: { run: RunDetail }) {
     }
   };
 
+  // La primera acción del array es la recomendada para este error y va como
+  // botón secundario. "Reintentar" nunca es la salida obvia en una pantalla
+  // de error — si aparece en segundo lugar (lock_exists) hay algo mejor para
+  // hacer primero, y baja a .btn--quiet con una etiqueta que lo deja claro.
+  const lead = copy.actions[0];
+
   return (
-    <div className={`card error-card ${tone}`}>
-      <h3>{copy.title}</h3>
-      <p>{copy.what}</p>
-      <p><strong>Qué hacer:</strong> {copy.todo}</p>
-      <div className="row">
-        {copy.actions.includes("retry") && (
-          <button className="btn-primary" onClick={() => navigate(`/lanzar/${run.etl_id}`)}>Reintentar corrida</button>
-        )}
-        {copy.actions.includes("free_lock") && (
-          <button className="btn-secondary" onClick={() => act("free_lock")}>Liberar lock</button>
-        )}
-        {copy.actions.includes("view_promoted") && (
-          <Link className="btn-secondary" to={`/historial`}>Ver corrida promovida</Link>
-        )}
-        {copy.actions.includes("notify") && (
-          <button className="btn-ghost" onClick={() => act("notify_dev")}>Notificar a desarrollo</button>
-        )}
+    <div className="card card--elevated" style={{ boxShadow: `inset 3px 0 0 ${mark}, var(--elevation-2)` }}>
+      <div style={{ display: "flex", gap: 14, alignItems: "flex-start" }}>
+        <WarningOctagon size={22} color="var(--status-failed-fg)" style={{ flex: "none", marginTop: 1 }} aria-hidden="true" />
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <h2 style={{ marginBottom: 6 }}>{copy.title}</h2>
+          <p style={{ margin: "0 0 8px", fontSize: 12.5, color: "var(--ink-secondary)", maxWidth: "88ch" }}>{copy.what}</p>
+          <p style={{ margin: 0, fontSize: 12.5, color: "var(--ink-secondary)", maxWidth: "88ch" }}>
+            <strong style={{ fontWeight: 500, color: "var(--ink-primary)" }}>Qué hacer:</strong> {copy.todo}
+          </p>
+          <div className="row" style={{ marginTop: 14 }}>
+            {copy.actions.map((action) => {
+              const cls = action === lead ? "btn btn--secondary" : action === "retry" ? "btn btn--quiet" : "btn btn--ghost";
+              const label = action === "retry" && action !== lead ? "Reintentar de todas formas" : ACTION_LABEL[action];
+              if (action === "view_promoted") return <Link key={action} className={cls} to="/historial">{label}</Link>;
+              const onClick = action === "retry" ? () => navigate(`/lanzar/${run.etl_id}`)
+                : action === "free_lock" ? () => act("free_lock") : () => act("notify_dev");
+              return <button key={action} className={cls} onClick={onClick}>{label}</button>;
+            })}
+            <span className="mono ink-subtle" style={{ marginLeft: "auto" }}>{run.error_code ?? "desconocido"}</span>
+          </div>
+        </div>
       </div>
-      <div className="code mono">código: {run.error_code ?? "desconocido"}</div>
     </div>
   );
 }
+
+const STEP_STATE_LABEL: Record<string, string> = {
+  done: "completado", active: "en curso", fail: "falló", idle: "pendiente",
+};
 
 function Lifecycle({ run }: { run: RunDetail }) {
   const failedAtRun = ["failed", "timed_out"].includes(run.status);
@@ -103,6 +128,11 @@ function Lifecycle({ run }: { run: RunDetail }) {
     },
   ] as const;
 
+  // La causa concreta de la falla se muestra en el paso que falló, no en otra
+  // card: es donde el ojo ya está. Un resumen corto, no el ErrorCard completo
+  // (que sigue arriba de la página con las acciones).
+  const copy = failedAtRun || blockedEarly ? (run.error_code && ERROR_COPY[run.error_code]) || FALLBACK_ERROR : null;
+
   const outputsLabel = { passed: "Salidas verificadas ✓", failed: "Salidas con problemas",
                          not_run: "Salidas no evaluadas" } as Record<string, string>;
   const stateLabel = { promoted: "Estado promovido", not_applicable: "Sin efecto de estado (stateless)",
@@ -111,28 +141,52 @@ function Lifecycle({ run }: { run: RunDetail }) {
 
   return (
     <div className="card">
-      <h3>Ciclo de vida</h3>
-      <div className="timeline">
+      <div className="card__head"><span className="card__title">Ciclo de vida</span></div>
+      <ol className="timeline" style={{ listStyle: "none", margin: 0, padding: 0 }}>
         {steps.map((step, index) => (
-          <div key={step.title} className="step">
-            <div className="rail">
+          <li key={step.title} className="tl-step" data-state={step.state}>
+            <div className="tl-rail">
               <TimelineIcon state={step.state} />
-              {index < steps.length - 1 && <span className="line" />}
+              {index < steps.length - 1 && <span className="tl-line" />}
             </div>
-            <div className="body">
-              <div className="title">{step.title}</div>
-              <div className="note">{step.note}</div>
-              {step.when && <div className="when mono">{formatMoment(step.when)}</div>}
+            <div className="tl-body">
+              <div className="tl-head">
+                <span className="tl-title">{step.title}</span>
+                <span className="sr-only">{STEP_STATE_LABEL[step.state]}</span>
+              </div>
+              <div className="tl-note">{step.note}</div>
+              {step.when && <div className="tl-when mono">{formatMoment(step.when)}</div>}
+              {step.state === "fail" && copy && (
+                <div className="notice notice--danger" style={{ marginTop: 10, fontSize: 12 }}>
+                  <WarningOctagon size={15} className="notice__icon" aria-hidden="true" />
+                  <div><div className="notice__title" style={{ fontSize: 12.5 }}>{copy.title}</div>{copy.what}</div>
+                </div>
+              )}
             </div>
-          </div>
+          </li>
         ))}
-      </div>
+      </ol>
       <h3 style={{ marginTop: 6 }}>Postcondiciones</h3>
       <div className="stack" style={{ gap: 6, fontSize: 12.5 }}>
         <div>{outputsLabel[run.postconditions?.outputs ?? "not_run"] ?? "Pendiente"}</div>
         <div>{stateLabel[run.postconditions?.state ?? "not_started"] ?? "—"}</div>
       </div>
     </div>
+  );
+}
+
+// Divide un tail de log en líneas y colorea por nivel detectado en el texto
+// (INFO/WARN/ERROR ya vienen así de los procesos legacy). No inventa
+// estructura que el backend no da — sólo lee el nivel que el texto ya trae.
+function LogLines({ text }: { text: string }) {
+  return (
+    <>
+      {text.split("\n").map((line, index) => {
+        const cls = /\bERROR\b/.test(line) ? "log__line log__line--err"
+          : /\bWARN\b/.test(line) ? "log__line log__line--warn" : "log__line";
+        return <span key={index} className={cls}>{line}{"\n"}</span>;
+      })}
+    </>
   );
 }
 
@@ -145,31 +199,43 @@ export default function DetalleCorrida() {
     refetchInterval: (query) =>
       query.state.data && LIVE.includes(query.state.data.status) ? 2500 : false,
   });
+  const catalog = useQuery({ queryKey: ["catalog"], queryFn: fetchCatalog, staleTime: 5 * 60_000 });
   useEffect(() =>
 
     () => { queryClient.invalidateQueries({ queryKey: ["runs-today"] }); }, [queryClient]);
 
   if (run.isLoading) return <div className="page stack"><div className="skeleton" /><div className="skeleton" /></div>;
   if (run.isError || !run.data) {
-    return <div className="page"><div className="banner-error">No se pudo cargar la corrida. <button className="btn-secondary" onClick={() => run.refetch()}>Reintentar</button></div></div>;
+    return <div className="page"><div className="banner-error">No se pudo cargar la corrida. <button className="btn btn--secondary" onClick={() => run.refetch()}>Reintentar</button></div></div>;
   }
   const data = run.data;
   const live = LIVE.includes(data.status);
   const ended = !live && data.status !== "succeeded";
 
+  const entry = catalog.data?.find((candidate) => candidate.id === data.etl_id);
+  const missingOutputs = entry ? entry.outputs.filter((output) =>
+    !data.artifacts.some((artifact) => artifact.role === output.role)) : [];
+  const declaredCount = entry?.outputs.length ?? data.artifacts.length;
+  const incomplete = missingOutputs.length > 0;
+
   return (
     <div className="page stack" style={{ gap: 18 }}>
       <header className="page-header" style={{ marginBottom: 0 }}>
         <div className="row" style={{ marginBottom: 8 }}>
-          <Link className="btn-ghost" to="/">Tablero</Link>
-          <Link className="btn-ghost" to="/historial">Historial</Link>
+          <Link className="btn btn--ghost" to="/">Tablero</Link>
+          <Link className="btn btn--ghost" to="/historial">Historial</Link>
         </div>
         <div className="row">
           <h1>{data.client} — {data.etl_id}</h1>
-          <StatusBadge status={data.status} large />
-          <span className="mono muted">{data.run_id}</span>
+          {/* El polling de esta pantalla (cada 2.5s) es invisible para un lector
+              de pantalla sin esto: al pasar de "En curso" a "Fallida" se
+              anuncia una vez, completo. */}
+          <div role="status" aria-live="polite" aria-atomic="true">
+            <StatusBadge status={data.status} large />
+          </div>
+          <span className="mono ink-muted">{data.run_id}</span>
         </div>
-        <div className="subtitle">
+        <div className="page-header__sub">
           Fecha de negocio {data.business_date} · inicio {formatMoment(data.started_at)} ·
           fin {formatMoment(data.finished_at)} · duración {formatDuration(data.started_at, data.finished_at)} ·
           <span className="mono"> {data.etl_id}</span>
@@ -179,48 +245,72 @@ export default function DetalleCorrida() {
       {live && <LiveCard run={data} />}
       {ended && <ErrorCard run={data} />}
 
-      <div className="two-col">
+      <div className="split">
         <Lifecycle run={data} />
         <div className="card">
-          <h3>Artefactos</h3>
-          {data.artifacts.length === 0 ? (
-            <div className="muted">
+          <div className="card__head">
+            <span className="card__title">Artefactos</span>
+            {entry && (
+              <span className="tag card__tools" style={incomplete
+                ? { color: "var(--status-failed-fg)", boxShadow: "inset 0 0 0 1px color-mix(in srgb, var(--status-failed-mark) 40%, transparent)" }
+                : undefined}>
+                {data.artifacts.length} de {declaredCount}
+              </span>
+            )}
+          </div>
+          {data.artifacts.length === 0 && !incomplete ? (
+            <div className="ink-muted">
               {live ? "Los artefactos aparecen cuando la corrida termina bien."
                     : "Esta corrida no generó artefactos."}
             </div>
           ) : (
             <div className="stack" style={{ gap: 8 }}>
-              <button className="btn-primary" onClick={() => downloadArtifactsZip(data.run_id)}>
-                <FileZip size={14} /> Descargar todo (.zip)
-              </button>
               {data.artifacts.map((artifact) => (
-                <div key={artifact.role} className="filerow">
-                  <span className="tag accent">{artifact.role}</span>
+                <div key={artifact.role} className="file-row">
+                  <span className="tag tag--accent">{artifact.role}</span>
                   <span className="mono">{artifact.name}</span>
-                  <span className="size">{formatBytes(artifact.size)}</span>
-                  <button className="btn-ghost"
+                  <span className="file-row__size">{formatBytes(artifact.size)}</span>
+                  <button className="btn btn--quiet btn--icon btn--sm"
                           onClick={() => downloadArtifact(data.run_id, artifact.role, artifact.name)}
                           aria-label={`Descargar ${artifact.role}`}>
                     <DownloadSimple size={14} />
                   </button>
                 </div>
               ))}
+              {/* El artefacto que falta se muestra como fila presente y roja, no
+                  como ausencia: el rol, "no generado" y el patrón esperado. */}
+              {missingOutputs.map((output) => (
+                <div key={output.role} className="file-row"
+                     style={{ boxShadow: "inset 0 0 0 1px color-mix(in srgb, var(--status-failed-mark) 30%, transparent)",
+                              background: "color-mix(in srgb, var(--status-failed-tint) 45%, transparent)" }}>
+                  <span className="tag" style={{ color: "var(--status-failed-fg)",
+                    boxShadow: "inset 0 0 0 1px color-mix(in srgb, var(--status-failed-mark) 40%, transparent)" }}>{output.role}</span>
+                  <span className="mono" style={{ color: "var(--status-failed-fg)" }}>no generado</span>
+                  <span className="file-row__size mono">{output.glob}</span>
+                </div>
+              ))}
+              {data.artifacts.length > 0 && (
+                <button className={`btn btn--block ${incomplete ? "btn--secondary" : "btn--primary"}`}
+                        style={{ marginTop: 4 }} onClick={() => downloadArtifactsZip(data.run_id)}>
+                  <FileZip size={14} /> {incomplete ? "Descargar lo que hay (.zip)" : "Descargar todo (.zip)"}
+                </button>
+              )}
             </div>
           )}
         </div>
       </div>
 
       <details className="evidence card">
-        <summary>Evidencia técnica (run.json)</summary>
+        <summary className="card__title" style={{ cursor: "pointer" }}>Evidencia técnica (run.json)</summary>
         <div className="stack" style={{ gap: 12, marginTop: 12 }}>
           <div>
-            <span className="field-label">Comando</span>
+            <span className="field__label">Comando</span>
             <pre className="log">{data.command.join(" ") || "—"}</pre>
           </div>
           <div className="row" style={{ gap: 24 }}>
             <span>Exit code:{" "}
-              <strong style={{ color: data.exit_code === 0 ? "var(--status-success)"
-                : data.exit_code == null ? "inherit" : "var(--status-failed)" }}>
+              <strong style={{ color: data.exit_code === 0 ? "var(--status-succeeded-fg)"
+                : data.exit_code == null ? "inherit" : "var(--status-failed-fg)" }}>
                 {data.exit_code ?? "—"}
               </strong>
             </span>
@@ -228,7 +318,7 @@ export default function DetalleCorrida() {
             <span>Timeout: 900 s</span>
           </div>
           <div>
-            <span className="field-label">Entradas</span>
+            <span className="field__label">Entradas</span>
             <table className="data-table">
               <thead><tr><th>Rol</th><th>Archivo</th><th className="num">Tamaño</th><th>SHA-256</th></tr></thead>
               <tbody>
@@ -244,13 +334,17 @@ export default function DetalleCorrida() {
             </table>
           </div>
           <div>
-            <span className="field-label">STDOUT (últimas líneas)</span>
-            <pre className="log">{data.logs.stdout_tail || "—"}</pre>
+            <span className="field__label">STDOUT (últimas líneas)</span>
+            <pre className="log" tabIndex={0} aria-label="Salida estándar de la corrida">
+              {data.logs.stdout_tail ? <LogLines text={data.logs.stdout_tail} /> : "—"}
+            </pre>
           </div>
           {data.logs.stderr && (
             <div>
-              <span className="field-label">STDERR</span>
-              <pre className="log err">{data.logs.stderr}</pre>
+              <span className="field__label">STDERR</span>
+              <pre className="log log--stderr" tabIndex={0} aria-label="Salida de error de la corrida">
+                <LogLines text={data.logs.stderr} />
+              </pre>
             </div>
           )}
         </div>

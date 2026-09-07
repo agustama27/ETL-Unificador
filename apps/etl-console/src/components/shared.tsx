@@ -1,4 +1,4 @@
-import { Check, CheckCircle, CircleNotch, Info, LockSimple, Minus, Prohibit, Timer, Warning, X, XCircle } from "@phosphor-icons/react";
+import { Check, CheckCircle, CircleNotch, Info, LockSimple, Minus, Prohibit, Timer, Warning, X } from "@phosphor-icons/react";
 import { createContext, useCallback, useContext, useMemo, useRef, useState } from "react";
 import type { ReactNode } from "react";
 import { Link } from "react-router-dom";
@@ -95,10 +95,10 @@ export function InertRow({ entry }: { entry: CatalogEntry }) {
 
 export function TimelineIcon({ state }: { state: "done" | "active" | "fail" | "idle" }) {
   const icon = useMemo(() => {
-    if (state === "done") return <CheckCircle size={14} weight="bold" />;
-    if (state === "fail") return <XCircle size={14} weight="bold" />;
-    if (state === "active") return <CircleNotch size={14} className="spin" />;
+    if (state === "done") return <Check size={12} weight="bold" aria-hidden="true" />;
+    if (state === "fail") return <X size={12} weight="bold" aria-hidden="true" />;
+    if (state === "active") return <CircleNotch size={12} className="st-spin" aria-hidden="true" />;
     return null;
   }, [state]);
-  return <span className={`dot ${state === "idle" ? "" : state}`}>{icon}</span>;
+  return <span className="tl-node">{icon}</span>;
 }
