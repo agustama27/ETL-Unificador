@@ -48,5 +48,30 @@ services:
         condition: service_healthy
     restart: unless-stopped
 
+  # Servidor MCP sobre la API. NO ejecuta ETLs: es un cliente HTTP de backend,
+  # asi que no necesita el arbol etls/ ni el volumen de estado.
+  # No publica puerto al host: se lo alcanza por la red interna de Compose.
+  mcp:
+    build:
+      context: .
+      dockerfile: apps/mcp-etl-cobranza/Dockerfile
+    env_file: .env
+    environment:
+      TZ: ${TZ:-America/Argentina/Buenos_Aires}
+      ETL_API_URL: http://backend:8000
+    expose:
+      - "9000"
+    depends_on:
+      backend:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c",
+             "import urllib.request,sys;sys.exit(0 if urllib.request.urlopen('http://localhost:9000/health',timeout=5).status==200 else 1)"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+
 volumes:
   etl-var:

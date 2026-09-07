@@ -1,0 +1,151 @@
+# Contrato MCP (ADR-ARC-015, punto 4).
+#
+# Declara lo que este servidor ES HOY, no lo que va a ser. El perfil de auth es
+# `gateway-api-key` porque no hay identidad de usuario en ninguna capa todavia:
+# el token es compartido y las corridas no se pueden atribuir a nadie. La
+# migracion a `oauth-obo` esta en `migracion`, con lo que falta para poder
+# hacerla.
+schema_version: 1
+
+identificacion:
+  nombre: mcp-etl-cobranza
+  dominio: cobranza
+  descripcion: >-
+    Ejecuta y audita los ETLs de cobranza del ETL Unificador. Expone el catalogo,
+    lanza corridas, sigue su estado y entrega la evidencia.
+  responsable: Equipo de Datos / Evoltis
+  repositorio: etl-unificador
+  ruta: apps/mcp-etl-cobranza
+  documentacion: docs/reference/ARQUITECTURA.md
+
+runtime:
+  lenguaje: python
+  version: "3.12"
+  sdk: mcp>=1.12,<2.0
+  transporte: streamable-http
+  endpoint: /mcp
+  puerto: 9000
+  sonda_liveness: /health
+  stateless: true          # sin afinidad de sesion: admite mas de una replica
+  dependencias:
+    - servicio: etl-platform-api
+      protocolo: http
+      obligatorio: true
+      nota: >-
+        Unica dependencia. El MCP no toca la base ni el filesystem de corridas:
+        todo pasa por la API, que es la que tiene el locking y la evidencia.
+
+seguridad:
+  perfil_auth: gateway-api-key
+  valida_identidad_propia: false
+  audience: null
+  scopes: []
+  secretos:
+    - nombre: ETL_MCP_TOKEN
+      uso: token que el MCP le exige a sus clientes
+      fail_closed: true    # sin el, responde 503 salvo ETL_MCP_AUTH_DISABLED=1
+    - nombre: ETL_CONSOLE_TOKEN
+      uso: token con el que el MCP le habla a etl-platform-api
+  excepcion_seccion_6: no_aplica
+  motivo_excepcion: >-
+    La seccion 6 exige "auditoria suficiente" y hoy no existe: run.json no
+    registra ningun principal y el indice de corridas no tiene columna de
+    sujeto. La condicion es falsa por construccion, no por configuracion.
+  datos_sensibles: >-
+    Los artefactos y logs de corrida contienen PII de deudores. `download_artifact`
+    los entrega y los links de subida los reciben.
+
+tools:
+  - nombre: list_etls
+    tipo: read
+    riesgo: bajo
+    auto_ejecucion: true
+    descripcion: Catalogo de ETLs con cliente, estado y motivo de inercia.
+
+  - nombre: describe_etl
+    tipo: read
+    riesgo: bajo
+    auto_ejecucion: true
+    descripcion: Entradas requeridas, salidas prometidas, params y timeout.
+
+  - nombre: preparar_carga
+    tipo: write
+    riesgo: bajo
+    auto_ejecucion: true
+    descripcion: >-
+      Emite un link de un solo uso para que una persona suba los archivos. No
+      mueve datos: solo crea la capability, que vence sola.
+
+  - nombre: estado_carga
+    tipo: read
+    riesgo: bajo
+    auto_ejecucion: true
+    descripcion: Que roles aterrizaron y cuales faltan para poder lanzar.
+
+  - nombre: get_run
+    tipo: read
+    riesgo: bajo
+    auto_ejecucion: true
+    descripcion: Estado y evidencia de una corrida, con logs y errores.
+
+  - nombre: download_artifact
+    tipo: read
+    riesgo: medio
+    auto_ejecucion: true
+    descripcion: >-
+      Baja un artefacto de salida. Riesgo medio y no bajo porque los artefactos
+      llevan PII de deudores.
+
+  - nombre: run_etl
+    tipo: write
+    riesgo: alto
+    auto_ejecucion: false
+    descripcion: >-
+      Dispara una corrida real contra un legacy de produccion, con deadline
+      contractual y promocion de estado durable. Exige confirmacion humana.
+    invariantes:
+      - >-
+        Nunca acepta contenido de archivo como argumento. Los argumentos de tool
+        son JSON que emite el modelo, y un modelo regenera los bytes en vez de
+        copiarlos: eso rompe la paridad byte a byte contra los upstream. Sobre
+        HTTP las rutas locales se rechazan con LocalPathsUnavailable, y hay test
+        de contrato que lo fija.
+      - >-
+        business_date debe ser hoy. Es regla de negocio (ADR-001, decision 7):
+        no existe reproceso de dias caidos.
+
+operacion:
+  runbook: docs/how-to/desplegar-en-vm-stage.md
+  logs: stdout del contenedor, formato de uvicorn
+  evidencia_de_corridas: >-
+    No la escribe el MCP. Vive en var/runs/<etl>/<run_id>/run.json del servicio
+    etl-platform-api.
+  modos_de_falla:
+    - sintoma: 503 en /mcp
+      causa: falta ETL_MCP_TOKEN
+      accion: cargar el secreto y reiniciar
+    - sintoma: 401 en /mcp
+      causa: el cliente no manda el bearer o manda otro
+      accion: revisar el header del conector
+    - sintoma: las tools responden "API error 503"
+      causa: etl-platform-api sin ETL_CONSOLE_TOKEN
+      accion: revisar el .env del backend
+    - sintoma: el link de subida devuelve la consola React
+      causa: nginx no proxea /upload/ al backend
+      accion: revisar apps/etl-console/nginx.conf
+
+migracion:
+  objetivo: oauth-obo
+  bloqueantes:
+    - >-
+      Confirmar si el Zitadel corporativo tiene habilitado token exchange
+      (RFC 8693). Sin eso oauth-obo no es implementable.
+    - >-
+      La API tiene que volverse resource server y validar JWT contra el JWKS de
+      Zitadel. Hoy compara un unico token compartido.
+    - >-
+      No hay scoping por cliente: el campo `client` es presentacional y sale del
+      prefijo del etl_id. Un usuario de Bancor ve y puede lanzar Naranja X.
+    - >-
+      El registro en la base del AI Gateway y la NetworkPolicy del namespace de
+      herramientas son tramites del repo de infraestructura.

@@ -117,6 +117,19 @@ sudo docker compose exec backend date   # tiene que decir -03
 
 ## Re-deploy
 
+**Antes de limpiar el directorio del stack, verificá qué hay que no venga del paquete.**
+Extraer el tar encima no borra lo que se eliminó en el repo, así que el re-deploy limpia y
+reextrae — y esa limpieza se lleva puesto cualquier archivo que alguien haya agregado
+directamente en la VM:
+
+```bash
+ssh ... 'cd /opt/stacks/etl-unificador && ls -a'
+# Comparar contra `git ls-files | cut -d/ -f1 | sort -u` mas .env.
+# Todo lo que sobre es trabajo de otro: rescatarlo antes de limpiar.
+ssh ... 'cd /opt/stacks/etl-unificador && sudo docker compose config --services'
+# Un servicio que el compose.yaml del repo no define ya paso una vez.
+```
+
 ```bash
 # desde local, con los cambios ya commiteados
 git archive --format=tar.gz -o /tmp/etl-unificador.tgz HEAD

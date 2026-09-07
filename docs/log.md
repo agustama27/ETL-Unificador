@@ -168,3 +168,20 @@ Formato: `## [YYYY-MM-DD] <op> | <tema>`. Grepeable con `grep '^## \[' docs/log.
 - El `job.py` de Bancor copiaba el input con el nombre fijo `base.csv`. El legacy elige
   el lector **por la extensión**, así que un `.xlsx` renombrado iba al parser de CSV →
   [../etls/bancor/README.md](../etls/bancor/README.md)
+
+## [2026-09-06] incidente | el redespliegue borró el servicio MCP del stack
+
+- El procedimiento de re-deploy limpia el directorio del stack y extrae el paquete de
+  nuevo, para no dejar residuos de archivos borrados en el repo. En el primer deploy se
+  verificó que lo único ajeno al repo fuera `.env`; en el segundo se repitió la limpieza
+  **sin volver a verificar**, y para entonces alguien había agregado un servicio `mcp` con
+  su código en `apps/mcp-etl-cobranza/` → [how-to/desplegar-en-vm-stage.md](how-to/desplegar-en-vm-stage.md)
+- Se perdieron la definición del servicio en `compose.yaml` y el código fuente. El
+  contenedor seguía vivo porque Compose no elimina huérfanos por defecto, así que el
+  código se recuperó con `docker cp` desde el contenedor y la definición se reconstruyó
+  desde `docker inspect` → [how-to/desplegar-en-vm-stage.md](how-to/desplegar-en-vm-stage.md)
+- `.env` sobrevivió, con las variables del MCP incluidas: es lo único que la limpieza
+  preserva por diseño → [how-to/desplegar-en-vm-stage.md](how-to/desplegar-en-vm-stage.md)
+- Quedan **dos** paquetes `platform_mcp`: el de `tools/etl-platform-mcp` (stdio, el que
+  usan los tests) y el de `apps/mcp-etl-cobranza` (HTTP, más nuevo). Cuál sobrevive es
+  decisión de quien escribió el segundo → [reference/ARQUITECTURA.md](reference/ARQUITECTURA.md)
