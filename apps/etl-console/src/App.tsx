@@ -18,27 +18,28 @@ function Sidebar() {
     refetchInterval: 5000,
   });
   const liveCount = (runs.data?.items ?? []).filter((run) => LIVE.includes(run.status)).length;
-  const item = "";
+  // NavLink ya emite aria-current="page" en la ruta activa, que es de donde la hoja
+  // toma el estado (.nav-item[aria-current="page"]): no hace falta clase "active".
   return (
     <aside className="sidebar">
-      <div className="brand row"><FlowArrow size={17} color="var(--color-accent)" /> Consola ETL</div>
-      <nav>
-        <NavLink to="/" end className={({ isActive }) => (isActive ? "active" : item)}>
+      <div className="sidebar__brand"><FlowArrow size={17} color="var(--brand-base)" /> Consola ETL</div>
+      <nav className="sidebar__nav">
+        <NavLink to="/" end className="nav-item">
           <SquaresFour size={15} /> Tablero
-          {liveCount > 0 && <span className="live-pill">{liveCount}</span>}
+          {liveCount > 0 && <span className="nav-item__pill">{liveCount}</span>}
         </NavLink>
-        <NavLink to="/catalogo" className={({ isActive }) => (isActive ? "active" : item)}>
+        <NavLink to="/catalogo" className="nav-item">
           <Stack size={15} /> Catálogo
         </NavLink>
-        <NavLink to="/lanzar" className={({ isActive }) => (isActive ? "active" : item)}>
+        <NavLink to="/lanzar" className="nav-item">
           <Play size={15} /> Lanzar corrida
         </NavLink>
-        <NavLink to="/historial" className={({ isActive }) => (isActive ? "active" : item)}>
+        <NavLink to="/historial" className="nav-item">
           <ClockCounterClockwise size={15} /> Historial
         </NavLink>
       </nav>
-      <div className="user">
-        <span className="avatar">OS</span>
+      <div className="sidebar__user">
+        <span className="sidebar__avatar">OS</span>
         <span>Operaciones SOHO<br />Red interna · sin sesión</span>
       </div>
     </aside>
@@ -67,7 +68,7 @@ export default function App() {
 
   return (
     <ToastProvider>
-      <div className="layout">
+      <div className="shell">
         <Sidebar />
         <main className="content">
           <Routes>
