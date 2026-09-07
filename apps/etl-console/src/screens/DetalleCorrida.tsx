@@ -1,11 +1,11 @@
-import { DownloadSimple, FileZip, WarningOctagon } from "@phosphor-icons/react";
+import { DownloadSimple, FileDashed, FileZip, HourglassHigh, WarningOctagon } from "@phosphor-icons/react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { ERROR_COPY, FALLBACK_ERROR, LIVE, downloadArtifact, downloadArtifactsZip,
          fetchCatalog, fetchRun, formatBytes, formatDuration, formatMoment, runAction } from "../api";
 import type { ErrorCopy, RunDetail } from "../api";
-import { StatusBadge, TimelineIcon, useToast } from "../components/shared";
+import { ConnectionError, Empty, StatusBadge, TimelineIcon, useToast } from "../components/shared";
 
 function LiveCard({ run }: { run: RunDetail }) {
   const [elapsed, setElapsed] = useState(0);
@@ -204,9 +204,42 @@ export default function DetalleCorrida() {
 
     () => { queryClient.invalidateQueries({ queryKey: ["runs-today"] }); }, [queryClient]);
 
-  if (run.isLoading) return <div className="page stack"><div className="skeleton" /><div className="skeleton" /></div>;
+  if (run.isLoading) {
+    return (
+      <div className="page">
+        <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 8 }}>
+          <div className="skel skel--title" style={{ width: 210 }} />
+          <div className="skel" style={{ width: 82, height: 22, borderRadius: 999 }} />
+        </div>
+        <div className="skel skel--text" style={{ width: 340, marginBottom: 20 }} />
+        <div className="split">
+          <div className="card">
+            <div className="skel skel--text" style={{ width: 100, marginBottom: 16 }} />
+            {[110, 90, 80].map((width, index) => (
+              <div key={width} style={{ display: "grid", gridTemplateColumns: "26px 1fr", gap: 12 }}>
+                <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
+                  <div className="skel skel--node" />
+                  {index < 2 && <div className="skel" style={{ width: 2, flex: 1, minHeight: 22 }} />}
+                </div>
+                <div style={{ paddingBottom: index < 2 ? 20 : 0 }}>
+                  <div className="skel skel--text" style={{ width, marginBottom: 7 }} />
+                  <div className="skel skel--text" style={{ width: "90%", height: 9 }} />
+                </div>
+              </div>
+            ))}
+          </div>
+          <div className="card">
+            <div className="skel skel--text" style={{ width: 80, marginBottom: 14 }} />
+            <div className="skel" style={{ height: 32, borderRadius: 6, marginBottom: 8 }} />
+            <div className="skel" style={{ height: 40, borderRadius: 6, marginBottom: 8 }} />
+            <div className="skel" style={{ height: 40, borderRadius: 6, opacity: 0.6 }} />
+          </div>
+        </div>
+      </div>
+    );
+  }
   if (run.isError || !run.data) {
-    return <div className="page"><div className="banner-error">No se pudo cargar la corrida. <button className="btn btn--secondary" onClick={() => run.refetch()}>Reintentar</button></div></div>;
+    return <div className="page"><ConnectionError endpoint={`/api/runs/${runId}`} onRetry={() => run.refetch()} /></div>;
   }
   const data = run.data;
   const live = LIVE.includes(data.status);
