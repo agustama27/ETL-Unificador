@@ -36,7 +36,10 @@ export default function Tablero() {
     for (const run of runs.data?.items ?? []) {
       const before = seen.current.get(run.run_id);
       if (before && LIVE.includes(before) && !LIVE.includes(run.status)) {
-        toast(run.status === "succeeded" ? "success" : "warning",
+        // Una corrida que falló, se bloqueó o dio timeout es "danger": el
+        // toast no se auto-cierra, porque es la única señal que recibe
+        // alguien que dejó el Tablero abierto en otra pestaña.
+        toast(run.status === "succeeded" ? "success" : "danger",
               run.status === "succeeded"
                 ? `${run.etl_id}: corrida exitosa.`
                 : `${run.etl_id}: la corrida terminó ${run.status === "blocked" ? "bloqueada" : "con problemas"}.`,

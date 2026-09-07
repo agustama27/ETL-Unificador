@@ -1,5 +1,5 @@
 import { ArrowClockwise, Check, CheckCircle, CircleNotch, Copy, Info, LockSimple, Minus,
-         Plugs, Prohibit, Timer, Warning, X } from "@phosphor-icons/react";
+         Plugs, Prohibit, Timer, Warning, WarningOctagon, X } from "@phosphor-icons/react";
 import { createContext, useCallback, useContext, useEffect, useId, useMemo, useRef, useState } from "react";
 import type { ReactNode } from "react";
 import { Link } from "react-router-dom";
@@ -49,35 +49,63 @@ export function ReadinessBadge({ readiness }: { readiness: CatalogEntry["readine
   );
 }
 
-interface Toast { id: number; kind: "info" | "success" | "warning"; text: string; runId?: string }
+// "danger" es la única variante que no se auto-cierra: una corrida que falló
+// es la única señal que recibe alguien que dejó el Tablero abierto en otra
+// pestaña, y un auto-cierre de 7s incumple WCAG 2.2.1 para ese caso.
+interface Toast { id: number; kind: "info" | "success" | "warning" | "danger"; text: string; runId?: string }
 const ToastContext = createContext<(kind: Toast["kind"], text: string, runId?: string) => void>(() => {});
 export const useToast = () => useContext(ToastContext);
+
+const TOAST_ICON: Record<Toast["kind"], ReactNode> = {
+  info:    <Info size={16} color="var(--feedback-info-fg)" aria-hidden="true" />,
+  success: <CheckCircle size={16} color="var(--feedback-success-fg)" aria-hidden="true" />,
+  warning: <Warning size={16} color="var(--feedback-warning-fg)" aria-hidden="true" />,
+  danger:  <WarningOctagon size={16} color="var(--feedback-danger-fg)" aria-hidden="true" />,
+};
 
 export function ToastProvider({ children }: { children: ReactNode }) {
   const [toasts, setToasts] = useState<Toast[]>([]);
   const next = useRef(1);
+  const timers = useRef(new Map<number, ReturnType<typeof setTimeout>>());
+
+  const cancelTimer = (id: number) => {
+    const timer = timers.current.get(id);
+    if (timer) { clearTimeout(timer); timers.current.delete(id); }
+  };
+  const close = useCallback((id: number) => {
+    cancelTimer(id);
+    setToasts((current) => current.filter((t) => t.id !== id));
+  }, []);
   const push = useCallback((kind: Toast["kind"], text: string, runId?: string) => {
     const id = next.current++;
     setToasts((current) => [...current, { id, kind, text, runId }]);
-    setTimeout(() => setToasts((current) => current.filter((t) => t.id !== id)), 7000);
+    if (kind !== "danger") {
+      timers.current.set(id, setTimeout(() => {
+        timers.current.delete(id);
+        setToasts((current) => current.filter((t) => t.id !== id));
+      }, 7000));
+    }
   }, []);
-  const icons = { info: <Info size={16} color="var(--color-accent)" />,
-                  success: <CheckCircle size={16} color="var(--status-success)" />,
-                  warning: <Warning size={16} color="var(--status-timeout)" /> };
+
   return (
     <ToastContext.Provider value={push}>
       {children}
-      <div className="toasts">
+      <div className="toast-stack" role="region" aria-label="Notificaciones">
         {toasts.map((toast) => (
-          <div key={toast.id} className={`toast ${toast.kind}`}>
-            {icons[toast.kind]}
-            <div>
-              <div>{toast.text}</div>
-              {toast.runId && <Link to={`/runs/${toast.runId}`}>Ver corrida →</Link>}
+          <div key={toast.id} className={`toast toast--${toast.kind}`}
+               role={toast.kind === "warning" || toast.kind === "danger" ? "alert" : "status"}
+               // Cancela el auto-cierre mientras el operador está mirando o
+               // enfocando el toast — un mínimo de WCAG 2.2.1, no una pausa que
+               // se reanuda sola.
+               onMouseEnter={() => cancelTimer(toast.id)} onFocus={() => cancelTimer(toast.id)}>
+            <span className="toast__icon">{TOAST_ICON[toast.kind]}</span>
+            <div className="toast__body">
+              <div className="toast__title">{toast.text}</div>
+              {toast.runId && <Link className="toast__link" to={`/runs/${toast.runId}`}>Ver corrida →</Link>}
             </div>
-            <button className="btn btn--ghost" style={{ marginLeft: "auto" }}
-                    onClick={() => setToasts((c) => c.filter((t) => t.id !== toast.id))}
-                    aria-label="Cerrar"><X size={12} /></button>
+            <button className="btn btn--ghost btn--icon btn--sm" style={{ marginLeft: "auto" }}
+                    onClick={() => close(toast.id)}
+                    aria-label="Cerrar"><X size={12} aria-hidden="true" /></button>
           </div>
         ))}
       </div>
