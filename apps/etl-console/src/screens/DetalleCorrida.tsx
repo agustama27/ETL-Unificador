@@ -229,14 +229,14 @@ export default function DetalleCorrida() {
           </div>
           <div>
             <span className="field-label">Entradas</span>
-            <table className="history">
-              <thead><tr><th>Rol</th><th>Archivo</th><th className="right">Tamaño</th><th>SHA-256</th></tr></thead>
+            <table className="data-table">
+              <thead><tr><th>Rol</th><th>Archivo</th><th className="num">Tamaño</th><th>SHA-256</th></tr></thead>
               <tbody>
                 {data.inputs.map((input) => (
-                  <tr key={input.role} style={{ cursor: "default" }}>
+                  <tr key={input.role}>
                     <td>{input.role}</td>
                     <td className="mono">{input.name}</td>
-                    <td className="right">{formatBytes(input.size)}</td>
+                    <td className="num">{formatBytes(input.size)}</td>
                     <td className="mono">{input.sha256.slice(0, 16)}…</td>
                   </tr>
                 ))}
