@@ -49,7 +49,7 @@ export default function Historial() {
       ) : history.isError ? (
         <div className="banner-error">
           No se pudo cargar el historial.
-          <button className="btn-secondary" onClick={() => history.refetch()}>Reintentar</button>
+          <button className="btn btn--secondary" onClick={() => history.refetch()}>Reintentar</button>
         </div>
       ) : (
         <>
@@ -75,12 +75,12 @@ export default function Historial() {
             </tbody>
           </table>
           <div className="row" style={{ justifyContent: "flex-end", marginTop: 12 }}>
-            <button className="btn-ghost" disabled={page <= 1}
+            <button className="btn btn--ghost" disabled={page <= 1}
                     onClick={() => setPage((current) => current - 1)} aria-label="Anterior">
               <CaretLeft size={13} />
             </button>
             <span className="muted">Página {history.data!.page} de {history.data!.pages}</span>
-            <button className="btn-ghost" disabled={page >= history.data!.pages}
+            <button className="btn btn--ghost" disabled={page >= history.data!.pages}
                     onClick={() => setPage((current) => current + 1)} aria-label="Siguiente">
               <CaretRight size={13} />
             </button>

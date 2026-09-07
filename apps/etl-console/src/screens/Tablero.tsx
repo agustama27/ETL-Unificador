@@ -46,7 +46,7 @@ export default function Tablero() {
       <div className="page">
         <div className="banner-error">
           No se pudo cargar el tablero.
-          <button className="btn-secondary" onClick={() => { catalog.refetch(); runs.refetch(); }}>Reintentar</button>
+          <button className="btn btn--secondary" onClick={() => { catalog.refetch(); runs.refetch(); }}>Reintentar</button>
         </div>
       </div>
     );
@@ -97,14 +97,14 @@ export default function Tablero() {
                 <StatusBadge status={status} />
                 <div className="meta">{meta}</div>
                 <div className="actions">
-                  {run && <Link className="btn-ghost" to={`/runs/${run.run_id}`}>Ver corrida</Link>}
+                  {run && <Link className="btn btn--ghost" to={`/runs/${run.run_id}`}>Ver corrida</Link>}
                   {run?.status === "succeeded" && (
-                    <button className="btn-secondary" onClick={() => downloadArtifactsZip(run.run_id)}>
+                    <button className="btn btn--secondary" onClick={() => downloadArtifactsZip(run.run_id)}>
                       <Download size={13} /> Descargar
                     </button>
                   )}
                   {runLabel && (
-                    <button className="btn-primary" onClick={() => navigate(`/lanzar/${entry.id}`)}>
+                    <button className="btn btn--primary" onClick={() => navigate(`/lanzar/${entry.id}`)}>
                       <Play size={13} /> {runLabel}
                     </button>
                   )}
